@@ -25,7 +25,14 @@ export const sites = sqliteTable("sites", {
     megabytesOut: integer("bytesOut"),
     lastBandwidthUpdate: text("lastBandwidthUpdate"),
     type: text("type").notNull(), // "newt" or "wireguard"
-    online: integer("online", { mode: "boolean" }).notNull().default(false)
+    online: integer("online", { mode: "boolean" }).notNull().default(false),
+
+    // exit node stuff that is how to connect to the site when it has a gerbil
+    address: text("address"), // this is the address of the wireguard interface in gerbil
+    endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
+    publicKey: text("pubicKey"),
+    listenPort: integer("listenPort"),
+    reachableAt: text("reachableAt") // this is the internal address of the gerbil http server for command control
 });
 
 export const resources = sqliteTable("resources", {
@@ -108,6 +115,15 @@ export const newts = sqliteTable("newt", {
     })
 });
 
+export const clients = sqliteTable("clients", {
+    clientId: text("id").primaryKey(),
+    secretHash: text("secretHash").notNull(),
+    dateCreated: text("dateCreated").notNull(),
+    siteId: integer("siteId").references(() => sites.siteId, {
+        onDelete: "cascade"
+    })
+});
+
 export const twoFactorBackupCodes = sqliteTable("twoFactorBackupCodes", {
     codeId: integer("id").primaryKey({ autoIncrement: true }),
     userId: text("userId")
@@ -127,6 +143,14 @@ export const sessions = sqliteTable("session", {
 export const newtSessions = sqliteTable("newtSession", {
     sessionId: text("id").primaryKey(),
     newtId: text("newtId")
+        .notNull()
+        .references(() => newts.newtId, { onDelete: "cascade" }),
+    expiresAt: integer("expiresAt").notNull()
+});
+
+export const clientSessions = sqliteTable("clientSession", {
+    sessionId: text("id").primaryKey(),
+    clientId: text("clientId")
         .notNull()
         .references(() => newts.newtId, { onDelete: "cascade" }),
     expiresAt: integer("expiresAt").notNull()
@@ -393,6 +417,8 @@ export type Target = InferSelectModel<typeof targets>;
 export type Session = InferSelectModel<typeof sessions>;
 export type Newt = InferSelectModel<typeof newts>;
 export type NewtSession = InferSelectModel<typeof newtSessions>;
+export type Client = InferSelectModel<typeof clients>;
+export type ClientSession = InferSelectModel<typeof clientSessions>;
 export type EmailVerificationCode = InferSelectModel<
     typeof emailVerificationCodes
 >;
