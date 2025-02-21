@@ -22,7 +22,8 @@ import {
     verifyRoleAccess,
     verifySetResourceUsers,
     verifyUserAccess,
-    getUserOrgs
+    getUserOrgs,
+    verifyClientAccess
 } from "@server/middlewares";
 import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
 import { ActionsEnum } from "@server/auth/actions";
@@ -98,7 +99,7 @@ authenticated.get(
 
 authenticated.get(
     "/site/:siteId/pick-client-defaults",
-    verifyOrgAccess,
+    verifySiteAccess,
     verifyUserHasAction(ActionsEnum.createClient),
     client.pickClientDefaults
 );
@@ -109,6 +110,14 @@ authenticated.put(
     verifyUserHasAction(ActionsEnum.createClient),
     client.createClient
 );
+
+authenticated.delete(
+    "/client/:clientId",
+    verifyClientAccess,
+    verifyUserHasAction(ActionsEnum.deleteClient),
+    client.deleteClient
+);
+
 
 // authenticated.get(
 //     "/site/:siteId/roles",
