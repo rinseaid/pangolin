@@ -77,11 +77,11 @@ export async function pickClientDefaults(
 
         const parsedSite = sitesRequiredFields.safeParse(site);
         if (!parsedSite.success) {
+            logger.error("Unable to pick client defaults because: " + fromError(parsedSite.error).toString());
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "Unable to pick client defaults because: " +
-                        fromError(parsedSite.error).toString()
+                    "Site is not configured to accept client connectivity"
                 )
             );
         }

@@ -20,7 +20,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     const newt = client as Newt;
 
     logger.debug(JSON.stringify(message.data));
-    
+
 
     logger.debug("Handling Newt get config message!");
 
@@ -60,7 +60,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     let site: Site | undefined;
     if (!site) {
         const address = await getNextAvailableSubnet();
-        const listenPort = await getNextAvailablePort(); 
+        const listenPort = await getNextAvailablePort();
 
         // create a new exit node
         const [updateRes] = await db

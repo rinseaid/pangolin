@@ -110,10 +110,13 @@ export default function CreateClientForm({
             const res = await api.get<AxiosResponse<ListSitesResponse>>(
                 `/org/${orgId}/sites/`
             );
-            setSites(res.data.data.sites);
+            const sites = res.data.data.sites.filter(
+                (s) => s.type === "newt" && s.subnet
+            );
+            setSites(sites);
 
-            if (res.data.data.sites.length > 0) {
-                form.setValue("siteId", res.data.data.sites[0].siteId);
+            if (sites.length > 0) {
+                form.setValue("siteId", sites[0].siteId);
             }
         };
 
@@ -289,32 +292,30 @@ export default function CreateClientForm({
                                 </Popover>
                                 <FormDescription>
                                     The client will be have connectivity to this
-                                    site.
+                                    site. The site must be configured to accept
+                                    client connections.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    <div className="w-full">
-                        <div className="mb-2">
-                            <Collapsible
-                                open={isOpen}
-                                onOpenChange={setIsOpen}
-                                className="space-y-2"
-                            >
+                    {olmCommand && (
+                        <div className="w-full">
+                            <div className="mb-2">
                                 <div className="mx-auto">
                                     <CopyTextBox
-                                        text={olmCommand || ""}
+                                        text={olmCommand}
                                         wrapText={false}
                                     />
                                 </div>
-                            </Collapsible>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                                You will only be able to see the configuration
+                                once.
+                            </span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                            You will only be able to see the configuration once.
-                        </span>
-                    </div>
+                    )}
 
                     <div className="flex items-center space-x-2">
                         <Checkbox
