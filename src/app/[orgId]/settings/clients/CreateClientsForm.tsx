@@ -24,6 +24,7 @@ import { AxiosResponse } from "axios";
 import { Collapsible } from "@app/components/ui/collapsible";
 import { ClientRow } from "./ClientsTable";
 import {
+    CreateClientBody,
     CreateClientResponse,
     PickClientDefaultsResponse
 } from "@server/routers/client";
@@ -167,11 +168,11 @@ export default function CreateClientForm({
         const payload = {
             name: data.name,
             siteId: data.siteId,
-            orgId,
             subnet: clientDefaults.subnet,
+            olmId: clientDefaults.olmId,
             secret: clientDefaults.olmSecret,
-            olmId: clientDefaults.olmId
-        };
+            type: "olm"
+        } as CreateClientBody;
 
         const res = await api
             .put<
