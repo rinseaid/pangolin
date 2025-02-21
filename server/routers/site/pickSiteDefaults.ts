@@ -84,7 +84,7 @@ export async function pickSiteDefaults(
                 name: exitNode.name,
                 listenPort: exitNode.listenPort,
                 endpoint: exitNode.endpoint,
-                subnet: newSubnet,
+                subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().gerbil.block_size}`, // we want the block size of the whole subnet
                 newtId,
                 newtSecret: secret
             },

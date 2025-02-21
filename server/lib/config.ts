@@ -110,7 +110,7 @@ const configSchema = z.object({
         block_size: z.number().positive().gt(0),
         site_block_size: z.number().positive().gt(0)
     }),
-    wg_site: z.object({
+    newt: z.object({
         block_size: z.number().positive().gt(0),
         subnet_group: z.string(),
         start_port: portSchema,

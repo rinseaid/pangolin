@@ -18,7 +18,7 @@ import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { eq, and } from "drizzle-orm";
-import { addPeer } from "../gerbil/peers";
+import { addPeer } from "../newt/peers";
 import { fromError } from "zod-validation-error";
 import { newts } from "@server/db/schema";
 import moment from "moment";
