@@ -35,7 +35,7 @@ const createSiteSchema = z
         subnet: z.string().optional(),
         newtId: z.string().optional(),
         secret: z.string().optional(),
-        type: z.string()
+        type: z.enum(["newt", "wireguard"])
     })
     .strict();
 

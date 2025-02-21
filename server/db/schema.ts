@@ -121,6 +121,10 @@ export const clients = sqliteTable("clients", {
     siteId: integer("siteId").references(() => sites.siteId, {
         onDelete: "cascade"
     }),
+    orgId: text("orgId").references(() => orgs.orgId, {
+        onDelete: "cascade"
+    }),
+    name: text("name").notNull(),
     pubKey: text("pubKey"),
     subnet: text("subnet").notNull(),
     megabytesIn: integer("bytesIn"),

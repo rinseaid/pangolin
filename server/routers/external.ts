@@ -103,6 +103,13 @@ authenticated.get(
     client.pickClientDefaults
 );
 
+authenticated.put(
+    "/site/:siteId/client",
+    verifySiteAccess,
+    verifyUserHasAction(ActionsEnum.createClient),
+    client.createClient
+);
+
 // authenticated.get(
 //     "/site/:siteId/roles",
 //     verifySiteAccess,
