@@ -3,7 +3,7 @@ import { MessageHandler } from "../ws";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import db from "@server/db";
-import { clients, Site, sites } from "@server/db/schema";
+import { clients, Newt, Site, sites } from "@server/db/schema";
 import { eq, isNotNull } from "drizzle-orm";
 import { findNextAvailableCidr } from "@server/lib/ip";
 import config from "@server/lib/config";
@@ -17,7 +17,8 @@ const inputSchema = z.object({
 type Input = z.infer<typeof inputSchema>;
 
 export const handleGetConfigMessage: MessageHandler = async (context) => {
-    const { message, newt, sendToClient } = context;
+    const { message, client, sendToClient } = context;
+    const newt = client as Newt;
 
     logger.debug("Handling Newt get config message!");
 
