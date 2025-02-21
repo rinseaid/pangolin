@@ -89,6 +89,9 @@ export default function CreateClientForm({
 
     const handleCheckboxChange = (checked: boolean) => {
         setIsChecked(checked);
+        if (setChecked) {
+            setChecked(checked);
+        }
     };
 
     const form = useForm<CreateSiteFormValues>({
@@ -230,7 +233,7 @@ export default function CreateClientForm({
                         name="siteId"
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
-                                <FormLabel>Client</FormLabel>
+                                <FormLabel>Site</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <FormControl>
