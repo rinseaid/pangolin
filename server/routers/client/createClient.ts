@@ -104,6 +104,12 @@ export async function createClient(
             return next(createHttpError(HttpCode.NOT_FOUND, "Site not found"));
         }
 
+        if (site.type !== "newt") {
+            return next(
+                createHttpError(HttpCode.BAD_REQUEST, "Site is not a newt site")
+            );
+        }
+
         await db.transaction(async (trx) => {
             const adminRole = await trx
                 .select()

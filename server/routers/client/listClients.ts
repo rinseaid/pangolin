@@ -3,10 +3,8 @@ import {
     clients,
     orgs,
     roleClients,
-    roleSites,
     sites,
     userClients,
-    userSites
 } from "@server/db/schema";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
@@ -41,16 +39,17 @@ const listClientsSchema = z.object({
 function queryClients(orgId: string, accessibleClientIds: number[]) {
     return db
         .select({
-            siteId: sites.siteId,
-            niceId: sites.niceId,
-            name: sites.name,
-            pubKey: sites.pubKey,
-            subnet: sites.subnet,
-            megabytesIn: sites.megabytesIn,
-            megabytesOut: sites.megabytesOut,
+            clientId: clients.clientId,
+            orgId: clients.orgId,
+            siteId: clients.siteId,
+            name: clients.name,
+            pubKey: clients.pubKey,
+            subnet: clients.subnet,
+            megabytesIn: clients.megabytesIn,
+            megabytesOut: clients.megabytesOut,
             orgName: orgs.name,
-            type: sites.type,
-            online: sites.online
+            type: clients.type,
+            online: clients.online
         })
         .from(clients)
         .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
@@ -115,22 +114,22 @@ export async function listClients(
             )
             .where(
                 or(
-                    eq(userSites.userId, req.user!.userId),
-                    eq(roleSites.roleId, req.userOrgRoleId!)
+                    eq(userClients.userId, req.user!.userId),
+                    eq(roleClients.roleId, req.userOrgRoleId!)
                 )
             );
 
-        const accessibleSiteIds = accessibleClients.map(
+        const accessibleClientIds = accessibleClients.map(
             (site) => site.clientId
         );
-        const baseQuery = queryClients(orgId, accessibleSiteIds);
+        const baseQuery = queryClients(orgId, accessibleClientIds);
 
         let countQuery = db
             .select({ count: count() })
             .from(sites)
             .where(
                 and(
-                    inArray(sites.siteId, accessibleSiteIds),
+                    inArray(sites.siteId, accessibleClientIds),
                     eq(sites.orgId, orgId)
                 )
             );

@@ -14,7 +14,7 @@ import { fromError } from "zod-validation-error";
 
 const getSiteSchema = z
     .object({
-        siteId: z.number().int().positive()
+        siteId: z.string().transform(Number).pipe(z.number())
     })
     .strict();
 
@@ -26,8 +26,8 @@ export type PickClientDefaultsResponse = {
     listenPort: number;
     endpoint: string;
     subnet: string;
-    clientId: string;
-    clientSecret: string;
+    olmId: string;
+    olmSecret: string;
 };
 
 export async function pickClientDefaults(
@@ -55,6 +55,15 @@ export async function pickClientDefaults(
 
         if (!site) {
             return next(createHttpError(HttpCode.NOT_FOUND, "Site not found"));
+        }
+
+        if (site.type !== "newt") {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    "Site is not a newt site"
+                )
+            );
         }
 
         // make sure all the required fields are present
@@ -109,7 +118,7 @@ export async function pickClientDefaults(
             );
         }
 
-        const clientId = generateId(15);
+        const olmId = generateId(15);
         const secret = generateId(48);
 
         return response<PickClientDefaultsResponse>(res, {
@@ -121,8 +130,8 @@ export async function pickClientDefaults(
                 listenPort: listenPort,
                 endpoint: endpoint,
                 subnet: newSubnet,
-                clientId,
-                clientSecret: secret
+                olmId: olmId,
+                olmSecret: secret
             },
             success: true,
             error: false,

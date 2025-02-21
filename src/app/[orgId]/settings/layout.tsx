@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { TopbarNav } from "@app/components/TopbarNav";
-import { Cog, Combine, Link, Settings, Users, Waypoints } from "lucide-react";
+import { Cog, Combine, Laptop, Link, Settings, Users, Waypoints, Workflow } from "lucide-react";
 import { Header } from "@app/components/Header";
 import { verifySession } from "@app/lib/auth/verifySession";
 import { redirect } from "next/navigation";
@@ -29,6 +29,11 @@ const topNavItems = [
         title: "Resources",
         href: "/{orgId}/settings/resources",
         icon: <Waypoints className="h-4 w-4" />
+    },
+    {
+        title: "Clients",
+        href: "/{orgId}/settings/clients",
+        icon: <Workflow className="h-4 w-4" />
     },
     {
         title: "Users & Roles",
