@@ -16,7 +16,7 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
 
     const newt = client;
 
-    logger.info("Handling register message!");
+    logger.info("Handling register newt message!");
 
     if (!newt) {
         logger.warn("Newt not found");

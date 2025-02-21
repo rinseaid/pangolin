@@ -1,14 +1,11 @@
 import db from "@server/db";
 import { MessageHandler } from "../ws";
 import {
-    exitNodes,
-    resources,
+    olms,
     sites,
-    Target,
-    targets
 } from "@server/db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import { addPeer, deletePeer } from "../gerbil/peers";
+import { eq, } from "drizzle-orm";
+import { addPeer, deletePeer } from "../newt/peers";
 import logger from "@server/logger";
 
 export const handleOlmRegisterMessage: MessageHandler = async (context) => {
@@ -16,7 +13,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
 
     const olm = client;
 
-    logger.info("Handling register message!");
+    logger.info("Handling register olm message!");
 
     if (!olm) {
         logger.warn("Olm not found");
@@ -42,28 +39,22 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         .where(eq(sites.siteId, siteId))
         .limit(1);
 
-    if (!site || !site.exitNodeId) {
+    if (!site) {
         logger.warn("Site not found or does not have exit node");
         return;
     }
 
     await db
-        .update(sites)
+        .update(olms)
         .set({
             pubKey: publicKey
         })
-        .where(eq(sites.siteId, siteId))
+        .where(eq(olms.olmId, olm.olmId))
         .returning();
 
-    const [exitNode] = await db
-        .select()
-        .from(exitNodes)
-        .where(eq(exitNodes.exitNodeId, site.exitNodeId))
-        .limit(1);
-
-    if (site.pubKey && site.pubKey !== publicKey) {
+    if (olm.pubKey && olm.pubKey !== publicKey) {
         logger.info("Public key mismatch. Deleting old peer...");
-        await deletePeer(site.exitNodeId, site.pubKey);
+        await deletePeer(site.siteId, site.pubKey);
     }
 
     if (!site.subnet) {
@@ -72,7 +63,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
     }
 
     // add the peer to the exit node
-    await addPeer(site.exitNodeId, {
+    await addPeer(site.siteId, {
         publicKey: publicKey,
         allowedIps: [site.subnet]
     });
@@ -81,9 +72,9 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         message: {
             type: "olm/wg/connect",
             data: {
-                endpoint: `${exitNode.endpoint}:${exitNode.listenPort}`,
-                publicKey: exitNode.publicKey,
-                serverIP: exitNode.address.split("/")[0],
+                endpoint: `${site.endpoint}:${site.listenPort}`,
+                publicKey: site.publicKey,
+                serverIP: site.address!.split("/")[0],
                 tunnelIP: site.subnet.split("/")[0]
             }
         },
