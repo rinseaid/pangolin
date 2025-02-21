@@ -12,9 +12,12 @@ interface PeerBandwidth {
 
 export const handleReceiveBandwidthMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
-    const newt = client as Newt;
 
-    const bandwidthData: PeerBandwidth[] = message.data;
+    if (!message.data.bandwidthData) {
+        logger.warn("No bandwidth data provided");
+    }
+
+    const bandwidthData: PeerBandwidth[] = message.data.bandwidthData;
 
     if (!Array.isArray(bandwidthData)) {
         throw new Error("Invalid bandwidth data");
@@ -63,6 +66,4 @@ export const handleReceiveBandwidthMessage: MessageHandler = async (context) => 
                 .where(eq(clients.clientId, client.clientId));
         }
     });
-
-    logger.info("Handling register olm message!");
 };

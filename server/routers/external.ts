@@ -28,7 +28,8 @@ import {
 import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
 import { ActionsEnum } from "@server/auth/actions";
 import { verifyUserIsOrgOwner } from "../middlewares/verifyUserIsOrgOwner";
-import { createNewt, getToken } from "./newt";
+import { createNewt, getNewtToken } from "./newt";
+import { getOlmToken } from "./olm";
 import rateLimit from "express-rate-limit";
 import createHttpError from "http-errors";
 
@@ -501,7 +502,8 @@ authRouter.use(
 authRouter.put("/signup", auth.signup);
 authRouter.post("/login", auth.login);
 authRouter.post("/logout", auth.logout);
-authRouter.post("/newt/get-token", getToken);
+authRouter.post("/newt/get-token", getNewtToken);
+authRouter.post("/olm/get-token", getOlmToken);
 
 authRouter.post("/2fa/enable", verifySessionUserMiddleware, auth.verifyTotp);
 authRouter.post(
