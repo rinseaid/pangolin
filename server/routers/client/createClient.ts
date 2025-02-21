@@ -37,10 +37,9 @@ const createClientSchema = z
     .object({
         name: z.string().min(1).max(255),
         siteId: z.number().int().positive(),
-        pubKey: z.string().optional(),
-        subnet: z.string().optional(),
-        olmId: z.string().optional(),
-        secret: z.string().optional(),
+        subnet: z.string(),
+        olmId: z.string(),
+        secret: z.string(),
         type: z.enum(["olm"])
     })
     .strict();
@@ -65,7 +64,7 @@ export async function createClient(
             );
         }
 
-        const { name, type, siteId, pubKey, subnet, olmId, secret } =
+        const { name, type, siteId, subnet, olmId, secret } =
             parsedBody.data;
 
         const parsedParams = createClientParamsSchema.safeParse(req.params);
@@ -104,12 +103,6 @@ export async function createClient(
             return next(createHttpError(HttpCode.NOT_FOUND, "Site not found"));
         }
 
-        if (site.type !== "newt") {
-            return next(
-                createHttpError(HttpCode.BAD_REQUEST, "Site is not a newt site")
-            );
-        }
-
         await db.transaction(async (trx) => {
             const adminRole = await trx
                 .select()
@@ -132,7 +125,6 @@ export async function createClient(
                     siteId,
                     orgId: site.orgId,
                     name,
-                    pubKey,
                     subnet,
                     type
                 })
