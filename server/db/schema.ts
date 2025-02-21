@@ -61,7 +61,9 @@ export const resources = sqliteTable("resources", {
         .notNull()
         .default(false),
     isBaseDomain: integer("isBaseDomain", { mode: "boolean" }),
-    applyRules: integer("applyRules", { mode: "boolean" }).notNull().default(false)
+    applyRules: integer("applyRules", { mode: "boolean" })
+        .notNull()
+        .default(false)
 });
 
 export const targets = sqliteTable("targets", {
@@ -114,22 +116,27 @@ export const newts = sqliteTable("newt", {
     })
 });
 
-export const olms = sqliteTable("olms", {
-    olmId: text("id").primaryKey(),
-    secretHash: text("secretHash").notNull(),
-    dateCreated: text("dateCreated").notNull(),
+export const clients = sqliteTable("clients", {
+    clientId: integer("id").primaryKey({ autoIncrement: true }),
     siteId: integer("siteId").references(() => sites.siteId, {
         onDelete: "cascade"
     }),
-
-    // wgstuff
     pubKey: text("pubKey"),
     subnet: text("subnet").notNull(),
     megabytesIn: integer("bytesIn"),
     megabytesOut: integer("bytesOut"),
     lastBandwidthUpdate: text("lastBandwidthUpdate"),
-    type: text("type").notNull(), // "newt" or "wireguard"
-    online: integer("online", { mode: "boolean" }).notNull().default(false),
+    type: text("type").notNull(), // "olm"
+    online: integer("online", { mode: "boolean" }).notNull().default(false)
+});
+
+export const olms = sqliteTable("olms", {
+    olmId: text("id").primaryKey(),
+    secretHash: text("secretHash").notNull(),
+    dateCreated: text("dateCreated").notNull(),
+    clientId: integer("clientId").references(() => clients.clientId, {
+        onDelete: "cascade"
+    })
 });
 
 export const twoFactorBackupCodes = sqliteTable("twoFactorBackupCodes", {
@@ -257,6 +264,24 @@ export const userSites = sqliteTable("userSites", {
     siteId: integer("siteId")
         .notNull()
         .references(() => sites.siteId, { onDelete: "cascade" })
+});
+
+export const userClients = sqliteTable("userClients", {
+    userId: text("userId")
+        .notNull()
+        .references(() => users.userId, { onDelete: "cascade" }),
+    clientId: integer("clientId")
+        .notNull()
+        .references(() => clients.clientId, { onDelete: "cascade" })
+});
+
+export const roleClients = sqliteTable("roleClients", {
+    roleId: integer("roleId")
+        .notNull()
+        .references(() => roles.roleId, { onDelete: "cascade" }),
+    clientId: integer("clientId")
+        .notNull()
+        .references(() => clients.clientId, { onDelete: "cascade" })
 });
 
 export const roleResources = sqliteTable("roleResources", {
@@ -451,3 +476,6 @@ export type ResourceAccessToken = InferSelectModel<typeof resourceAccessToken>;
 export type ResourceWhitelist = InferSelectModel<typeof resourceWhitelist>;
 export type VersionMigration = InferSelectModel<typeof versionMigrations>;
 export type ResourceRule = InferSelectModel<typeof resourceRules>;
+export type Client = InferSelectModel<typeof clients>;
+export type RoleClient = InferSelectModel<typeof roleClients>;
+export type UserClient = InferSelectModel<typeof userClients>;

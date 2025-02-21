@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "@server/db";
-import { olms, sites } from "@server/db/schema";
+import { clients, olms, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -30,7 +30,7 @@ export type PickClientDefaultsResponse = {
     clientSecret: string;
 };
 
-export async function pickOlmDefaults(
+export async function pickClientDefaults(
     req: Request,
     res: Response,
     next: NextFunction
@@ -58,29 +58,39 @@ export async function pickOlmDefaults(
         }
 
         // make sure all the required fields are present
-        if (
-            !site.address ||
-            !site.publicKey ||
-            !site.listenPort ||
-            !site.endpoint
-        ) {
+
+        const sitesRequiredFields = z.object({
+            address: z.string(),
+            publicKey: z.string(),
+            listenPort: z.number(),
+            endpoint: z.string()
+        });
+
+        const parsedSite = sitesRequiredFields.safeParse(site);
+        if (!parsedSite.success) {
             return next(
-                createHttpError(HttpCode.BAD_REQUEST, "Site has no address")
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    "Unable to pick client defaults because: " +
+                        fromError(parsedSite.error).toString()
+                )
             );
         }
 
+        const { address, publicKey, listenPort, endpoint } = parsedSite.data;
+
         const clientsQuery = await db
             .select({
-                subnet: olms.subnet
+                subnet: clients.subnet
             })
-            .from(olms)
-            .where(eq(olms.siteId, site.siteId));
+            .from(clients)
+            .where(eq(clients.siteId, site.siteId));
 
         let subnets = clientsQuery.map((client) => client.subnet);
 
         // exclude the exit node address by replacing after the / with a site block size
         subnets.push(
-            site.address.replace(
+            address.replace(
                 /\/\d+$/,
                 `/${config.getRawConfig().wg_site.block_size}`
             )
@@ -88,7 +98,7 @@ export async function pickOlmDefaults(
         const newSubnet = findNextAvailableCidr(
             subnets,
             config.getRawConfig().wg_site.block_size,
-            site.address
+            address
         );
         if (!newSubnet) {
             return next(
@@ -105,11 +115,11 @@ export async function pickOlmDefaults(
         return response<PickClientDefaultsResponse>(res, {
             data: {
                 siteId: site.siteId,
-                address: site.address,
-                publicKey: site.publicKey,
+                address: address,
+                publicKey: publicKey,
                 name: site.name,
-                listenPort: site.listenPort,
-                endpoint: site.endpoint,
+                listenPort: listenPort,
+                endpoint: endpoint,
                 subnet: newSubnet,
                 clientId,
                 clientSecret: secret

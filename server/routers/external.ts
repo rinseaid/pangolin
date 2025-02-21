@@ -7,7 +7,7 @@ import * as target from "./target";
 import * as user from "./user";
 import * as auth from "./auth";
 import * as role from "./role";
-import * as olm from "./olm";
+import * as client from "./client";
 import * as accessToken from "./accessToken";
 import HttpCode from "@server/types/HttpCode";
 import {
@@ -100,7 +100,7 @@ authenticated.get(
     "/site/:siteId/pick-client-defaults",
     verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.createClient),
-    olm.pickOlmDefaults
+    client.pickClientDefaults
 );
 
 // authenticated.get(
