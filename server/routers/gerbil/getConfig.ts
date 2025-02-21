@@ -86,7 +86,7 @@ export async function getConfig(req: Request, res: Response, next: NextFunction)
         const peers = await Promise.all(sitesRes.map(async (site) => {
             return {
                 publicKey: site.pubKey,
-                allowedIps: await getAllowedIps(site.siteId)
+                allowedIps: await getAllowedIps(site.siteId) // put 0.0.0.0/0 for now
             };
         }));
 

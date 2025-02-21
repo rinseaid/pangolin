@@ -62,6 +62,7 @@ export enum ActionsEnum {
     deleteResourceRule = "deleteResourceRule",
     listResourceRules = "listResourceRules",
     updateResourceRule = "updateResourceRule",
+    createClient = "createClient"
 }
 
 export async function checkUserActionPermission(
