@@ -101,16 +101,13 @@ export async function pickClientDefaults(
         subnets.push(
             address.replace(
                 /\/\d+$/,
-                `/${config.getRawConfig().wg_site.site_block_size}`
+                `/${config.getRawConfig().newt.site_block_size}`
             )
         );
-        logger.debug(`Subnets: ${subnets}`);
-        logger.debug(`Address: ${address}`);
-        logger.debug(`Block size: ${config.getRawConfig().wg_site.block_size}`);
-        logger.debug(`Site block size: ${config.getRawConfig().wg_site.site_block_size}`);
+
         const newSubnet = findNextAvailableCidr(
             subnets,
-            config.getRawConfig().wg_site.site_block_size,
+            config.getRawConfig().newt.site_block_size,
             address
         );
         if (!newSubnet) {
@@ -133,7 +130,7 @@ export async function pickClientDefaults(
                 name: site.name,
                 listenPort: listenPort,
                 endpoint: endpoint,
-                subnet: newSubnet,
+                subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().newt.block_size}`, // we want the block size of the whole subnet
                 olmId: olmId,
                 olmSecret: secret
             },

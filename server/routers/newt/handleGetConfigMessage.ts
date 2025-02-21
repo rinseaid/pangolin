@@ -105,7 +105,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         clientsRes.map(async (client) => {
             return {
                 publicKey: client.pubKey,
-                allowedIps: ["0.0.0.0/0"] // TODO: We should lock this down more
+                allowedIps: [client.subnet]
             };
         })
     );
@@ -144,8 +144,8 @@ async function getNextAvailableSubnet(): Promise<string> {
 
     let subnet = findNextAvailableCidr(
         addresses,
-        config.getRawConfig().wg_site.block_size,
-        config.getRawConfig().wg_site.subnet_group
+        config.getRawConfig().newt.block_size,
+        config.getRawConfig().newt.subnet_group
     );
     if (!subnet) {
         throw new Error("No available subnets remaining in space");
@@ -167,7 +167,7 @@ async function getNextAvailablePort(): Promise<number> {
     }).from(sites);
 
     // Find the first available port between 1024 and 65535
-    let nextPort = config.getRawConfig().wg_site.start_port;
+    let nextPort = config.getRawConfig().newt.start_port;
     for (const port of existingPorts) {
         if (port.listenPort && port.listenPort > nextPort) {
             break;

@@ -73,11 +73,11 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         logger.warn("Site has no subnet");
         return;
     }
-
+ 
     // add the peer to the exit node
     await addPeer(site.siteId, {
         publicKey: publicKey,
-        allowedIps: [site.subnet]
+        allowedIps: [client.subnet]
     });
 
     return {
@@ -87,7 +87,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
                 endpoint: `${site.endpoint}:${site.listenPort}`,
                 publicKey: site.publicKey,
                 serverIP: site.address!.split("/")[0],
-                tunnelIP: client.subnet.split("/")[0]
+                tunnelIP: client.subnet
             }
         },
         broadcast: false, // Send to all olms
