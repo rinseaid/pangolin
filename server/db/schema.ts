@@ -114,8 +114,8 @@ export const newts = sqliteTable("newt", {
     })
 });
 
-export const clients = sqliteTable("clients", {
-    clientId: text("id").primaryKey(),
+export const olms = sqliteTable("olms", {
+    olmId: text("id").primaryKey(),
     secretHash: text("secretHash").notNull(),
     dateCreated: text("dateCreated").notNull(),
     siteId: integer("siteId").references(() => sites.siteId, {
@@ -156,9 +156,9 @@ export const newtSessions = sqliteTable("newtSession", {
     expiresAt: integer("expiresAt").notNull()
 });
 
-export const clientSessions = sqliteTable("clientSession", {
+export const olmSessions = sqliteTable("clientSession", {
     sessionId: text("id").primaryKey(),
-    clientId: text("clientId")
+    olmId: text("olmId")
         .notNull()
         .references(() => newts.newtId, { onDelete: "cascade" }),
     expiresAt: integer("expiresAt").notNull()
@@ -425,8 +425,8 @@ export type Target = InferSelectModel<typeof targets>;
 export type Session = InferSelectModel<typeof sessions>;
 export type Newt = InferSelectModel<typeof newts>;
 export type NewtSession = InferSelectModel<typeof newtSessions>;
-export type Client = InferSelectModel<typeof clients>;
-export type ClientSession = InferSelectModel<typeof clientSessions>;
+export type Olm = InferSelectModel<typeof olms>;
+export type OlmSession = InferSelectModel<typeof olmSessions>;
 export type EmailVerificationCode = InferSelectModel<
     typeof emailVerificationCodes
 >;

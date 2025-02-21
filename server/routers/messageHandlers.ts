@@ -1,8 +1,10 @@
-import { handleRegisterMessage } from "./newt";
+import { handleNewtRegisterMessage } from "./newt";
+import { handleOlmRegisterMessage } from "./olm";
 import { handleGetConfigMessage } from "./newt/handleGetConfigMessage";
 import { MessageHandler } from "./ws";
 
 export const messageHandlers: Record<string, MessageHandler> = {
-    "newt/wg/register": handleRegisterMessage,
+    "newt/wg/register": handleNewtRegisterMessage,
+    "olm/wg/register": handleOlmRegisterMessage,
     "newt/wg/get-config": handleGetConfigMessage,
 };

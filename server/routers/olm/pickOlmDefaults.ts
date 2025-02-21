@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "@server/db";
-import { clients, sites } from "@server/db/schema";
+import { olms, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -30,7 +30,7 @@ export type PickClientDefaultsResponse = {
     clientSecret: string;
 };
 
-export async function pickClientDefaults(
+export async function pickOlmDefaults(
     req: Request,
     res: Response,
     next: NextFunction
@@ -71,10 +71,10 @@ export async function pickClientDefaults(
 
         const clientsQuery = await db
             .select({
-                subnet: clients.subnet
+                subnet: olms.subnet
             })
-            .from(clients)
-            .where(eq(clients.siteId, site.siteId));
+            .from(olms)
+            .where(eq(olms.siteId, site.siteId));
 
         let subnets = clientsQuery.map((client) => client.subnet);
 

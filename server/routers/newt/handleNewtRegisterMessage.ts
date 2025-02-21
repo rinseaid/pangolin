@@ -11,8 +11,10 @@ import { eq, and, sql } from "drizzle-orm";
 import { addPeer, deletePeer } from "../gerbil/peers";
 import logger from "@server/logger";
 
-export const handleRegisterMessage: MessageHandler = async (context) => {
-    const { message, newt, sendToClient } = context;
+export const handleNewtRegisterMessage: MessageHandler = async (context) => {
+    const { message, client, sendToClient } = context;
+
+    const newt = client;
 
     logger.info("Handling register message!");
 
