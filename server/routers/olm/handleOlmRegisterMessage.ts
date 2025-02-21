@@ -87,7 +87,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
                 endpoint: `${site.endpoint}:${site.listenPort}`,
                 publicKey: site.publicKey,
                 serverIP: site.address!.split("/")[0],
-                tunnelIP: site.subnet.split("/")[0]
+                tunnelIP: client.subnet.split("/")[0]
             }
         },
         broadcast: false, // Send to all olms
