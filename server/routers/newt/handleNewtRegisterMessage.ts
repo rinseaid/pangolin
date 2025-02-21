@@ -9,7 +9,7 @@ import {
     targets
 } from "@server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { addPeer, deletePeer } from "../newt/peers";
+import { addPeer, deletePeer } from "../gerbil/peers";
 import logger from "@server/logger";
 
 export const handleNewtRegisterMessage: MessageHandler = async (context) => {
