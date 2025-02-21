@@ -92,7 +92,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         clientsRes.map(async (client) => {
             return {
                 publicKey: client.pubKey,
-                allowedIps: "0.0.0.0/0"
+                allowedIps: "0.0.0.0/0" // TODO: We should lock this down more
             };
         })
     );
@@ -107,7 +107,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
     return {
         message: {
-            type: "newt/wg/connect", // what to make the response type?
+            type: "newt/wg/receive-config", // what to make the response type?
             data: {
                 config: configResponse
             }
