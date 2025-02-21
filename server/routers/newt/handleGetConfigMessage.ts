@@ -78,6 +78,16 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
         logger.info(`Updated site ${siteId} with new WG Newt info`);
     } else {
+        // update the endpoint and the public key
+        const [siteRes] = await db
+            .update(sites)
+            .set({
+                publicKey,
+                endpoint
+            })
+            .where(eq(sites.siteId, siteId))
+            .returning();
+
         site = siteRes;
     }
 
