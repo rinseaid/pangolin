@@ -41,7 +41,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const { publicKey, endpoint, listenPort } = message.data as Input;
+    const { publicKey, endpoint } = message.data as Input;
 
     const siteId = newt.siteId;
 
@@ -58,6 +58,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     let site: Site | undefined;
     if (!site) {
         const address = await getNextAvailableSubnet();
+        const listenPort = await getNextAvailablePort(); 
 
         // create a new exit node
         const [updateRes] = await db
@@ -145,4 +146,25 @@ async function getNextAvailableSubnet(): Promise<string> {
         "/" +
         subnet.split("/")[1];
     return subnet;
+}
+
+async function getNextAvailablePort(): Promise<number> {
+    // Get all existing ports from exitNodes table
+    const existingPorts = await db.select({
+        listenPort: sites.listenPort,
+    }).from(sites);
+
+    // Find the first available port between 1024 and 65535
+    let nextPort = config.getRawConfig().wg_site.start_port;
+    for (const port of existingPorts) {
+        if (port.listenPort && port.listenPort > nextPort) {
+            break;
+        }
+        nextPort++;
+        if (nextPort > 65535) {
+            throw new Error('No available ports remaining in space');
+        }
+    }
+
+    return nextPort;
 }
