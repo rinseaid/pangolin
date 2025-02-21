@@ -43,12 +43,12 @@ export async function deleteClient(
             return next(
                 createHttpError(
                     HttpCode.NOT_FOUND,
-                    `Site with ID ${clientId} not found`
+                    `Client with ID ${clientId} not found`
                 )
             );
         }
 
-        await db.delete(sites).where(eq(sites.siteId, clientId));
+        await db.delete(clients).where(eq(clients.clientId, clientId));
 
         return response(res, {
             data: null,
