@@ -104,6 +104,13 @@ authenticated.get(
     client.pickClientDefaults
 );
 
+authenticated.get(
+    "/org/:orgId/clients",
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.listClients),
+    client.listClients
+);
+
 authenticated.put(
     "/site/:siteId/client",
     verifySiteAccess,
@@ -117,7 +124,6 @@ authenticated.delete(
     verifyUserHasAction(ActionsEnum.deleteClient),
     client.deleteClient
 );
-
 
 // authenticated.get(
 //     "/site/:siteId/roles",
@@ -255,7 +261,6 @@ authenticated.delete(
     verifyUserHasAction(ActionsEnum.deleteTarget),
     target.deleteTarget
 );
-
 
 authenticated.put(
     "/org/:orgId/role",
