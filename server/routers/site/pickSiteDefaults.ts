@@ -45,7 +45,7 @@ export async function pickSiteDefaults(
         // list all of the sites on that exit node
         const sitesQuery = await db
             .select({
-                subnet: sites.subnet,
+                subnet: sites.subnet
             })
             .from(sites)
             .where(eq(sites.exitNodeId, exitNode.exitNodeId));
@@ -53,8 +53,17 @@ export async function pickSiteDefaults(
         // TODO: we need to lock this subnet for some time so someone else does not take it
         let subnets = sitesQuery.map((site) => site.subnet);
         // exclude the exit node address by replacing after the / with a site block size
-        subnets.push(exitNode.address.replace(/\/\d+$/, `/${config.getRawConfig().gerbil.site_block_size}`));
-        const newSubnet = findNextAvailableCidr(subnets, config.getRawConfig().gerbil.site_block_size, exitNode.address);
+        subnets.push(
+            exitNode.address.replace(
+                /\/\d+$/,
+                `/${config.getRawConfig().gerbil.site_block_size}`
+            )
+        );
+        const newSubnet = findNextAvailableCidr(
+            subnets,
+            config.getRawConfig().gerbil.site_block_size,
+            exitNode.address
+        );
         if (!newSubnet) {
             return next(
                 createHttpError(
@@ -77,12 +86,12 @@ export async function pickSiteDefaults(
                 endpoint: exitNode.endpoint,
                 subnet: newSubnet,
                 newtId,
-                newtSecret: secret,
+                newtSecret: secret
             },
             success: true,
             error: false,
             message: "Organization retrieved successfully",
-            status: HttpCode.OK,
+            status: HttpCode.OK
         });
     } catch (error) {
         logger.error(error);

@@ -37,10 +37,10 @@ const createClientSchema = z
     .object({
         name: z.string().min(1).max(255),
         siteId: z.number().int().positive(),
-        pubKey: z.string(),
-        subnet: z.string(),
-        olmId: z.string(),
-        secret: z.string(),
+        pubKey: z.string().optional(),
+        subnet: z.string().optional(),
+        olmId: z.string().optional(),
+        secret: z.string().optional(),
         type: z.enum(["olm"])
     })
     .strict();

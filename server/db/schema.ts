@@ -173,7 +173,7 @@ export const olmSessions = sqliteTable("clientSession", {
     sessionId: text("id").primaryKey(),
     olmId: text("olmId")
         .notNull()
-        .references(() => newts.newtId, { onDelete: "cascade" }),
+        .references(() => olms.olmId, { onDelete: "cascade" }),
     expiresAt: integer("expiresAt").notNull()
 });
 

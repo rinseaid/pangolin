@@ -14,7 +14,7 @@ import { fromError } from "zod-validation-error";
 
 const getSiteSchema = z
     .object({
-        siteId: z.number().int().positive()
+        siteId: z.string().transform(Number).pipe(z.number())
     })
     .strict();
 
@@ -92,12 +92,16 @@ export async function pickClientDefaults(
         subnets.push(
             address.replace(
                 /\/\d+$/,
-                `/${config.getRawConfig().wg_site.block_size}`
+                `/${config.getRawConfig().wg_site.site_block_size}`
             )
         );
+        logger.debug(`Subnets: ${subnets}`);
+        logger.debug(`Address: ${address}`);
+        logger.debug(`Block size: ${config.getRawConfig().wg_site.block_size}`);
+        logger.debug(`Site block size: ${config.getRawConfig().wg_site.site_block_size}`);
         const newSubnet = findNextAvailableCidr(
             subnets,
-            config.getRawConfig().wg_site.block_size,
+            config.getRawConfig().wg_site.site_block_size,
             address
         );
         if (!newSubnet) {
