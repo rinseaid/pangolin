@@ -12,6 +12,7 @@ import {
 } from "@server/lib/consts";
 import { passwordSchema } from "@server/auth/passwordSchema";
 import stoi from "./stoi";
+import { start } from "repl";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
 const hostnameSchema = z
@@ -112,6 +113,7 @@ const configSchema = z.object({
     wg_site: z.object({
         block_size: z.number().positive().gt(0),
         subnet_group: z.string(),
+        start_port: portSchema 
     }),
     rate_limits: z.object({
         global: z.object({

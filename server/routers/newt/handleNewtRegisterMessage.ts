@@ -2,6 +2,7 @@ import db from "@server/db";
 import { MessageHandler } from "../ws";
 import {
     exitNodes,
+    Newt,
     resources,
     sites,
     Target,
@@ -13,8 +14,7 @@ import logger from "@server/logger";
 
 export const handleNewtRegisterMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
-
-    const newt = client;
+    const newt = client as Newt;
 
     logger.info("Handling register newt message!");
 

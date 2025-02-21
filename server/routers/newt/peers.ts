@@ -20,7 +20,7 @@ export async function addPeer(siteId: number, peer: {
     }
 
     sendToClient(newt.newtId, {
-        type: 'add_peer',    
+        type: 'newt/wg/peer/add',    
         data: peer
     });
 }
@@ -38,7 +38,7 @@ export async function deletePeer(siteId: number, publicKey: string) {
     }
 
     sendToClient(newt.newtId, {
-        type: 'delete_peer',
+        type: 'newt/wg/peer/remove',
         data: {
             publicKey
         }

@@ -3,7 +3,7 @@ import { MessageHandler } from "../ws";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import db from "@server/db";
-import { clients, Site, sites } from "@server/db/schema";
+import { clients, Newt, Site, sites } from "@server/db/schema";
 import { eq, isNotNull } from "drizzle-orm";
 import { findNextAvailableCidr } from "@server/lib/ip";
 import config from "@server/lib/config";
@@ -17,7 +17,8 @@ const inputSchema = z.object({
 type Input = z.infer<typeof inputSchema>;
 
 export const handleGetConfigMessage: MessageHandler = async (context) => {
-    const { message, newt, sendToClient } = context;
+    const { message, client, sendToClient } = context;
+    const newt = client as Newt;
 
     logger.debug("Handling Newt get config message!");
 
@@ -40,7 +41,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const { publicKey, endpoint, listenPort } = message.data as Input;
+    const { publicKey, endpoint } = message.data as Input;
 
     const siteId = newt.siteId;
 
@@ -57,6 +58,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     let site: Site | undefined;
     if (!site) {
         const address = await getNextAvailableSubnet();
+        const listenPort = await getNextAvailablePort(); 
 
         // create a new exit node
         const [updateRes] = await db
@@ -91,7 +93,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         clientsRes.map(async (client) => {
             return {
                 publicKey: client.pubKey,
-                allowedIps: "0.0.0.0/0"
+                allowedIps: "0.0.0.0/0" // TODO: We should lock this down more
             };
         })
     );
@@ -106,7 +108,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
     return {
         message: {
-            type: "newt/wg/connect", // what to make the response type?
+            type: "newt/wg/receive-config", // what to make the response type?
             data: {
                 config: configResponse
             }
@@ -144,4 +146,25 @@ async function getNextAvailableSubnet(): Promise<string> {
         "/" +
         subnet.split("/")[1];
     return subnet;
+}
+
+async function getNextAvailablePort(): Promise<number> {
+    // Get all existing ports from exitNodes table
+    const existingPorts = await db.select({
+        listenPort: sites.listenPort,
+    }).from(sites);
+
+    // Find the first available port between 1024 and 65535
+    let nextPort = config.getRawConfig().wg_site.start_port;
+    for (const port of existingPorts) {
+        if (port.listenPort && port.listenPort > nextPort) {
+            break;
+        }
+        nextPort++;
+        if (nextPort > 65535) {
+            throw new Error('No available ports remaining in space');
+        }
+    }
+
+    return nextPort;
 }
