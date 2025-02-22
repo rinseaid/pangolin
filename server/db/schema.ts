@@ -118,9 +118,11 @@ export const newts = sqliteTable("newt", {
 
 export const clients = sqliteTable("clients", {
     clientId: integer("id").primaryKey({ autoIncrement: true }),
-    siteId: integer("siteId").references(() => sites.siteId, {
-        onDelete: "cascade"
-    }),
+    siteId: integer("siteId")
+        .references(() => sites.siteId, {
+            onDelete: "cascade"
+        })
+        .notNull(),
     orgId: text("orgId")
         .references(() => orgs.orgId, {
             onDelete: "cascade"

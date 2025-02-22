@@ -36,6 +36,8 @@ export default async function ClientsPage(props: ClientsPageProps) {
     const clientRows: ClientRow[] = clients.map((client) => {
         return {
             name: client.name,
+            siteName: client.siteName,
+            siteId: client.siteNiceId,
             id: client.clientId,
             mbIn: formatSize(client.megabytesIn || 0),
             mbOut: formatSize(client.megabytesOut || 0),

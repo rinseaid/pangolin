@@ -42,6 +42,7 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
             clientId: clients.clientId,
             orgId: clients.orgId,
             siteId: clients.siteId,
+            siteNiceId: sites.niceId,
             name: clients.name,
             pubKey: clients.pubKey,
             subnet: clients.subnet,
@@ -49,10 +50,12 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
             megabytesOut: clients.megabytesOut,
             orgName: orgs.name,
             type: clients.type,
-            online: clients.online
+            online: clients.online,
+            siteName: sites.name
         })
         .from(clients)
         .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
+        .innerJoin(sites, eq(clients.siteId, sites.siteId))
         .where(
             and(
                 inArray(clients.clientId, accessibleClientIds),

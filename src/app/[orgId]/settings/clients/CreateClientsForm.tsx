@@ -189,8 +189,12 @@ export default function CreateClientForm({
         if (res && res.status === 201) {
             const data = res.data.data;
 
+            const site = sites.find((site) => site.siteId === data.siteId);
+
             onCreate?.({
                 name: data.name,
+                siteId: site!.niceId,
+                siteName: site!.name,
                 id: data.clientId,
                 mbIn: "0 MB",
                 mbOut: "0 MB",

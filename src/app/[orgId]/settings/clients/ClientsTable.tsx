@@ -12,6 +12,7 @@ import { Button } from "@app/components/ui/button";
 import {
     ArrowRight,
     ArrowUpDown,
+    ArrowUpRight,
     Check,
     MoreHorizontal,
     X
@@ -28,6 +29,8 @@ import CreateClientFormModal from "./CreateClientsModal";
 
 export type ClientRow = {
     id: number;
+    siteId: string;
+    siteName: string;
     name: string;
     mbIn: string;
     mbOut: string;
@@ -126,6 +129,33 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
             }
         },
         {
+            accessorKey: "siteName",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                    >
+                        Site
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                );
+            },
+            cell: ({ row }) => {
+                const r = row.original;
+                return (
+                    <Link href={`/${r.orgId}/settings/sites/${r.siteId}`}>
+                        <Button variant="outline">
+                            {r.siteName}
+                            <ArrowUpRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </Link>
+                );
+            }
+        },
+        {
             accessorKey: "online",
             header: ({ column }) => {
                 return (
@@ -135,7 +165,7 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Online
+                        Connectivity
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -146,14 +176,14 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
                     return (
                         <span className="text-green-500 flex items-center space-x-2">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span>Online</span>
+                            <span>Connected</span>
                         </span>
                     );
                 } else {
                     return (
                         <span className="text-neutral-500 flex items-center space-x-2">
                             <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                            <span>Offline</span>
+                            <span>Disconnected</span>
                         </span>
                     );
                 }
