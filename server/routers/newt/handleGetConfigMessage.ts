@@ -57,7 +57,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     }
 
     let site: Site | undefined;
-    if (!site) {
+    if (!siteRes.address) {
         const address = await getNextAvailableSubnet();
         const listenPort = await getNextAvailablePort();
 
