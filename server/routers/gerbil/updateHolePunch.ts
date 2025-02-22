@@ -35,6 +35,8 @@ export async function updateHolePunch(
         }
 
         const { olmId, newtId, ip, port, timestamp } = parsedParams.data;
+        
+        logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId} or newtId: ${newtId}`);
 
         if (olmId) {
             const [olm] = await db

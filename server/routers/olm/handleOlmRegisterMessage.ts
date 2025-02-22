@@ -56,6 +56,23 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         return;
     }
 
+    // make sure we hand endpoints for both the site and the client and the lastHolePunch is not too old
+    if (!site.endpoint || !client.endpoint) {
+        logger.warn("Site or client has no endpoint or listen port");
+        return;
+    }
+
+    const now = new Date().getTime() / 1000;
+    if (site.lastHolePunch && now - site.lastHolePunch > 6) {
+        logger.warn("Site last hole punch is too old");
+        return;
+    }
+
+    if (client.lastHolePunch && now - client.lastHolePunch > 6) {
+        logger.warn("Client last hole punch is too old");
+        return;
+    }
+
     await db
         .update(clients)
         .set({
@@ -77,14 +94,15 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
     // add the peer to the exit node
     await addPeer(site.siteId, {
         publicKey: publicKey,
-        allowedIps: [client.subnet]
+        allowedIps: [client.subnet],
+        endpoint: client.endpoint
     });
 
     return {
         message: {
             type: "olm/wg/connect",
             data: {
-                endpoint: `${site.endpoint}:${site.listenPort}`,
+                endpoint: site.endpoint,
                 publicKey: site.publicKey,
                 serverIP: site.address!.split("/")[0],
                 tunnelIP: client.subnet

@@ -6,6 +6,7 @@ import { sendToClient } from '../ws';
 export async function addPeer(siteId: number, peer: {
     publicKey: string;
     allowedIps: string[];
+    endpoint: string;
 }) {
 
     const [site] = await db.select().from(sites).where(eq(sites.siteId, siteId)).limit(1);

@@ -21,7 +21,6 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
     logger.debug(JSON.stringify(message.data));
 
-
     logger.debug("Handling Newt get config message!");
 
     if (!newt) {
@@ -67,7 +66,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             .update(sites)
             .set({
                 publicKey,
-                endpoint,
+                // endpoint,
                 address,
                 listenPort
             })
@@ -82,8 +81,8 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         const [siteRes] = await db
             .update(sites)
             .set({
-                publicKey,
-                endpoint
+                publicKey
+                // endpoint
             })
             .where(eq(sites.siteId, siteId))
             .returning();
@@ -101,13 +100,22 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         .from(clients)
         .where(eq(clients.siteId, siteId));
 
+    const now = new Date().getTime() / 1000;
     const peers = await Promise.all(
-        clientsRes.map(async (client) => {
-            return {
-                publicKey: client.pubKey,
-                allowedIps: [client.subnet]
-            };
-        })
+        clientsRes
+            .filter((client) => {
+                if (client.lastHolePunch && now - client.lastHolePunch > 6) {
+                    logger.warn("Client last hole punch is too old");
+                    return;
+                }
+            })
+            .map(async (client) => {
+                return {
+                    publicKey: client.pubKey,
+                    allowedIps: [client.subnet],
+                    endpoint: client.endpoint
+                };
+            })
     );
 
     const configResponse = {
@@ -162,9 +170,11 @@ async function getNextAvailableSubnet(): Promise<string> {
 
 async function getNextAvailablePort(): Promise<number> {
     // Get all existing ports from exitNodes table
-    const existingPorts = await db.select({
-        listenPort: sites.listenPort,
-    }).from(sites);
+    const existingPorts = await db
+        .select({
+            listenPort: sites.listenPort
+        })
+        .from(sites);
 
     // Find the first available port between 1024 and 65535
     let nextPort = config.getRawConfig().newt.start_port;
@@ -174,7 +184,7 @@ async function getNextAvailablePort(): Promise<number> {
         }
         nextPort++;
         if (nextPort > 65535) {
-            throw new Error('No available ports remaining in space');
+            throw new Error("No available ports remaining in space");
         }
     }
 
