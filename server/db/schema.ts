@@ -31,7 +31,8 @@ export const sites = sqliteTable("sites", {
     address: text("address"), // this is the address of the wireguard interface in gerbil
     endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
     publicKey: text("pubicKey"),
-    listenPort: integer("listenPort")
+    listenPort: integer("listenPort"),
+    lastHolePunch: integer("lastHolePunch"), 
 });
 
 export const resources = sqliteTable("resources", {
@@ -135,7 +136,9 @@ export const clients = sqliteTable("clients", {
     megabytesOut: integer("bytesOut"),
     lastBandwidthUpdate: text("lastBandwidthUpdate"),
     type: text("type").notNull(), // "olm"
-    online: integer("online", { mode: "boolean" }).notNull().default(false)
+    online: integer("online", { mode: "boolean" }).notNull().default(false),
+    endpoint: text("endpoint"),
+    lastHolePunch: integer("lastHolePunch"),
 });
 
 export const olms = sqliteTable("olms", {
