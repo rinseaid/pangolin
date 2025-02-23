@@ -74,8 +74,6 @@ export async function getOlmToken(
             );
         }
 
-        logger.debug("Existing olm: ", existingOlmRes);
-
         const existingOlm = existingOlmRes[0];
 
         const validSecret = await verifyPassword(

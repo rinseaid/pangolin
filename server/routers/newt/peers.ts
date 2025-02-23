@@ -2,6 +2,7 @@ import db from '@server/db';
 import { newts, sites } from '@server/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendToClient } from '../ws';
+import logger from '@server/logger';
 
 export async function addPeer(siteId: number, peer: {
     publicKey: string;
@@ -24,6 +25,8 @@ export async function addPeer(siteId: number, peer: {
         type: 'newt/wg/peer/add',    
         data: peer
     });
+
+    logger.info(`Added peer ${peer.publicKey} to newt ${newt.newtId}`);
 }
 
 export async function deletePeer(siteId: number, publicKey: string) {
@@ -44,4 +47,6 @@ export async function deletePeer(siteId: number, publicKey: string) {
             publicKey
         }
     });
+
+    logger.info(`Deleted peer ${publicKey} from newt ${newt.newtId}`);
 }

@@ -10,7 +10,6 @@ import config from "@server/lib/config";
 
 const inputSchema = z.object({
     publicKey: z.string(),
-    endpoint: z.string()
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -42,7 +41,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const { publicKey, endpoint } = message.data as Input;
+    const { publicKey } = message.data as Input;
 
     const siteId = newt.siteId;
 
@@ -66,7 +65,6 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             .update(sites)
             .set({
                 publicKey,
-                // endpoint,
                 address,
                 listenPort
             })
@@ -82,7 +80,6 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             .update(sites)
             .set({
                 publicKey
-                // endpoint
             })
             .where(eq(sites.siteId, siteId))
             .returning();

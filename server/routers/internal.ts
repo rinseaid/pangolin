@@ -35,6 +35,7 @@ internalRouter.use("/gerbil", gerbilRouter);
 gerbilRouter.post("/get-config", gerbil.getConfig);
 gerbilRouter.post("/receive-bandwidth", gerbil.receiveBandwidth);
 gerbilRouter.post("/update-hole-punch", gerbil.updateHolePunch);
+gerbilRouter.post("/get-all-relays", gerbil.getAllRelays);
 
 // Badger routes
 const badgerRouter = Router();

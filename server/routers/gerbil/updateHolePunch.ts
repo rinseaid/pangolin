@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { clients, newts, olms, sites } from "@server/db/schema";
+import { clients, newts, olms, Site, sites } from "@server/db/schema";
 import { db } from "@server/db";
 import { eq } from "drizzle-orm";
 import HttpCode from "@server/types/HttpCode";
@@ -36,7 +36,9 @@ export async function updateHolePunch(
 
         const { olmId, newtId, ip, port, timestamp } = parsedParams.data;
         
-        logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId} or newtId: ${newtId}`);
+        // logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId} or newtId: ${newtId}`);
+
+        let site: Site | undefined;
 
         if (olmId) {
             const [olm] = await db
@@ -51,13 +53,19 @@ export async function updateHolePunch(
                 );
             }
 
-            await db
+            const [client] = await db
                 .update(clients)
                 .set({
                     endpoint: `${ip}:${port}`,
                     lastHolePunch: timestamp
                 })
-                .where(eq(clients.clientId, olm.clientId));
+                .where(eq(clients.clientId, olm.clientId))
+                .returning();
+
+            [site] = await db
+                .select()
+                .from(sites)
+                .where(eq(sites.siteId, client.siteId));
         } else if (newtId) {
             const [newt] = await db
                 .select()
@@ -71,16 +79,27 @@ export async function updateHolePunch(
                 );
             }
 
-            await db
+            [site] = await db
                 .update(sites)
                 .set({
                     endpoint: `${ip}:${port}`,
                     lastHolePunch: timestamp
                 })
-                .where(eq(sites.siteId, newt.siteId));
+                .where(eq(sites.siteId, newt.siteId))
+                .returning();
         }
 
-        return res.status(HttpCode.OK).send({});
+        if (!site || !site.endpoint || !site.subnet) {
+            logger.warn(`Site not found for olmId: ${olmId} or newtId: ${newtId}`);
+            return next(
+                createHttpError(HttpCode.NOT_FOUND, "Site not found")
+            );
+        }
+
+        return res.status(HttpCode.OK).send({
+            destinationIp: site.subnet.split("/")[0],
+            destinationPort: parseInt(site.endpoint.split(":")[1])
+        });
     } catch (error) {
         logger.error(error);
         return next(
