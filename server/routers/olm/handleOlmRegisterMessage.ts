@@ -105,7 +105,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
                 endpoint: site.endpoint,
                 publicKey: site.publicKey,
                 serverIP: site.address!.split("/")[0],
-                tunnelIP: client.subnet
+                tunnelIP: `${client.subnet.split("/")[0]}/${site.address!.split("/")[1]}`, // put the client ip in the same subnet as the site. TODO: Is this right? Maybe we need th make .subnet work properly!
             }
         },
         broadcast: false, // Send to all olms

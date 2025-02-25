@@ -46,7 +46,9 @@ export async function getAllRelays(
         const sitesRes = await db.select().from(sites).where(eq(sites.exitNodeId, exitNode.exitNodeId));
 
         if (sitesRes.length === 0) {
-            return next(createHttpError(HttpCode.NOT_FOUND, "No sites found for this exit node"));
+            return {
+                mappings: {}
+            }
         }
         
         // get the clients on each site and map them to the site

@@ -130,7 +130,8 @@ export async function pickClientDefaults(
                 name: site.name,
                 listenPort: listenPort,
                 endpoint: endpoint,
-                subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().newt.block_size}`, // we want the block size of the whole subnet
+                // subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().newt.block_size}`, // we want the block size of the whole subnet
+                subnet: newSubnet,
                 olmId: olmId,
                 olmSecret: secret
             },
