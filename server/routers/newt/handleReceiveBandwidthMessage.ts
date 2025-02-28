@@ -27,7 +27,7 @@ export const handleReceiveBandwidthMessage: MessageHandler = async (context) => 
         for (const peer of bandwidthData) {
             const { publicKey, bytesIn, bytesOut } = peer;
 
-            // Find the site by public key
+            // Find the client by public key
             const [client] = await trx
                 .select()
                 .from(clients)
@@ -39,8 +39,8 @@ export const handleReceiveBandwidthMessage: MessageHandler = async (context) => 
             }
             let online = client.online;
 
-            // if the bandwidth for the site is > 0 then set it to online. if it has been less than 0 (no update) for 5 minutes then set it to offline
-            if (bytesIn > 0 || bytesOut > 0) {
+            // if the bandwidth for the client is > 0 then set it to online. if it has been less than 0 (no update) for 5 minutes then set it to offline
+            if (bytesIn > 0) { // only track the bytes in because we are always sending bytes out with persistent keep alive
                 online = true;
             } else if (client.lastBandwidthUpdate) {
                 const lastBandwidthUpdate = new Date(
@@ -54,7 +54,7 @@ export const handleReceiveBandwidthMessage: MessageHandler = async (context) => 
                 }
             }
 
-            // Update the site's bandwidth usage
+            // Update the client's bandwidth usage
             await trx
                 .update(clients)
                 .set({
