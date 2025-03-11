@@ -167,12 +167,19 @@ export function serializeResourceSessionCookie(
     cookieName: string,
     domain: string,
     token: string,
-    isHttp: boolean = false
+    isHttp: boolean = false,
+    expiresAt?: Date
 ): string {
     if (!isHttp) {
-        return `${cookieName}_s=${token}; HttpOnly; SameSite=Strict; Max-Age=${SESSION_COOKIE_EXPIRES / 1000}; Path=/; Secure; Domain=${"." + domain}`;
+        if (expiresAt === undefined) {
+            return `${cookieName}_s=${token}; HttpOnly; SameSite=Lax; Path=/; Secure; Domain=${"." + domain}`;
+        }
+        return `${cookieName}_s=${token}; HttpOnly; SameSite=Lax; Expires=${expiresAt.toUTCString()}; Path=/; Secure; Domain=${"." + domain}`;
     } else {
-        return `${cookieName}=${token}; HttpOnly; SameSite=Strict; Max-Age=${SESSION_COOKIE_EXPIRES / 1000}; Path=/; Domain=${"." + domain}`;
+        if (expiresAt === undefined) {
+            return `${cookieName}=${token}; HttpOnly; SameSite=Lax; Path=/; Domain=${"." + domain}`;
+        }
+        return `${cookieName}=${token}; HttpOnly; SameSite=Lax; Expires=${expiresAt.toUTCString()}; Path=/; Domain=${"." + domain}`;
     }
 }
 
@@ -182,9 +189,9 @@ export function createBlankResourceSessionTokenCookie(
     isHttp: boolean = false
 ): string {
     if (!isHttp) {
-        return `${cookieName}_s=; HttpOnly; SameSite=Strict; Max-Age=0; Path=/; Secure; Domain=${"." + domain}`;
+        return `${cookieName}_s=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/; Secure; Domain=${"." + domain}`;
     } else {
-        return `${cookieName}=; HttpOnly; SameSite=Strict; Max-Age=0; Path=/; Domain=${"." + domain}`;
+        return `${cookieName}=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/; Domain=${"." + domain}`;
     }
 }
 

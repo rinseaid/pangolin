@@ -15,6 +15,8 @@ import m6 from "./scripts/1.0.0-beta9";
 import m7 from "./scripts/1.0.0-beta10";
 import m8 from "./scripts/1.0.0-beta12";
 import m13 from "./scripts/1.0.0-beta13";
+import m15 from "./scripts/1.0.0-beta15";
+import m16 from "./scripts/1.0.0";
 
 // THIS CANNOT IMPORT ANYTHING FROM THE SERVER
 // EXCEPT FOR THE DATABASE AND THE SCHEMA
@@ -29,16 +31,15 @@ const migrations = [
     { version: "1.0.0-beta.9", run: m6 },
     { version: "1.0.0-beta.10", run: m7 },
     { version: "1.0.0-beta.12", run: m8 },
-    { version: "1.0.0-beta.13", run: m13 }
+    { version: "1.0.0-beta.13", run: m13 },
+    { version: "1.0.0-beta.15", run: m15 },
+    { version: "1.0.0", run: m16 }
     // Add new migrations here as they are created
 ] as const;
 
 await run();
 
 async function run() {
-    // backup the database
-    backupDb();
-
     // run the migrations
     await runMigrations();
 }
@@ -123,6 +124,11 @@ async function executeScripts() {
             console.log(`Running migration ${migration.version}`);
 
             try {
+                if (!process.env.DISABLE_BACKUP_ON_MIGRATION) {
+                    // Backup the database before running the migration
+                    backupDb();
+                }
+
                 await migration.run();
 
                 // Update version in database

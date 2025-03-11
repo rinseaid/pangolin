@@ -1,6 +1,12 @@
 import { Metadata } from "next";
 import { TopbarNav } from "@app/components/TopbarNav";
-import { Cog, Combine, Laptop, Link, Settings, Users, Waypoints, Workflow } from "lucide-react";
+import {
+    Combine,
+    LinkIcon,
+    Settings,
+    Users,
+    Waypoints
+} from "lucide-react";
 import { Header } from "@app/components/Header";
 import { verifySession } from "@app/lib/auth/verifySession";
 import { redirect } from "next/navigation";
@@ -43,7 +49,7 @@ const topNavItems = [
     {
         title: "Shareable Links",
         href: "/{orgId}/settings/share-links",
-        icon: <Link className="h-4 w-4" />
+        icon: <LinkIcon className="h-4 w-4" />
     },
     {
         title: "General",
@@ -100,19 +106,23 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
 
     return (
         <>
-            <div className="w-full border-b bg-card select-none sm:px-0 px-3 fixed top-0 z-10">
-                <div className="container mx-auto flex flex-col content-between">
-                    <div className="my-4">
-                        <UserProvider user={user}>
-                            <Header orgId={params.orgId} orgs={orgs} />
-                        </UserProvider>
+            <div className="w-full bg-card sm:px-0 px-3 fixed top-0 z-10">
+                <div className="border-b">
+                    <div className="container mx-auto flex flex-col content-between">
+                        <div className="my-4">
+                            <UserProvider user={user}>
+                                <Header orgId={params.orgId} orgs={orgs} />
+                            </UserProvider>
+                        </div>
+                        <TopbarNav items={topNavItems} orgId={params.orgId} />
                     </div>
-                    <TopbarNav items={topNavItems} orgId={params.orgId} />
                 </div>
             </div>
 
-            <div className="container mx-auto sm:px-0 px-3 pt-[165px]">
-                {children}
+            <div className="container mx-auto sm:px-0 px-3 pt-[155px]">
+                <div className="container mx-auto sm:px-0 px-3">
+                    {children}
+                </div>
             </div>
         </>
     );

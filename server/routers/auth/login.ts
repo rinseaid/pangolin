@@ -78,7 +78,7 @@ export async function login(
             }
             return next(
                 createHttpError(
-                    HttpCode.BAD_REQUEST,
+                    HttpCode.UNAUTHORIZED,
                     "Username or password is incorrect"
                 )
             );
@@ -98,7 +98,7 @@ export async function login(
             }
             return next(
                 createHttpError(
-                    HttpCode.BAD_REQUEST,
+                    HttpCode.UNAUTHORIZED,
                     "Username or password is incorrect"
                 )
             );
@@ -129,7 +129,7 @@ export async function login(
                 }
                 return next(
                     createHttpError(
-                        HttpCode.BAD_REQUEST,
+                        HttpCode.UNAUTHORIZED,
                         "The two-factor code you entered is incorrect"
                     )
                 );
@@ -137,9 +137,13 @@ export async function login(
         }
 
         const token = generateSessionToken();
-        await createSession(token, existingUser.userId);
+        const sess = await createSession(token, existingUser.userId);
         const isSecure = req.protocol === "https";
-        const cookie = serializeSessionCookie(token, isSecure);
+        const cookie = serializeSessionCookie(
+            token,
+            isSecure,
+            new Date(sess.expiresAt)
+        );
 
         res.appendHeader("Set-Cookie", cookie);
 

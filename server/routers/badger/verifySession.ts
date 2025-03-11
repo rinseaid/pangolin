@@ -90,7 +90,15 @@ export async function verifyResourceSession(
 
         const clientIp = requestIp?.split(":")[0];
 
-        const resourceCacheKey = `resource:${host}`;
+        let cleanHost = host;
+        // if the host ends with :443 or :80 remove it
+        if (cleanHost.endsWith(":443")) {
+            cleanHost = cleanHost.slice(0, -4);
+        } else if (cleanHost.endsWith(":80")) {
+            cleanHost = cleanHost.slice(0, -3);
+        }
+
+        const resourceCacheKey = `resource:${cleanHost}`;
         let resourceData:
             | {
                   resource: Resource | null;
@@ -111,11 +119,11 @@ export async function verifyResourceSession(
                     resourcePassword,
                     eq(resourcePassword.resourceId, resources.resourceId)
                 )
-                .where(eq(resources.fullDomain, host))
+                .where(eq(resources.fullDomain, cleanHost))
                 .limit(1);
 
             if (!result) {
-                logger.debug("Resource not found", host);
+                logger.debug("Resource not found", cleanHost);
                 return notAllowed(res);
             }
 
@@ -131,7 +139,7 @@ export async function verifyResourceSession(
         const { resource, pincode, password } = resourceData;
 
         if (!resource) {
-            logger.debug("Resource not found", host);
+            logger.debug("Resource not found", cleanHost);
             return notAllowed(res);
         }
 
@@ -140,16 +148,6 @@ export async function verifyResourceSession(
         if (blockAccess) {
             logger.debug("Resource blocked", host);
             return notAllowed(res);
-        }
-
-        if (
-            !resource.sso &&
-            !pincode &&
-            !password &&
-            !resource.emailWhitelistEnabled
-        ) {
-            logger.debug("Resource allowed because no auth");
-            return allowed(res);
         }
 
         // check the rules
@@ -169,6 +167,16 @@ export async function verifyResourceSession(
             }
 
             // otherwise its undefined and we pass
+        }
+
+        if (
+            !resource.sso &&
+            !pincode &&
+            !password &&
+            !resource.emailWhitelistEnabled
+        ) {
+            logger.debug("Resource allowed because no auth");
+            return allowed(res);
         }
 
         const redirectUrl = `${config.getRawConfig().app.dashboard_url}/auth/resource/${encodeURIComponent(
@@ -376,7 +384,7 @@ async function createAccessTokenSession(
     tokenItem: ResourceAccessToken
 ) {
     const token = generateSessionToken();
-    await createResourceSession({
+    const sess = await createResourceSession({
         resourceId: resource.resourceId,
         token,
         accessTokenId: tokenItem.accessTokenId,
@@ -389,7 +397,8 @@ async function createAccessTokenSession(
         cookieName,
         resource.fullDomain!,
         token,
-        !resource.ssl
+        !resource.ssl,
+        new Date(sess.expiresAt)
     );
     res.appendHeader("Set-Cookie", cookie);
     logger.debug("Access token is valid, creating new session");
@@ -525,7 +534,7 @@ async function checkRules(
     return;
 }
 
-function isPathAllowed(pattern: string, path: string): boolean {
+export function isPathAllowed(pattern: string, path: string): boolean {
     logger.debug(`\nMatching path "${path}" against pattern "${pattern}"`);
 
     // Normalize and split paths into segments
@@ -566,7 +575,7 @@ function isPathAllowed(pattern: string, path: string): boolean {
             return result;
         }
 
-        // For wildcards, try consuming different numbers of path segments
+        // For full segment wildcards, try consuming different numbers of path segments
         if (currentPatternPart === "*") {
             logger.debug(
                 `${indent}Found wildcard at pattern index ${patternIndex}`
@@ -595,6 +604,32 @@ function isPathAllowed(pattern: string, path: string): boolean {
             }
 
             logger.debug(`${indent}Failed to match wildcard`);
+            return false;
+        }
+
+        // Check for in-segment wildcard (e.g., "prefix*" or "prefix*suffix")
+        if (currentPatternPart.includes("*")) {
+            logger.debug(
+                `${indent}Found in-segment wildcard in "${currentPatternPart}"`
+            );
+            
+            // Convert the pattern segment to a regex pattern
+            const regexPattern = currentPatternPart
+                .replace(/\*/g, ".*") // Replace * with .* for regex wildcard
+                .replace(/\?/g, "."); // Replace ? with . for single character wildcard if needed
+            
+            const regex = new RegExp(`^${regexPattern}$`);
+            
+            if (regex.test(currentPathPart)) {
+                logger.debug(
+                    `${indent}Segment with wildcard matches: "${currentPatternPart}" matches "${currentPathPart}"`
+                );
+                return matchSegments(patternIndex + 1, pathIndex + 1);
+            }
+            
+            logger.debug(
+                `${indent}Segment with wildcard mismatch: "${currentPatternPart}" doesn't match "${currentPathPart}"`
+            );
             return false;
         }
 

@@ -8,14 +8,12 @@ import { useResourceContext } from "@app/hooks/useResourceContext";
 import { AxiosResponse } from "axios";
 import { formatAxiosError } from "@app/lib/api";
 import {
-    GetResourceAuthInfoResponse,
     GetResourceWhitelistResponse,
     ListResourceRolesResponse,
     ListResourceUsersResponse
 } from "@server/routers/resource";
 import { Button } from "@app/components/ui/button";
 import { set, z } from "zod";
-import { Tag } from "emblor";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -27,12 +25,8 @@ import {
     FormLabel,
     FormMessage
 } from "@app/components/ui/form";
-import { TagInput } from "emblor";
-// import SettingsSectionTitle from "@app/components/SettingsSectionTitle";
 import { ListUsersResponse } from "@server/routers/user";
-import { Switch } from "@app/components/ui/switch";
-import { Label } from "@app/components/ui/label";
-import { Binary, Key, ShieldCheck } from "lucide-react";
+import { Binary, Key } from "lucide-react";
 import SetResourcePasswordForm from "./SetResourcePasswordForm";
 import SetResourcePincodeForm from "./SetResourcePincodeForm";
 import { createApiClient } from "@app/lib/api";
@@ -44,11 +38,12 @@ import {
     SettingsSectionHeader,
     SettingsSectionDescription,
     SettingsSectionBody,
-    SettingsSectionForm,
-    SettingsSectionFooter
+    SettingsSectionFooter,
+    SettingsSectionForm
 } from "@app/components/Settings";
 import { SwitchInput } from "@app/components/SwitchInput";
 import { InfoPopup } from "@app/components/ui/info-popup";
+import { Tag, TagInput } from "@app/components/tags/tag-input";
 import { useRouter } from "next/navigation";
 
 const UsersRolesFormSchema = z.object({
@@ -413,7 +408,7 @@ export default function ResourceAuthenticationPage() {
                         <SwitchInput
                             id="sso-toggle"
                             label="Use Platform SSO"
-                            description="Existing users will only have to login once for all resources that have this enabled."
+                            description="Existing users will only have to log in once for all resources that have this enabled."
                             defaultChecked={resource.sso}
                             onCheckedChange={(val) => setSsoEnabled(val)}
                         />
@@ -435,7 +430,6 @@ export default function ResourceAuthenticationPage() {
                                                 <FormItem className="flex flex-col items-start">
                                                     <FormLabel>Roles</FormLabel>
                                                     <FormControl>
-                                                        {/* @ts-ignore */}
                                                         <TagInput
                                                             {...field}
                                                             activeTagIndex={
@@ -444,7 +438,8 @@ export default function ResourceAuthenticationPage() {
                                                             setActiveTagIndex={
                                                                 setActiveRolesTagIndex
                                                             }
-                                                            placeholder="Enter a role"
+                                                            placeholder="Select a role"
+                                                            size="sm"
                                                             tags={
                                                                 usersRolesForm.getValues()
                                                                     .roles
@@ -473,23 +468,13 @@ export default function ResourceAuthenticationPage() {
                                                                 true
                                                             }
                                                             sortTags={true}
-                                                            styleClasses={{
-                                                                tag: {
-                                                                    body: "bg-muted hover:bg-accent text-foreground py-2 px-3 rounded-full"
-                                                                },
-                                                                input: "text-base md:text-sm border-none bg-transparent text-inherit placeholder:text-inherit shadow-none",
-                                                                inlineTagsContainer:
-                                                                    "bg-transparent p-2"
-                                                            }}
                                                         />
                                                     </FormControl>
+                                                    <FormMessage />
                                                     <FormDescription>
-                                                        These roles will be able
-                                                        to access this resource.
                                                         Admins can always access
                                                         this resource.
                                                     </FormDescription>
-                                                    <FormMessage />
                                                 </FormItem>
                                             )}
                                         />
@@ -500,7 +485,6 @@ export default function ResourceAuthenticationPage() {
                                                 <FormItem className="flex flex-col items-start">
                                                     <FormLabel>Users</FormLabel>
                                                     <FormControl>
-                                                        {/* @ts-ignore */}
                                                         <TagInput
                                                             {...field}
                                                             activeTagIndex={
@@ -509,11 +493,12 @@ export default function ResourceAuthenticationPage() {
                                                             setActiveTagIndex={
                                                                 setActiveUsersTagIndex
                                                             }
-                                                            placeholder="Enter a user"
+                                                            placeholder="Select a user"
                                                             tags={
                                                                 usersRolesForm.getValues()
                                                                     .users
                                                             }
+                                                            size="sm"
                                                             setTags={(
                                                                 newUsers
                                                             ) => {
@@ -538,25 +523,8 @@ export default function ResourceAuthenticationPage() {
                                                                 true
                                                             }
                                                             sortTags={true}
-                                                            styleClasses={{
-                                                                tag: {
-                                                                    body: "bg-muted hover:bg-accent text-foreground py-2 px-3 rounded-full"
-                                                                },
-                                                                input: "text-base md:text-sm border-none bg-transparent text-inherit placeholder:text-inherit shadow-none",
-                                                                inlineTagsContainer:
-                                                                    "bg-transparent p-2"
-                                                            }}
                                                         />
                                                     </FormControl>
-                                                    <FormDescription>
-                                                        Users added here will be
-                                                        able to access this
-                                                        resource. A user will
-                                                        always have access to a
-                                                        resource if they have a
-                                                        role that has access to
-                                                        it.
-                                                    </FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
@@ -601,7 +569,7 @@ export default function ResourceAuthenticationPage() {
                                 </span>
                             </div>
                             <Button
-                                variant="outline"
+                                variant="outlinePrimary"
                                 onClick={
                                     authInfo.password
                                         ? removeResourcePassword
@@ -627,7 +595,7 @@ export default function ResourceAuthenticationPage() {
                                 </span>
                             </div>
                             <Button
-                                variant="outline"
+                                variant="outlinePrimary"
                                 onClick={
                                     authInfo.pincode
                                         ? removeResourcePincode
@@ -683,6 +651,7 @@ export default function ResourceAuthenticationPage() {
                                                             activeTagIndex={
                                                                 activeEmailTagIndex
                                                             }
+                                                            size={"sm"}
                                                             validateTag={(
                                                                 tag
                                                             ) => {
@@ -727,18 +696,12 @@ export default function ResourceAuthenticationPage() {
                                                                 false
                                                             }
                                                             sortTags={true}
-                                                            styleClasses={{
-                                                                tag: {
-                                                                    body: "bg-muted hover:bg-accent text-foreground py-2 px-3 rounded-full"
-                                                                },
-                                                                input: "text-base md:text-sm border-none bg-transparent text-inherit placeholder:text-inherit shadow-none",
-                                                                inlineTagsContainer:
-                                                                    "bg-transparent p-2"
-                                                            }}
                                                         />
                                                     </FormControl>
                                                     <FormDescription>
-                                                        Press enter to add an email after typing it in the input field.
+                                                        Press enter to add an
+                                                        email after typing it in
+                                                        the input field.
                                                     </FormDescription>
                                                 </FormItem>
                                             )}

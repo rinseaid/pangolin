@@ -1,11 +1,9 @@
 import fs from "fs";
 import yaml from "js-yaml";
-import path from "path";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import {
     __DIRNAME,
-    APP_PATH,
     APP_VERSION,
     configFilePath1,
     configFilePath2
@@ -15,12 +13,6 @@ import stoi from "./stoi";
 import { start } from "repl";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
-const hostnameSchema = z
-    .string()
-    .regex(
-        /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$/
-    )
-    .or(z.literal("localhost"));
 
 const getEnvOrYaml = (envVar: string) => (valFromYaml: any) => {
     return process.env[envVar] ?? valFromYaml;
@@ -32,34 +24,42 @@ const configSchema = z.object({
             .string()
             .url()
             .optional()
-            .transform(getEnvOrYaml("APP_DASHBOARDURL"))
             .pipe(z.string().url())
-            .transform((url) => url.toLowerCase()),
-        base_domain: hostnameSchema
-            .optional()
-            .transform(getEnvOrYaml("APP_BASEDOMAIN"))
-            .pipe(hostnameSchema)
             .transform((url) => url.toLowerCase()),
         log_level: z.enum(["debug", "info", "warn", "error"]),
         save_logs: z.boolean(),
         log_failed_attempts: z.boolean().optional()
     }),
+    domains: z
+        .record(
+            z.string(),
+            z.object({
+                base_domain: z
+                    .string()
+                    .nonempty("base_domain must not be empty")
+                    .transform((url) => url.toLowerCase()),
+                cert_resolver: z.string().optional(),
+                prefer_wildcard_cert: z.boolean().optional()
+            })
+        )
+        .refine(
+            (domains) => {
+                const keys = Object.keys(domains);
+
+                if (keys.length === 0) {
+                    return false;
+                }
+
+                return true;
+            },
+            {
+                message: "At least one domain must be defined"
+            }
+        ),
     server: z.object({
-        external_port: portSchema
-            .optional()
-            .transform(getEnvOrYaml("SERVER_EXTERNALPORT"))
-            .transform(stoi)
-            .pipe(portSchema),
-        internal_port: portSchema
-            .optional()
-            .transform(getEnvOrYaml("SERVER_INTERNALPORT"))
-            .transform(stoi)
-            .pipe(portSchema),
-        next_port: portSchema
-            .optional()
-            .transform(getEnvOrYaml("SERVER_NEXTPORT"))
-            .transform(stoi)
-            .pipe(portSchema),
+        external_port: portSchema.optional().transform(stoi).pipe(portSchema),
+        internal_port: portSchema.optional().transform(stoi).pipe(portSchema),
+        next_port: portSchema.optional().transform(stoi).pipe(portSchema),
         internal_hostname: z.string().transform((url) => url.toLowerCase()),
         session_cookie_name: z.string(),
         resource_access_token_param: z.string(),
@@ -89,20 +89,13 @@ const configSchema = z.object({
     traefik: z.object({
         http_entrypoint: z.string(),
         https_entrypoint: z.string().optional(),
-        cert_resolver: z.string().optional(),
-        prefer_wildcard_cert: z.boolean().optional(),
         additional_middlewares: z.array(z.string()).optional()
     }),
     gerbil: z.object({
-        start_port: portSchema
-            .optional()
-            .transform(getEnvOrYaml("GERBIL_STARTPORT"))
-            .transform(stoi)
-            .pipe(portSchema),
+        start_port: portSchema.optional().transform(stoi).pipe(portSchema),
         base_endpoint: z
             .string()
             .optional()
-            .transform(getEnvOrYaml("GERBIL_BASEENDPOINT"))
             .pipe(z.string())
             .transform((url) => url.toLowerCase()),
         use_subdomain: z.boolean(),
@@ -135,6 +128,7 @@ const configSchema = z.object({
             smtp_user: z.string().optional(),
             smtp_pass: z.string().optional(),
             smtp_secure: z.boolean().optional(),
+            smtp_tls_reject_unauthorized: z.boolean().optional(),
             no_reply: z.string().email().optional()
         })
         .optional(),
@@ -159,7 +153,8 @@ const configSchema = z.object({
             disable_signup_without_invite: z.boolean().optional(),
             disable_user_create_org: z.boolean().optional(),
             allow_raw_resources: z.boolean().optional(),
-            allow_base_domain_resources: z.boolean().optional()
+            allow_base_domain_resources: z.boolean().optional(),
+            allow_local_sites: z.boolean().optional()
         })
         .optional()
 });
@@ -169,13 +164,7 @@ export class Config {
 
     constructor() {
         this.loadConfig();
-
-        if (process.env.GENERATE_TRAEFIK_CONFIG === "true") {
-            this.createTraefikConfig();
-        }
     }
-
-    public loadEnvironment() {}
 
     public loadConfig() {
         const loadConfig = (configPath: string) => {
@@ -199,45 +188,15 @@ export class Config {
         } else if (fs.existsSync(configFilePath2)) {
             environment = loadConfig(configFilePath2);
         }
-        if (!environment) {
-            const exampleConfigPath = path.join(
-                __DIRNAME,
-                "config.example.yml"
-            );
-            if (fs.existsSync(exampleConfigPath)) {
-                try {
-                    const exampleConfigContent = fs.readFileSync(
-                        exampleConfigPath,
-                        "utf8"
-                    );
-                    fs.writeFileSync(
-                        configFilePath1,
-                        exampleConfigContent,
-                        "utf8"
-                    );
-                    environment = loadConfig(configFilePath1);
-                } catch (error) {
-                    console.log(
-                        "See the docs for information about what to include in the configuration file: https://docs.fossorial.io/Pangolin/Configuration/config"
-                    );
-                    if (error instanceof Error) {
-                        throw new Error(
-                            `Error creating configuration file from example: ${
-                                error.message
-                            }`
-                        );
-                    }
-                    throw error;
-                }
-            } else {
-                throw new Error(
-                    "No configuration file found and no example configuration available"
-                );
-            }
+
+        if (process.env.APP_BASE_DOMAIN) {
+            console.log("You're using deprecated environment variables. Transition to the configuration file. https://docs.fossorial.io/");
         }
 
         if (!environment) {
-            throw new Error("No configuration file found");
+            throw new Error(
+                "No configuration file found. Please create one. https://docs.fossorial.io/"
+            );
         }
 
         const parsedConfig = configSchema.safeParse(environment);
@@ -290,80 +249,14 @@ export class Config {
         return this.rawConfig;
     }
 
-    public getBaseDomain(): string {
-        return this.rawConfig.app.base_domain;
-    }
-
     public getNoReplyEmail(): string | undefined {
         return (
             this.rawConfig.email?.no_reply || this.rawConfig.email?.smtp_user
         );
     }
 
-    private createTraefikConfig() {
-        try {
-            // check if traefik_config.yml and dynamic_config.yml exists in APP_PATH/traefik
-            const defaultTraefikConfigPath = path.join(
-                __DIRNAME,
-                "traefik_config.example.yml"
-            );
-            const defaultDynamicConfigPath = path.join(
-                __DIRNAME,
-                "dynamic_config.example.yml"
-            );
-
-            const traefikPath = path.join(APP_PATH, "traefik");
-            if (!fs.existsSync(traefikPath)) {
-                return;
-            }
-
-            // load default configs
-            let traefikConfig = fs.readFileSync(
-                defaultTraefikConfigPath,
-                "utf8"
-            );
-            let dynamicConfig = fs.readFileSync(
-                defaultDynamicConfigPath,
-                "utf8"
-            );
-
-            traefikConfig = traefikConfig
-                .split("{{.LetsEncryptEmail}}")
-                .join(this.rawConfig.users.server_admin.email);
-            traefikConfig = traefikConfig
-                .split("{{.INTERNAL_PORT}}")
-                .join(this.rawConfig.server.internal_port.toString());
-
-            dynamicConfig = dynamicConfig
-                .split("{{.DashboardDomain}}")
-                .join(new URL(this.rawConfig.app.dashboard_url).hostname);
-            dynamicConfig = dynamicConfig
-                .split("{{.NEXT_PORT}}")
-                .join(this.rawConfig.server.next_port.toString());
-            dynamicConfig = dynamicConfig
-                .split("{{.EXTERNAL_PORT}}")
-                .join(this.rawConfig.server.external_port.toString());
-
-            // write thiese to the traefik directory
-            const traefikConfigPath = path.join(
-                traefikPath,
-                "traefik_config.yml"
-            );
-            const dynamicConfigPath = path.join(
-                traefikPath,
-                "dynamic_config.yml"
-            );
-
-            fs.writeFileSync(traefikConfigPath, traefikConfig, "utf8");
-            fs.writeFileSync(dynamicConfigPath, dynamicConfig, "utf8");
-
-            console.log("Traefik configuration files created");
-        } catch (e) {
-            console.log(
-                "Failed to generate the Traefik configuration files. Please create them manually."
-            );
-            console.error(e);
-        }
+    public getDomain(domainId: string) {
+        return this.rawConfig.domains[domainId];
     }
 }
 
