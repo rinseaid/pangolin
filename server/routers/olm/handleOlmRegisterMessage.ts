@@ -1,12 +1,7 @@
 import db from "@server/db";
 import { MessageHandler } from "../ws";
-import {
-    clients,
-    Olm,
-    olms,
-    sites,
-} from "@server/db/schema";
-import { eq, } from "drizzle-orm";
+import { clients, Olm, olms, sites } from "@server/db/schema";
+import { eq } from "drizzle-orm";
 import { addPeer, deletePeer } from "../newt/peers";
 import logger from "@server/logger";
 
@@ -62,6 +57,16 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         return;
     }
 
+    sendToClient(olm.olmId, {
+        type: "olm/wg/holepunch",
+        data: {
+            endpoint: site.endpoint,
+            publicKey: site.publicKey,
+            serverIP: site.address!.split("/")[0],
+            tunnelIP: `${client.subnet.split("/")[0]}/${site.address!.split("/")[1]}` // put the client ip in the same subnet as the site. TODO: Is this right? Maybe we need th make .subnet work properly!
+        }
+    });
+
     const now = new Date().getTime() / 1000;
     if (site.lastHolePunch && now - site.lastHolePunch > 6) {
         logger.warn("Site last hole punch is too old");
@@ -90,7 +95,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         logger.warn("Site has no subnet");
         return;
     }
- 
+
     // add the peer to the exit node
     await addPeer(site.siteId, {
         publicKey: publicKey,
@@ -105,7 +110,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
                 endpoint: site.endpoint,
                 publicKey: site.publicKey,
                 serverIP: site.address!.split("/")[0],
-                tunnelIP: `${client.subnet.split("/")[0]}/${site.address!.split("/")[1]}`, // put the client ip in the same subnet as the site. TODO: Is this right? Maybe we need th make .subnet work properly!
+                tunnelIP: `${client.subnet.split("/")[0]}/${site.address!.split("/")[1]}` // put the client ip in the same subnet as the site. TODO: Is this right? Maybe we need th make .subnet work properly!
             }
         },
         broadcast: false, // Send to all olms
