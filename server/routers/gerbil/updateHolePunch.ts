@@ -7,11 +7,14 @@ import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
+import { validateNewtSessionToken } from "@server/auth/sessions/newt";
+import { validateOlmSessionToken } from "@server/auth/sessions/olm";
 
 // Define Zod schema for request validation
 const updateHolePunchSchema = z.object({
     olmId: z.string().optional(),
     newtId: z.string().optional(),
+    token: z.string(),
     ip: z.string(),
     port: z.number(),
     timestamp: z.number()
@@ -34,13 +37,28 @@ export async function updateHolePunch(
             );
         }
 
-        const { olmId, newtId, ip, port, timestamp } = parsedParams.data;
-        
+        const { olmId, newtId, ip, port, timestamp, token } = parsedParams.data;
+
         // logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId} or newtId: ${newtId}`);
 
         let site: Site | undefined;
 
         if (olmId) {
+            const { session, olm: olmSession } =
+                await validateOlmSessionToken(token);
+            if (!session || !olmSession) {
+                return next(
+                    createHttpError(HttpCode.UNAUTHORIZED, "Unauthorized")
+                );
+            }
+
+            if (olmId !== olmSession.olmId) {
+                logger.warn(`Olm ID mismatch: ${olmId} !== ${olmSession.olmId}`);
+                return next(
+                    createHttpError(HttpCode.UNAUTHORIZED, "Unauthorized")
+                );
+            }
+
             const [olm] = await db
                 .select()
                 .from(olms)
@@ -66,7 +84,24 @@ export async function updateHolePunch(
                 .select()
                 .from(sites)
                 .where(eq(sites.siteId, client.siteId));
+
         } else if (newtId) {
+            const { session, newt: newtSession } =
+                await validateNewtSessionToken(token);
+
+            if (!session || !newtSession) {
+                return next(
+                    createHttpError(HttpCode.UNAUTHORIZED, "Unauthorized")
+                );
+            }
+
+            if (newtId !== newtSession.newtId) {
+                logger.warn(`Newt ID mismatch: ${newtId} !== ${newtSession.newtId}`);
+                return next(
+                    createHttpError(HttpCode.UNAUTHORIZED, "Unauthorized")
+                );
+            }
+
             const [newt] = await db
                 .select()
                 .from(newts)
@@ -90,10 +125,10 @@ export async function updateHolePunch(
         }
 
         if (!site || !site.endpoint || !site.subnet) {
-            logger.warn(`Site not found for olmId: ${olmId} or newtId: ${newtId}`);
-            return next(
-                createHttpError(HttpCode.NOT_FOUND, "Site not found")
+            logger.warn(
+                `Site not found for olmId: ${olmId} or newtId: ${newtId}`
             );
+            return next(createHttpError(HttpCode.NOT_FOUND, "Site not found"));
         }
 
         return res.status(HttpCode.OK).send({

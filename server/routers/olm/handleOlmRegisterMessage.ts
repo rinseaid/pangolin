@@ -1,6 +1,6 @@
 import db from "@server/db";
 import { MessageHandler } from "../ws";
-import { clients, Olm, olms, sites } from "@server/db/schema";
+import { clients, exitNodes, Olm, olms, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import { addPeer, deletePeer } from "../newt/peers";
 import logger from "@server/logger";
@@ -46,26 +46,34 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         .where(eq(sites.siteId, client.siteId))
         .limit(1);
 
-    if (!client) {
+    if (!site) {
         logger.warn("Site not found or does not have exit node");
         return;
     }
+
+    if (!site.exitNodeId) {
+        logger.warn("Site does not have exit node");
+        return;
+    }
+
+    const [exitNode] = await db
+        .select()
+        .from(exitNodes)
+        .where(eq(exitNodes.exitNodeId, site.exitNodeId))
+        .limit(1);
+
+    sendToClient(olm.olmId, {
+        type: "olm/wg/holepunch",
+        data: {
+            serverPubKey: exitNode.publicKey,
+        }
+    });
 
     // make sure we hand endpoints for both the site and the client and the lastHolePunch is not too old
     if (!site.endpoint || !client.endpoint) {
         logger.warn("Site or client has no endpoint or listen port");
         return;
     }
-
-    sendToClient(olm.olmId, {
-        type: "olm/wg/holepunch",
-        data: {
-            endpoint: site.endpoint,
-            publicKey: site.publicKey,
-            serverIP: site.address!.split("/")[0],
-            tunnelIP: `${client.subnet.split("/")[0]}/${site.address!.split("/")[1]}` // put the client ip in the same subnet as the site. TODO: Is this right? Maybe we need th make .subnet work properly!
-        }
-    });
 
     const now = new Date().getTime() / 1000;
     if (site.lastHolePunch && now - site.lastHolePunch > 6) {

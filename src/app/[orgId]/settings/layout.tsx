@@ -5,7 +5,8 @@ import {
     LinkIcon,
     Settings,
     Users,
-    Waypoints
+    Waypoints,
+    Workflow
 } from "lucide-react";
 import { Header } from "@app/components/Header";
 import { verifySession } from "@app/lib/auth/verifySession";
