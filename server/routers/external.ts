@@ -9,6 +9,7 @@ import * as user from "./user";
 import * as auth from "./auth";
 import * as role from "./role";
 import * as client from "./client";
+import * as supporterKey from "./supporterKey";
 import * as accessToken from "./accessToken";
 import HttpCode from "@server/types/HttpCode";
 import {
@@ -24,7 +25,8 @@ import {
     verifySetResourceUsers,
     verifyUserAccess,
     getUserOrgs,
-    verifyClientAccess
+    verifyClientAccess,
+    verifyUserIsServerAdmin
 } from "@server/middlewares";
 import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
 import { ActionsEnum } from "@server/auth/actions";
@@ -413,6 +415,9 @@ authenticated.get(
 
 authenticated.get(`/org/:orgId/overview`, verifyOrgAccess, org.getOrgOverview);
 
+authenticated.post(`/supporter-key/validate`, supporterKey.validateSupporterKey);
+authenticated.post(`/supporter-key/hide`, supporterKey.hideSupporterKey);
+
 unauthenticated.get("/resource/:resourceId/auth", resource.getResourceAuthInfo);
 
 // authenticated.get(
@@ -445,6 +450,13 @@ unauthenticated.get("/resource/:resourceId/auth", resource.getResourceAuthInfo);
 // );
 
 unauthenticated.get("/user", verifySessionMiddleware, user.getUser);
+
+authenticated.get("/users", verifyUserIsServerAdmin, user.adminListUsers);
+authenticated.delete(
+    "/user/:userId",
+    verifyUserIsServerAdmin,
+    user.adminRemoveUser
+);
 
 authenticated.get("/org/:orgId/user/:userId", verifyOrgAccess, user.getOrgUser);
 authenticated.get(

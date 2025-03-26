@@ -15,3 +15,4 @@ export * from "./verifySetResourceUsers";
 export * from "./verifyUserInRole";
 export * from "./verifyAccessTokenAccess";
 export * from "./verifyClientAccess";
+export * from "./verifyUserIsServerAdmin";

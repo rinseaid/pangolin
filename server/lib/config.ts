@@ -10,7 +10,9 @@ import {
 } from "@server/lib/consts";
 import { passwordSchema } from "@server/auth/passwordSchema";
 import stoi from "./stoi";
-import { start } from "repl";
+import db from "@server/db";
+import { SupporterKey, supporterKey } from "@server/db/schema";
+import { eq } from "drizzle-orm";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
 
@@ -162,6 +164,10 @@ const configSchema = z.object({
 export class Config {
     private rawConfig!: z.infer<typeof configSchema>;
 
+    supporterData: SupporterKey | null = null;
+
+    supporterHiddenUntil: number | null = null;
+
     constructor() {
         this.loadConfig();
     }
@@ -190,7 +196,9 @@ export class Config {
         }
 
         if (process.env.APP_BASE_DOMAIN) {
-            console.log("You're using deprecated environment variables. Transition to the configuration file. https://docs.fossorial.io/");
+            console.log(
+                "You're using deprecated environment variables. Transition to the configuration file. https://docs.fossorial.io/"
+            );
         }
 
         if (!environment) {
@@ -242,6 +250,14 @@ export class Config {
             : "false";
         process.env.DASHBOARD_URL = parsedConfig.data.app.dashboard_url;
 
+        this.checkSupporterKey()
+            .then(() => {
+                console.log("Supporter key checked");
+            })
+            .catch((error) => {
+                console.error("Error checking supporter key:", error);
+            });
+
         this.rawConfig = parsedConfig.data;
     }
 
@@ -257,6 +273,85 @@ export class Config {
 
     public getDomain(domainId: string) {
         return this.rawConfig.domains[domainId];
+    }
+
+    public hideSupporterKey(days: number = 7) {
+        const now = new Date().getTime();
+
+        if (this.supporterHiddenUntil && now < this.supporterHiddenUntil) {
+            return;
+        }
+
+        this.supporterHiddenUntil = now + 1000 * 60 * 60 * 24 * days;
+    }
+
+    public isSupporterKeyHidden() {
+        const now = new Date().getTime();
+
+        if (this.supporterHiddenUntil && now < this.supporterHiddenUntil) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public async checkSupporterKey() {
+        const [key] = await db.select().from(supporterKey).limit(1);
+
+        if (!key) {
+            return;
+        }
+
+        const { key: licenseKey, githubUsername } = key;
+
+        const response = await fetch(
+            "https://api.dev.fossorial.io/api/v1/license/validate",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    licenseKey,
+                    githubUsername
+                })
+            }
+        );
+
+        if (!response.ok) {
+            this.supporterData = key;
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!data.data.valid) {
+            this.supporterData = {
+                ...key,
+                valid: false
+            };
+            return;
+        }
+
+        this.supporterData = {
+            ...key,
+            tier: data.data.tier,
+            valid: true
+        };
+
+        // update the supporter key in the database
+        await db
+            .update(supporterKey)
+            .set({
+                tier: data.data.tier || null,
+                phrase: data.data.cutePhrase || null,
+                valid: true
+            })
+            .where(eq(supporterKey.keyId, key.keyId));
+    }
+
+    public getSupporterData() {
+        return this.supporterData;
     }
 }
 
