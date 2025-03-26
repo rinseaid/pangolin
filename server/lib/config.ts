@@ -105,11 +105,9 @@ const configSchema = z.object({
         block_size: z.number().positive().gt(0),
         site_block_size: z.number().positive().gt(0)
     }),
-    newt: z.object({
+    orgs: z.object({
         block_size: z.number().positive().gt(0),
         subnet_group: z.string(),
-        start_port: portSchema,
-        site_block_size: z.number().positive().gt(0)
     }),
     rate_limits: z.object({
         global: z.object({

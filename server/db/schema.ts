@@ -11,7 +11,8 @@ export const domains = sqliteTable("domains", {
 
 export const orgs = sqliteTable("orgs", {
     orgId: text("orgId").primaryKey(),
-    name: text("name").notNull()
+    name: text("name").notNull(),
+    subnet: text("subnet").notNull(), 
 });
 
 export const orgDomains = sqliteTable("orgDomains", {
@@ -47,7 +48,6 @@ export const sites = sqliteTable("sites", {
     address: text("address"), // this is the address of the wireguard interface in gerbil
     endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
     publicKey: text("pubicKey"),
-    listenPort: integer("listenPort"),
     lastHolePunch: integer("lastHolePunch"), 
 });
 
@@ -138,11 +138,6 @@ export const newts = sqliteTable("newt", {
 
 export const clients = sqliteTable("clients", {
     clientId: integer("id").primaryKey({ autoIncrement: true }),
-    siteId: integer("siteId")
-        .references(() => sites.siteId, {
-            onDelete: "cascade"
-        })
-        .notNull(),
     orgId: text("orgId")
         .references(() => orgs.orgId, {
             onDelete: "cascade"
@@ -158,6 +153,15 @@ export const clients = sqliteTable("clients", {
     online: integer("online", { mode: "boolean" }).notNull().default(false),
     endpoint: text("endpoint"),
     lastHolePunch: integer("lastHolePunch"),
+});
+
+export const clientSites = sqliteTable("clientSites", {
+    clientId: integer("clientId")
+        .notNull()
+        .references(() => clients.clientId, { onDelete: "cascade" }),
+    siteId: integer("siteId")
+        .notNull()
+        .references(() => sites.siteId, { onDelete: "cascade" }),
 });
 
 export const olms = sqliteTable("olms", {
@@ -516,6 +520,7 @@ export type ResourceWhitelist = InferSelectModel<typeof resourceWhitelist>;
 export type VersionMigration = InferSelectModel<typeof versionMigrations>;
 export type ResourceRule = InferSelectModel<typeof resourceRules>;
 export type Client = InferSelectModel<typeof clients>;
+export type ClientSite = InferSelectModel<typeof clientSites>;
 export type RoleClient = InferSelectModel<typeof roleClients>;
 export type UserClient = InferSelectModel<typeof userClients>;
 export type Domain = InferSelectModel<typeof domains>;

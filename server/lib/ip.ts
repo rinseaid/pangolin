@@ -1,3 +1,8 @@
+import db from "@server/db";
+import { clients, orgs, sites } from "@server/db/schema";
+import { and, eq, isNotNull } from "drizzle-orm";
+import config from "@server/lib/config";
+
 interface IPRange {
     start: bigint;
     end: bigint;
@@ -204,4 +209,58 @@ export function isIpInCidr(ip: string, cidr: string): boolean {
     const ipBigInt = ipToBigInt(ip);
     const range = cidrToRange(cidr);
     return ipBigInt >= range.start && ipBigInt <= range.end;
+}
+
+export async function getNextAvailableClientSubnet(orgId: string): Promise<string> {
+    const existingAddressesSites = await db
+        .select({
+            address: sites.address
+        })
+        .from(sites)
+        .where(and(isNotNull(sites.address), eq(sites.orgId, orgId)));
+
+    const existingAddressesClients = await db
+        .select({
+            address: clients.subnet
+        })
+        .from(clients)
+        .where(and(isNotNull(clients.subnet), eq(clients.orgId, orgId)));
+
+    const addresses = [
+        ...existingAddressesSites.map((site) => site.address),
+        ...existingAddressesClients.map((client) => client.address)
+    ].filter((address) => address !== null) as string[];
+
+    let subnet = findNextAvailableCidr(
+        addresses,
+        32,
+        config.getRawConfig().orgs.subnet_group
+    ); // pick the sites address in the org
+    if (!subnet) {
+        throw new Error("No available subnets remaining in space");
+    }
+
+    return subnet;
+}
+
+export async function getNextAvailableOrgSubnet(): Promise<string> {
+    const existingAddresses = await db
+        .select({
+            subnet: orgs.subnet
+        })
+        .from(orgs)
+        .where(isNotNull(orgs.subnet));
+
+    const addresses = existingAddresses.map((org) => org.subnet);
+
+    let subnet = findNextAvailableCidr(
+        addresses,
+        config.getRawConfig().orgs.block_size,
+        config.getRawConfig().orgs.subnet_group
+    );
+    if (!subnet) {
+        throw new Error("No available subnets remaining in space");
+    }
+
+    return subnet;
 }

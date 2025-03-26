@@ -19,6 +19,7 @@ import { createAdminRole } from "@server/setup/ensureActions";
 import config from "@server/lib/config";
 import { fromError } from "zod-validation-error";
 import { defaultRoleAllowedActions } from "../role";
+import { getNextAvailableOrgSubnet } from "@server/lib/ip";
 
 const createOrgSchema = z
     .object({
@@ -88,6 +89,8 @@ export async function createOrg(
         let error = "";
         let org: Org | null = null;
 
+        const subnet = await getNextAvailableOrgSubnet();
+
         await db.transaction(async (trx) => {
             const allDomains = await trx
                 .select()
@@ -98,7 +101,8 @@ export async function createOrg(
                 .insert(orgs)
                 .values({
                     orgId,
-                    name
+                    name,
+                    subnet,
                 })
                 .returning();
 

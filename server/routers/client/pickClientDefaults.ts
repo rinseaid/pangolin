@@ -6,7 +6,7 @@ import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
-import { findNextAvailableCidr } from "@server/lib/ip";
+import { findNextAvailableCidr, getNextAvailableClientSubnet } from "@server/lib/ip";
 import { generateId } from "@server/auth/sessions/app";
 import config from "@server/lib/config";
 import { z } from "zod";
@@ -88,37 +88,8 @@ export async function pickClientDefaults(
 
         const { address, publicKey, listenPort, endpoint } = parsedSite.data;
 
-        const clientsQuery = await db
-            .select({
-                subnet: clients.subnet
-            })
-            .from(clients)
-            .where(eq(clients.siteId, site.siteId));
-
-        let subnets = clientsQuery.map((client) => client.subnet);
-
-        // exclude the exit node address by replacing after the / with a site block size
-        subnets.push(
-            address.replace(
-                /\/\d+$/,
-                `/${config.getRawConfig().newt.site_block_size}`
-            )
-        );
-
-        const newSubnet = findNextAvailableCidr(
-            subnets,
-            config.getRawConfig().newt.site_block_size,
-            address
-        );
-        if (!newSubnet) {
-            return next(
-                createHttpError(
-                    HttpCode.INTERNAL_SERVER_ERROR,
-                    "No available subnets"
-                )
-            );
-        }
-
+        const newSubnet = await getNextAvailableClientSubnet(site.orgId);
+        
         const olmId = generateId(15);
         const secret = generateId(48);
 
@@ -130,8 +101,7 @@ export async function pickClientDefaults(
                 name: site.name,
                 listenPort: listenPort,
                 endpoint: endpoint,
-                // subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().newt.block_size}`, // we want the block size of the whole subnet
-                subnet: newSubnet,
+                subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}`, // we want the block size of the whole org
                 olmId: olmId,
                 olmSecret: secret
             },
