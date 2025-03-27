@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "@server/db";
-import { clients, olms, sites } from "@server/db/schema";
+import { clients, exitNodes, olms, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -19,6 +19,7 @@ const getSiteSchema = z
     .strict();
 
 export type PickClientDefaultsResponse = {
+    exitNodeId: number;
     siteId: number;
     address: string;
     publicKey: string;
@@ -66,8 +67,20 @@ export async function pickClientDefaults(
             );
         }
 
-        // make sure all the required fields are present
+        // TODO: more intelligent way to pick the exit node
 
+        // make sure there is an exit node by counting the exit nodes table
+        const nodes = await db.select().from(exitNodes);
+        if (nodes.length === 0) {
+            return next(
+                createHttpError(HttpCode.NOT_FOUND, "No exit nodes available")
+            );
+        }
+
+        // get the first exit node
+        const exitNode = nodes[0];
+
+        // make sure all the required fields are present
         const sitesRequiredFields = z.object({
             address: z.string(),
             publicKey: z.string(),
@@ -95,6 +108,7 @@ export async function pickClientDefaults(
 
         return response<PickClientDefaultsResponse>(res, {
             data: {
+                exitNodeId: exitNode.exitNodeId,
                 siteId: site.siteId,
                 address: address,
                 publicKey: publicKey,

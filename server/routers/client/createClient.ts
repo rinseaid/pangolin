@@ -18,9 +18,7 @@ import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { eq, and } from "drizzle-orm";
-import { addPeer } from "../newt/peers";
 import { fromError } from "zod-validation-error";
-import { newts } from "@server/db/schema";
 import moment from "moment";
 import { hashPassword } from "@server/auth/password";
 
@@ -122,7 +120,6 @@ export async function createClient(
             const [newClient] = await trx
                 .insert(clients)
                 .values({
-                    siteId,
                     orgId: site.orgId,
                     name,
                     subnet,
