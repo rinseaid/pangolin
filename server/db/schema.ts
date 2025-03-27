@@ -143,6 +143,9 @@ export const clients = sqliteTable("clients", {
             onDelete: "cascade"
         })
         .notNull(),
+    exitNodeId: integer("exitNode").references(() => exitNodes.exitNodeId, {
+        onDelete: "set null"
+    }),
     name: text("name").notNull(),
     pubKey: text("pubKey"),
     subnet: text("subnet").notNull(),
