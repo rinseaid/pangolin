@@ -41,7 +41,6 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
         .select({
             clientId: clients.clientId,
             orgId: clients.orgId,
-            siteId: clients.siteId,
             siteNiceId: sites.niceId,
             name: clients.name,
             pubKey: clients.pubKey,
@@ -55,7 +54,6 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
         })
         .from(clients)
         .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
-        .innerJoin(sites, eq(clients.siteId, sites.siteId))
         .where(
             and(
                 inArray(clients.clientId, accessibleClientIds),
