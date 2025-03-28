@@ -97,7 +97,7 @@ export async function pickClientDefaults(
 
         let subnets = clientsQuery.map((client) => client.subnet);
 
-        // exclude the exit node address by replacing after the / with a site block size
+        // exclude the newt address by replacing after the / with a site block size
         subnets.push(
             address.replace(
                 /\/\d+$/,

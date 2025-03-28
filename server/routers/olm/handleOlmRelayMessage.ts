@@ -67,13 +67,8 @@ export const handleOlmRelayMessage: MessageHandler = async (context) => {
 
     return {
         message: {
-            type: "olm/wg/connect",
-            data: {
-                endpoint: site.endpoint,
-                publicKey: site.publicKey,
-                serverIP: site.address!.split("/")[0],
-                tunnelIP: client.subnet
-            }
+            type: "olm/wg/relay-success",
+            data: {}
         },
         broadcast: false, // Send to all olms
         excludeSender: false // Include sender in broadcast

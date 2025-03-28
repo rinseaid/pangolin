@@ -10,6 +10,7 @@ import config from "@server/lib/config";
 
 const inputSchema = z.object({
     publicKey: z.string(),
+    port: z.number().int().positive(),
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -41,7 +42,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const { publicKey } = message.data as Input;
+    const { publicKey, port } = message.data as Input;
 
     const siteId = newt.siteId;
 
@@ -58,7 +59,6 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     let site: Site | undefined;
     if (!siteRes.address) {
         const address = await getNextAvailableSubnet();
-        const listenPort = await getNextAvailablePort();
 
         // create a new exit node
         const [updateRes] = await db
@@ -66,7 +66,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             .set({
                 publicKey,
                 address,
-                listenPort
+                listenPort: port,
             })
             .where(eq(sites.siteId, siteId))
             .returning();
@@ -79,7 +79,8 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         const [siteRes] = await db
             .update(sites)
             .set({
-                publicKey
+                publicKey,
+                listenPort: port,
             })
             .where(eq(sites.siteId, siteId))
             .returning();
@@ -116,7 +117,6 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     );
 
     const configResponse = {
-        listenPort: site.listenPort,
         ipAddress: site.address,
         peers
     };
