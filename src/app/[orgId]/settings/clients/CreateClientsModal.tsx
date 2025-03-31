@@ -44,7 +44,7 @@ export default function CreateClientFormModal({
                     <CredenzaHeader>
                         <CredenzaTitle>Create Client</CredenzaTitle>
                         <CredenzaDescription>
-                            Create a new client to connect to your site
+                            Create a new client to connect to your sites
                         </CredenzaDescription>
                     </CredenzaHeader>
                     <CredenzaBody>

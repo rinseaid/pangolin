@@ -21,7 +21,6 @@ import { formatAxiosError } from "@app/lib/api";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
 import { AxiosResponse } from "axios";
-import { Collapsible } from "@app/components/ui/collapsible";
 import { ClientRow } from "./ClientsTable";
 import {
     CreateClientBody,
@@ -45,6 +44,9 @@ import {
     CommandItem,
     CommandList
 } from "@app/components/ui/command";
+import { ScrollArea } from "@app/components/ui/scroll-area";
+import { Badge } from "@app/components/ui/badge";
+import { X } from "lucide-react";
 
 const createClientFormSchema = z.object({
     name: z
@@ -55,16 +57,19 @@ const createClientFormSchema = z.object({
         .max(30, {
             message: "Name must not be longer than 30 characters."
         }),
-    siteId: z.coerce.number()
+    siteIds: z.array(z.number()).min(1, { 
+        message: "Select at least one site." 
+    })
 });
 
-type CreateSiteFormValues = z.infer<typeof createClientFormSchema>;
+type CreateClientFormValues = z.infer<typeof createClientFormSchema>;
 
-const defaultValues: Partial<CreateSiteFormValues> = {
-    name: ""
+const defaultValues: Partial<CreateClientFormValues> = {
+    name: "",
+    siteIds: []
 };
 
-type CreateSiteFormProps = {
+type CreateClientFormProps = {
     onCreate?: (client: ClientRow) => void;
     setLoading?: (loading: boolean) => void;
     setChecked?: (checked: boolean) => void;
@@ -76,7 +81,7 @@ export default function CreateClientForm({
     setLoading,
     setChecked,
     orgId
-}: CreateSiteFormProps) {
+}: CreateClientFormProps) {
     const api = createApiClient(useEnvContext());
     const { env } = useEnvContext();
 
@@ -87,6 +92,7 @@ export default function CreateClientForm({
     const [clientDefaults, setClientDefaults] =
         useState<PickClientDefaultsResponse | null>(null);
     const [olmCommand, setOlmCommand] = useState<string | null>(null);
+    const [selectedSites, setSelectedSites] = useState<Array<{id: number, name: string}>>([]);
 
     const handleCheckboxChange = (checked: boolean) => {
         setIsChecked(checked);
@@ -95,10 +101,15 @@ export default function CreateClientForm({
         }
     };
 
-    const form = useForm<CreateSiteFormValues>({
+    const form = useForm<CreateClientFormValues>({
         resolver: zodResolver(createClientFormSchema),
         defaultValues
     });
+
+    useEffect(() => {
+        // Update form value when selectedSites changes
+        form.setValue('siteIds', selectedSites.map(site => site.id));
+    }, [selectedSites, form]);
 
     useEffect(() => {
         if (!open) return;
@@ -109,6 +120,7 @@ export default function CreateClientForm({
         form.reset();
         setChecked?.(false);
         setClientDefaults(null);
+        setSelectedSites([]);
 
         const fetchSites = async () => {
             const res = await api.get<AxiosResponse<ListSitesResponse>>(
@@ -118,25 +130,19 @@ export default function CreateClientForm({
                 (s) => s.type === "newt" && s.subnet
             );
             setSites(sites);
-
-            if (sites.length > 0) {
-                form.setValue("siteId", sites[0].siteId);
-            }
         };
 
         fetchSites();
     }, [open]);
 
     useEffect(() => {
-        const siteId = form.getValues("siteId");
+        if (selectedSites.length === 0) return;
 
-        if (siteId === undefined || siteId === null) return;
-
-        api.get(`/site/${siteId}/pick-client-defaults`)
+        api.get(`/pick-client-defaults`)
             .catch((e) => {
                 toast({
                     variant: "destructive",
-                    title: `Error fetching client defaults for site ${siteId}`,
+                    title: `Error fetching client defaults`,
                     description: formatAxiosError(e)
                 });
             })
@@ -148,17 +154,27 @@ export default function CreateClientForm({
                     setOlmCommand(olmConfig);
                 }
             });
-    }, [form.watch("siteId")]);
+    }, [selectedSites]);
 
-    async function onSubmit(data: CreateSiteFormValues) {
+    const addSite = (siteId: number, siteName: string) => {
+        if (!selectedSites.some(site => site.id === siteId)) {
+            setSelectedSites([...selectedSites, { id: siteId, name: siteName }]);
+        }
+    };
+
+    const removeSite = (siteId: number) => {
+        setSelectedSites(selectedSites.filter(site => site.id !== siteId));
+    };
+
+    async function onSubmit(data: CreateClientFormValues) {
         setLoading?.(true);
         setIsLoading(true);
 
         if (!clientDefaults) {
             toast({
                 variant: "destructive",
-                title: "Error creating site",
-                description: "Site defaults not found"
+                title: "Error creating client",
+                description: "Client defaults not found"
             });
             setLoading?.(false);
             setIsLoading(false);
@@ -167,17 +183,17 @@ export default function CreateClientForm({
 
         const payload = {
             name: data.name,
-            siteId: data.siteId,
-            subnet: clientDefaults.subnet,
+            siteIds: data.siteIds,
             olmId: clientDefaults.olmId,
             secret: clientDefaults.olmSecret,
             type: "olm"
         } as CreateClientBody;
 
         const res = await api
-            .put<
-                AxiosResponse<CreateClientResponse>
-            >(`/site/${data.siteId}/client`, payload)
+            .put<AxiosResponse<CreateClientResponse>>(
+                `/org/${orgId}/client`,
+                payload
+            )
             .catch((e) => {
                 toast({
                     variant: "destructive",
@@ -189,12 +205,14 @@ export default function CreateClientForm({
         if (res && res.status === 201) {
             const data = res.data.data;
 
-            const site = sites.find((site) => site.siteId === data.siteId);
+            // For now we'll just use the first site for display purposes
+            // The actual client will be associated with all selected sites
+            const firstSite = sites.find((site) => site.siteId === selectedSites[0]?.id);
 
             onCreate?.({
                 name: data.name,
-                siteId: site!.niceId,
-                siteName: site!.name,
+                siteId: firstSite?.niceId || "",
+                siteName: firstSite?.name || "",
                 id: data.clientId,
                 mbIn: "0 MB",
                 mbOut: "0 MB",
@@ -213,7 +231,7 @@ export default function CreateClientForm({
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-4"
-                    id="create-site-form"
+                    id="create-client-form"
                 >
                     <FormField
                         control={form.control}
@@ -235,10 +253,10 @@ export default function CreateClientForm({
 
                     <FormField
                         control={form.control}
-                        name="siteId"
-                        render={({ field }) => (
+                        name="siteIds"
+                        render={() => (
                             <FormItem className="flex flex-col">
-                                <FormLabel>Site</FormLabel>
+                                <FormLabel>Sites</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <FormControl>
@@ -247,61 +265,71 @@ export default function CreateClientForm({
                                                 role="combobox"
                                                 className={cn(
                                                     "justify-between",
-                                                    !field.value &&
+                                                    selectedSites.length === 0 &&
                                                         "text-muted-foreground"
                                                 )}
                                             >
-                                                {field.value
-                                                    ? sites.find(
-                                                          (site) =>
-                                                              site.siteId ===
-                                                              field.value
-                                                      )?.name
-                                                    : "Select site"}
+                                                {selectedSites.length > 0
+                                                    ? `${selectedSites.length} site${selectedSites.length !== 1 ? 's' : ''} selected`
+                                                    : "Select sites"}
                                                 <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </FormControl>
                                     </PopoverTrigger>
-                                    <PopoverContent className="p-0">
+                                    <PopoverContent className="p-0 w-[300px]">
                                         <Command>
-                                            <CommandInput placeholder="Search site..." />
+                                            <CommandInput placeholder="Search sites..." />
                                             <CommandList>
                                                 <CommandEmpty>
-                                                    No site found.
+                                                    No sites found.
                                                 </CommandEmpty>
                                                 <CommandGroup>
-                                                    {sites.map((site) => (
-                                                        <CommandItem
-                                                            value={`${site.siteId}:${site.name}:${site.niceId}`}
-                                                            key={site.siteId}
-                                                            onSelect={() => {
-                                                                form.setValue(
-                                                                    "siteId",
-                                                                    site.siteId
-                                                                );
-                                                            }}
-                                                        >
-                                                            <CheckIcon
-                                                                className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    site.siteId ===
-                                                                        field.value
-                                                                        ? "opacity-100"
-                                                                        : "opacity-0"
-                                                                )}
-                                                            />
-                                                            {site.name}
-                                                        </CommandItem>
-                                                    ))}
+                                                    <ScrollArea className="h-[200px]">
+                                                        {sites.map((site) => (
+                                                            <CommandItem
+                                                                value={`${site.siteId}:${site.name}:${site.niceId}`}
+                                                                key={site.siteId}
+                                                                onSelect={() => {
+                                                                    addSite(site.siteId, site.name);
+                                                                }}
+                                                            >
+                                                                <CheckIcon
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        selectedSites.some(s => s.id === site.siteId)
+                                                                            ? "opacity-100"
+                                                                            : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {site.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </ScrollArea>
                                                 </CommandGroup>
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
+                                
+                                {selectedSites.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {selectedSites.map(site => (
+                                            <Badge key={site.id} variant="secondary">
+                                                {site.name}
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => removeSite(site.id)} 
+                                                    className="ml-1 rounded-full outline-none focus:ring-2 focus:ring-offset-2"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                                
                                 <FormDescription>
-                                    The client will be have connectivity to this
-                                    site. The site must be configured to accept
-                                    client connections.
+                                    The client will have connectivity to the selected sites. The sites must be configured to accept client connections.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
