@@ -65,12 +65,5 @@ export const handleOlmRelayMessage: MessageHandler = async (context) => {
         endpoint: "" 
     });
 
-    return {
-        message: {
-            type: "olm/wg/relay-success",
-            data: {}
-        },
-        broadcast: false, // Send to all olms
-        excludeSender: false // Include sender in broadcast
-    };
+    return
 };
