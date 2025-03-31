@@ -102,7 +102,7 @@ authenticated.get(
 );
 
 authenticated.get(
-    "/site/:siteId/pick-client-defaults",
+    "/pick-client-defaults",
     verifySiteAccess,
     verifyUserHasAction(ActionsEnum.createClient),
     client.pickClientDefaults
@@ -116,8 +116,8 @@ authenticated.get(
 );
 
 authenticated.put(
-    "/site/:siteId/client",
-    verifySiteAccess,
+    "/org/:orgId/client",
+    verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.createClient),
     client.createClient
 );
@@ -127,6 +127,13 @@ authenticated.delete(
     verifyClientAccess,
     verifyUserHasAction(ActionsEnum.deleteClient),
     client.deleteClient
+);
+
+authenticated.post(
+    "/client/:clientId",
+    verifyClientAccess, // this will check if the user has access to the client
+    verifyUserHasAction(ActionsEnum.updateClient), // this will check if the user has permission to update the client
+    client.updateClient
 );
 
 // authenticated.get(

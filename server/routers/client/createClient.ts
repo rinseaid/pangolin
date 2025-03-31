@@ -3,15 +3,12 @@ import { z } from "zod";
 import { db } from "@server/db";
 import {
     roles,
-    userSites,
-    sites,
-    roleSites,
-    Site,
     Client,
     clients,
     roleClients,
     userClients,
-    olms
+    olms,
+    clientSites
 } from "@server/db/schema";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -21,21 +18,19 @@ import { eq, and } from "drizzle-orm";
 import { fromError } from "zod-validation-error";
 import moment from "moment";
 import { hashPassword } from "@server/auth/password";
+import { getNextAvailableClientSubnet } from "@server/lib/ip";
+import config from "@server/lib/config";
 
 const createClientParamsSchema = z
     .object({
-        siteId: z
-            .string()
-            .transform((val) => parseInt(val))
-            .pipe(z.number())
+        orgId: z.string()
     })
     .strict();
 
 const createClientSchema = z
     .object({
         name: z.string().min(1).max(255),
-        siteId: z.number().int().positive(),
-        subnet: z.string(),
+        siteIds: z.array(z.string().transform(Number).pipe(z.number())),
         olmId: z.string(),
         secret: z.string(),
         type: z.enum(["olm"])
@@ -62,7 +57,7 @@ export async function createClient(
             );
         }
 
-        const { name, type, siteId, subnet, olmId, secret } =
+        const { name, type, siteIds, olmId, secret } =
             parsedBody.data;
 
         const parsedParams = createClientParamsSchema.safeParse(req.params);
@@ -75,16 +70,7 @@ export async function createClient(
             );
         }
 
-        const { siteId: paramSiteId } = parsedParams.data;
-
-        if (siteId != paramSiteId) {
-            return next(
-                createHttpError(
-                    HttpCode.BAD_REQUEST,
-                    "Site ID in body does not match site ID in URL"
-                )
-            );
-        }
+        const { orgId } = parsedParams.data;
 
         if (!req.userOrgRoleId) {
             return next(
@@ -92,21 +78,16 @@ export async function createClient(
             );
         }
 
-        const [site] = await db
-            .select()
-            .from(sites)
-            .where(eq(sites.siteId, siteId));
+        const newSubnet = await getNextAvailableClientSubnet(orgId);
 
-        if (!site) {
-            return next(createHttpError(HttpCode.NOT_FOUND, "Site not found"));
-        }
+        const subnet = `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}` // we want the block size of the whole org
 
         await db.transaction(async (trx) => {
             const adminRole = await trx
                 .select()
                 .from(roles)
                 .where(
-                    and(eq(roles.isAdmin, true), eq(roles.orgId, site.orgId))
+                    and(eq(roles.isAdmin, true), eq(roles.orgId, orgId))
                 )
                 .limit(1);
 
@@ -120,7 +101,7 @@ export async function createClient(
             const [newClient] = await trx
                 .insert(clients)
                 .values({
-                    orgId: site.orgId,
+                    orgId,
                     name,
                     subnet,
                     type
@@ -138,6 +119,16 @@ export async function createClient(
                     userId: req.user?.userId!,
                     clientId: newClient.clientId
                 });
+            }
+
+            // Create site to client associations
+            if (siteIds && siteIds.length > 0) {
+                await trx.insert(clientSites).values(
+                    siteIds.map(siteId => ({
+                        clientId: newClient.clientId,
+                        siteId
+                    }))
+                );
             }
 
             const secretHash = await hashPassword(secret);

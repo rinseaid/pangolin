@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "@server/db";
-import { clients, sites } from "@server/db/schema";
+import { clients, clientSites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -48,7 +48,17 @@ export async function deleteClient(
             );
         }
 
-        await db.delete(clients).where(eq(clients.clientId, clientId));
+        await db.transaction(async (trx) => {
+            // Delete the client-site associations first
+            await trx
+                .delete(clientSites)
+                .where(eq(clientSites.clientId, clientId));
+
+            // Then delete the client itself
+            await trx
+                .delete(clients)
+                .where(eq(clients.clientId, clientId));
+        });
 
         return response(res, {
             data: null,
