@@ -8,7 +8,8 @@ import { eq } from "drizzle-orm";
 import { getNextAvailableClientSubnet } from "@server/lib/ip";
 
 const inputSchema = z.object({
-    publicKey: z.string()
+    publicKey: z.string(),
+    port: z.number().int().positive(),
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -40,7 +41,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const { publicKey } = message.data as Input;
+    const { publicKey, port } = message.data as Input;
 
     const siteId = newt.siteId;
 
@@ -64,7 +65,8 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             .update(sites)
             .set({
                 publicKey,
-                address
+                address,
+                listenPort: port,
             })
             .where(eq(sites.siteId, siteId))
             .returning();
@@ -77,7 +79,8 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         const [siteRes] = await db
             .update(sites)
             .set({
-                publicKey
+                publicKey,
+                listenPort: port,
             })
             .where(eq(sites.siteId, siteId))
             .returning();

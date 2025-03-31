@@ -48,7 +48,8 @@ export const sites = sqliteTable("sites", {
     address: text("address"), // this is the address of the wireguard interface in gerbil
     endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
     publicKey: text("pubicKey"),
-    lastHolePunch: integer("lastHolePunch"), 
+    lastHolePunch: integer("lastHolePunch"),
+    listenPort: integer("listenPort")
 });
 
 export const resources = sqliteTable("resources", {

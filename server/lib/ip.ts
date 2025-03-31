@@ -137,7 +137,6 @@ export function findNextAvailableCidr(
     blockSize: number,
     startCidr?: string
 ): string | null {
-
     if (!startCidr && existingCidrs.length === 0) {
         return null;
     }
@@ -155,40 +154,47 @@ export function findNextAvailableCidr(
         existingCidrs.some(cidr => detectIpVersion(cidr.split('/')[0]) !== version)) {
         throw new Error('All CIDRs must be of the same IP version');
     }
-
+    
+    // Extract the network part from startCidr to ensure we stay in the right subnet
+    const startCidrRange = cidrToRange(startCidr);
+    
     // Convert existing CIDRs to ranges and sort them
     const existingRanges = existingCidrs
         .map(cidr => cidrToRange(cidr))
         .sort((a, b) => (a.start < b.start ? -1 : 1));
-
+    
     // Calculate block size
     const maxPrefix = version === 4 ? 32 : 128;
     const blockSizeBigInt = BigInt(1) << BigInt(maxPrefix - blockSize);
-
+    
     // Start from the beginning of the given CIDR
-    let current = cidrToRange(startCidr).start;
-    const maxIp = cidrToRange(startCidr).end;
-
+    let current = startCidrRange.start;
+    const maxIp = startCidrRange.end;
+    
     // Iterate through existing ranges
     for (let i = 0; i <= existingRanges.length; i++) {
         const nextRange = existingRanges[i];
+        
         // Align current to block size
         const alignedCurrent = current + ((blockSizeBigInt - (current % blockSizeBigInt)) % blockSizeBigInt);
-
+        
         // Check if we've gone beyond the maximum allowed IP
         if (alignedCurrent + blockSizeBigInt - BigInt(1) > maxIp) {
             return null;
         }
-
+        
         // If we're at the end of existing ranges or found a gap
         if (!nextRange || alignedCurrent + blockSizeBigInt - BigInt(1) < nextRange.start) {
             return `${bigIntToIp(alignedCurrent, version)}/${blockSize}`;
         }
-
-        // Move current pointer to after the current range
-        current = nextRange.end + BigInt(1);
+        
+        // If next range overlaps with our search space, move past it
+        if (nextRange.end >= startCidrRange.start && nextRange.start <= maxIp) {
+            // Move current pointer to after the current range
+            current = nextRange.end + BigInt(1);
+        }
     }
-
+    
     return null;
 }
 

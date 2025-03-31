@@ -324,7 +324,7 @@ PersistentKeepalive = 5`;
 
         let payload: CreateSiteBody = {
             name: data.name,
-            type: data.method
+            type: data.method as any,
         };
 
         if (data.method == "wireguard") {

@@ -133,7 +133,7 @@ export async function updateHolePunch(
 
         return res.status(HttpCode.OK).send({
             destinationIp: site.subnet.split("/")[0],
-            destinationPort: parseInt(site.endpoint.split(":")[1])
+            destinationPort: site.listenPort
         });
     } catch (error) {
         logger.error(error);
