@@ -1,8 +1,8 @@
 import db from "@server/db";
 import { MessageHandler } from "../ws";
-import { clients, Olm, olms, sites } from "@server/db/schema";
+import { clients, clientSites, Olm, olms, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
-import { addPeer, deletePeer } from "../newt/peers";
+import { updatePeer } from "../newt/peers";
 import logger from "@server/logger";
 
 export const handleOlmRelayMessage: MessageHandler = async (context) => {
@@ -29,17 +29,6 @@ export const handleOlmRelayMessage: MessageHandler = async (context) => {
         .where(eq(clients.clientId, clientId))
         .limit(1);
 
-    if (!client || !client.siteId) {
-        logger.warn("Site not found or does not have exit node");
-        return;
-    }
-
-    const [site] = await db
-        .select()
-        .from(sites)
-        .where(eq(sites.siteId, client.siteId))
-        .limit(1);
-
     if (!client) {
         logger.warn("Site not found or does not have exit node");
         return;
@@ -51,19 +40,22 @@ export const handleOlmRelayMessage: MessageHandler = async (context) => {
         return;
     }
 
-    if (!site.subnet) {
-        logger.warn("Site has no subnet");
-        return;
+    const sitesData = await db
+        .select()
+        .from(sites)
+        .innerJoin(clientSites, eq(sites.siteId, clientSites.siteId))
+        .where(eq(clientSites.clientId, client.clientId));
+
+    let jobs: Array<Promise<void>> = [];
+    for (const site of sitesData) {
+        // update the peer on the exit node
+        const job = updatePeer(site.sites.siteId, client.pubKey, {
+            endpoint: "" // this removes the endpoint
+        });
+        jobs.push(job);
     }
 
-    await deletePeer(site.siteId, client.pubKey);
+    await Promise.all(jobs);
 
-    // add the peer to the exit node
-    await addPeer(site.siteId, {
-        publicKey: client.pubKey,
-        allowedIps: [client.subnet],
-        endpoint: "" 
-    });
-
-    return
+    return;
 };
