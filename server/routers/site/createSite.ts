@@ -10,7 +10,6 @@ import { eq, and } from "drizzle-orm";
 import { getUniqueSiteName } from "@server/db/names";
 import { addPeer } from "../gerbil/peers";
 import { fromError } from "zod-validation-error";
-import { hash } from "@node-rs/argon2";
 import { newts } from "@server/db/schema";
 import moment from "moment";
 import { hashPassword } from "@server/auth/password";
