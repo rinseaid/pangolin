@@ -5,6 +5,7 @@ import {
     roleClients,
     sites,
     userClients,
+    clientSites
 } from "@server/db/schema";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
@@ -41,7 +42,6 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
         .select({
             clientId: clients.clientId,
             orgId: clients.orgId,
-            siteNiceId: sites.niceId,
             name: clients.name,
             pubKey: clients.pubKey,
             subnet: clients.subnet,
@@ -49,8 +49,7 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
             megabytesOut: clients.megabytesOut,
             orgName: orgs.name,
             type: clients.type,
-            online: clients.online,
-            siteName: sites.name
+            online: clients.online
         })
         .from(clients)
         .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
@@ -62,8 +61,27 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
         );
 }
 
+async function getSiteAssociations(clientIds: number[]) {
+    if (clientIds.length === 0) return [];
+    
+    return db
+        .select({
+            clientId: clientSites.clientId,
+            siteId: clientSites.siteId,
+            siteName: sites.name,
+            siteNiceId: sites.niceId
+        })
+        .from(clientSites)
+        .leftJoin(sites, eq(clientSites.siteId, sites.siteId))
+        .where(inArray(clientSites.clientId, clientIds));
+}
+
 export type ListClientsResponse = {
-    clients: Awaited<ReturnType<typeof queryClients>>;
+    clients: Array<Awaited<ReturnType<typeof queryClients>>[0] & { sites: Array<{
+        siteId: number;
+        siteName: string | null;
+        siteNiceId: string | null;
+    }> }>;
     pagination: { total: number; limit: number; offset: number };
 };
 
@@ -121,17 +139,18 @@ export async function listClients(
             );
 
         const accessibleClientIds = accessibleClients.map(
-            (site) => site.clientId
+            (client) => client.clientId
         );
         const baseQuery = queryClients(orgId, accessibleClientIds);
 
-        let countQuery = db
+        // Get client count
+        const countQuery = db
             .select({ count: count() })
-            .from(sites)
+            .from(clients)
             .where(
                 and(
-                    inArray(sites.siteId, accessibleClientIds),
-                    eq(sites.orgId, orgId)
+                    inArray(clients.clientId, accessibleClientIds),
+                    eq(clients.orgId, orgId)
                 )
             );
 
@@ -139,9 +158,36 @@ export async function listClients(
         const totalCountResult = await countQuery;
         const totalCount = totalCountResult[0].count;
 
+        // Get associated sites for all clients
+        const clientIds = clientsList.map(client => client.clientId);
+        const siteAssociations = await getSiteAssociations(clientIds);
+
+        // Group site associations by client ID
+        const sitesByClient = siteAssociations.reduce((acc, association) => {
+            if (!acc[association.clientId]) {
+                acc[association.clientId] = [];
+            }
+            acc[association.clientId].push({
+                siteId: association.siteId,
+                siteName: association.siteName,
+                siteNiceId: association.siteNiceId
+            });
+            return acc;
+        }, {} as Record<number, Array<{
+            siteId: number;
+            siteName: string | null;
+            siteNiceId: string | null;
+        }>>);
+
+        // Merge clients with their site associations
+        const clientsWithSites = clientsList.map(client => ({
+            ...client,
+            sites: sitesByClient[client.clientId] || []
+        }));
+
         return response<ListClientsResponse>(res, {
             data: {
-                clients: clientsList,
+                clients: clientsWithSites,
                 pagination: {
                     total: totalCount,
                     limit,
