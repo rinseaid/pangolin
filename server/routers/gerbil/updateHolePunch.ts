@@ -80,10 +80,10 @@ export async function updateHolePunch(
                 .where(eq(clients.clientId, olm.clientId))
                 .returning();
 
-            [site] = await db
-                .select()
-                .from(sites)
-                .where(eq(sites.siteId, client.siteId));
+            // [site] = await db
+            //     .select()
+            //     .from(sites)
+            //     .where(eq(sites.siteId, client.siteId));
 
         } else if (newtId) {
             const { session, newt: newtSession } =

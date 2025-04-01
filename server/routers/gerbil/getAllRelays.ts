@@ -51,32 +51,32 @@ export async function getAllRelays(
             }
         }
         
-        // get the clients on each site and map them to the site
-        const sitesAndClients = await Promise.all(sitesRes.map(async (site) => {
-            const clientsRes = await db.select().from(clients).where(eq(clients.siteId, site.siteId));
-            return {
-                site,
-                clients: clientsRes 
-            };
-        }));
+        // // get the clients on each site and map them to the site
+        // const sitesAndClients = await Promise.all(sitesRes.map(async (site) => {
+        //     const clientsRes = await db.select().from(clients).where(eq(clients.siteId, site.siteId));
+        //     return {
+        //         site,
+        //         clients: clientsRes 
+        //     };
+        // }));
 
         let mappings: { [key: string]: {
             destinationIp: string;
             destinationPort: number;
         } } = {};
 
-        for (const siteAndClients of sitesAndClients) {
-            const { site, clients } = siteAndClients;
-            for (const client of clients) {
-                if (!client.endpoint || !site.endpoint || !site.subnet) {
-                    continue;
-                }
-                mappings[client.endpoint] = {
-                    destinationIp: site.subnet.split("/")[0],
-                    destinationPort: parseInt(site.endpoint.split(":")[1])
-                };
-            }
-        }
+        // for (const siteAndClients of sitesAndClients) {
+        //     const { site, clients } = siteAndClients;
+        //     for (const client of clients) {
+        //         if (!client.endpoint || !site.endpoint || !site.subnet) {
+        //             continue;
+        //         }
+        //         mappings[client.endpoint] = {
+        //             destinationIp: site.subnet.split("/")[0],
+        //             destinationPort: parseInt(site.endpoint.split(":")[1])
+        //         };
+        //     }
+        // }
 
         return res.status(HttpCode.OK).send({ mappings });
     } catch (error) {

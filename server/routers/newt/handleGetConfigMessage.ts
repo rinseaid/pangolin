@@ -6,6 +6,7 @@ import db from "@server/db";
 import { clients, clientSites, Newt, Site, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import { getNextAvailableClientSubnet } from "@server/lib/ip";
+import config from "@server/lib/config";
 
 const inputSchema = z.object({
     publicKey: z.string(),
@@ -58,7 +59,12 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     let site: Site | undefined;
     if (!siteRes.address) {
         let address = await getNextAvailableClientSubnet(siteRes.orgId);
-        address = address.split("/")[0]; // get the first part of the CIDR
+        if (!address) {
+            logger.error("handleGetConfigMessage: No available address");
+            return;
+        }
+
+        address = `${address.split("/")[0]}/${config.getRawConfig().orgs.block_size}` // we want the block size of the whole org
 
         // create a new exit node
         const [updateRes] = await db

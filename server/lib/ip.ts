@@ -218,6 +218,11 @@ export function isIpInCidr(ip: string, cidr: string): boolean {
 }
 
 export async function getNextAvailableClientSubnet(orgId: string): Promise<string> {
+    const [org] = await db  
+        .select()
+        .from(orgs)
+        .where(eq(orgs.orgId, orgId));
+
     const existingAddressesSites = await db
         .select({
             address: sites.address
@@ -233,14 +238,14 @@ export async function getNextAvailableClientSubnet(orgId: string): Promise<strin
         .where(and(isNotNull(clients.subnet), eq(clients.orgId, orgId)));
 
     const addresses = [
-        ...existingAddressesSites.map((site) => site.address),
-        ...existingAddressesClients.map((client) => client.address)
+        ...existingAddressesSites.map((site) => `${site.address?.split("/")[0]}/32`), // we are overriding the 32 so that we pick individual addresses in the subnet of the org for the site and the client even though they are stored with the /block_size of the org
+        ...existingAddressesClients.map((client) => `${client.address.split("/")}/32`)
     ].filter((address) => address !== null) as string[];
 
     let subnet = findNextAvailableCidr(
         addresses,
         32,
-        config.getRawConfig().orgs.subnet_group
+        org.subnet
     ); // pick the sites address in the org
     if (!subnet) {
         throw new Error("No available subnets remaining in space");
