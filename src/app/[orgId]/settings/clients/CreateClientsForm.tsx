@@ -57,8 +57,8 @@ const createClientFormSchema = z.object({
         .max(30, {
             message: "Name must not be longer than 30 characters."
         }),
-    siteIds: z.array(z.number()).min(1, { 
-        message: "Select at least one site." 
+    siteIds: z.array(z.number()).min(1, {
+        message: "Select at least one site."
     })
 });
 
@@ -88,11 +88,12 @@ export default function CreateClientForm({
     const [sites, setSites] = useState<ListSitesResponse["sites"]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
     const [clientDefaults, setClientDefaults] =
         useState<PickClientDefaultsResponse | null>(null);
     const [olmCommand, setOlmCommand] = useState<string | null>(null);
-    const [selectedSites, setSelectedSites] = useState<Array<{id: number, name: string}>>([]);
+    const [selectedSites, setSelectedSites] = useState<
+        Array<{ id: number; name: string }>
+    >([]);
 
     const handleCheckboxChange = (checked: boolean) => {
         setIsChecked(checked);
@@ -108,7 +109,10 @@ export default function CreateClientForm({
 
     useEffect(() => {
         // Update form value when selectedSites changes
-        form.setValue('siteIds', selectedSites.map(site => site.id));
+        form.setValue(
+            "siteIds",
+            selectedSites.map((site) => site.id)
+        );
     }, [selectedSites, form]);
 
     useEffect(() => {
@@ -132,38 +136,39 @@ export default function CreateClientForm({
             setSites(sites);
         };
 
+        const fetchDefaults = async () => {
+            api.get(`/org/${orgId}/pick-client-defaults`)
+                .catch((e) => {
+                    toast({
+                        variant: "destructive",
+                        title: `Error fetching client defaults`,
+                        description: formatAxiosError(e)
+                    });
+                })
+                .then((res) => {
+                    if (res && res.status === 200) {
+                        const data = res.data.data;
+                        setClientDefaults(data);
+                        const olmConfig = `olm --id ${data?.olmId} --secret ${data?.olmSecret} --endpoint ${env.app.dashboardUrl}`;
+                        setOlmCommand(olmConfig);
+                    }
+                });
+        };
         fetchSites();
+        fetchDefaults();
     }, [open]);
 
-    useEffect(() => {
-        if (selectedSites.length === 0) return;
-
-        api.get(`/pick-client-defaults`)
-            .catch((e) => {
-                toast({
-                    variant: "destructive",
-                    title: `Error fetching client defaults`,
-                    description: formatAxiosError(e)
-                });
-            })
-            .then((res) => {
-                if (res && res.status === 200) {
-                    const data = res.data.data;
-                    setClientDefaults(data);
-                    const olmConfig = `olm --id ${data?.olmId} --secret ${data?.olmSecret} --endpoint ${env.app.dashboardUrl}`;
-                    setOlmCommand(olmConfig);
-                }
-            });
-    }, [selectedSites]);
-
     const addSite = (siteId: number, siteName: string) => {
-        if (!selectedSites.some(site => site.id === siteId)) {
-            setSelectedSites([...selectedSites, { id: siteId, name: siteName }]);
+        if (!selectedSites.some((site) => site.id === siteId)) {
+            setSelectedSites([
+                ...selectedSites,
+                { id: siteId, name: siteName }
+            ]);
         }
     };
 
     const removeSite = (siteId: number) => {
-        setSelectedSites(selectedSites.filter(site => site.id !== siteId));
+        setSelectedSites(selectedSites.filter((site) => site.id !== siteId));
     };
 
     async function onSubmit(data: CreateClientFormValues) {
@@ -190,10 +195,9 @@ export default function CreateClientForm({
         } as CreateClientBody;
 
         const res = await api
-            .put<AxiosResponse<CreateClientResponse>>(
-                `/org/${orgId}/client`,
-                payload
-            )
+            .put<
+                AxiosResponse<CreateClientResponse>
+            >(`/org/${orgId}/client`, payload)
             .catch((e) => {
                 toast({
                     variant: "destructive",
@@ -205,14 +209,8 @@ export default function CreateClientForm({
         if (res && res.status === 201) {
             const data = res.data.data;
 
-            // For now we'll just use the first site for display purposes
-            // The actual client will be associated with all selected sites
-            const firstSite = sites.find((site) => site.siteId === selectedSites[0]?.id);
-
             onCreate?.({
                 name: data.name,
-                siteId: firstSite?.niceId || "",
-                siteName: firstSite?.name || "",
                 id: data.clientId,
                 mbIn: "0 MB",
                 mbOut: "0 MB",
@@ -265,12 +263,13 @@ export default function CreateClientForm({
                                                 role="combobox"
                                                 className={cn(
                                                     "justify-between",
-                                                    selectedSites.length === 0 &&
+                                                    selectedSites.length ===
+                                                        0 &&
                                                         "text-muted-foreground"
                                                 )}
                                             >
                                                 {selectedSites.length > 0
-                                                    ? `${selectedSites.length} site${selectedSites.length !== 1 ? 's' : ''} selected`
+                                                    ? `${selectedSites.length} site${selectedSites.length !== 1 ? "s" : ""} selected`
                                                     : "Select sites"}
                                                 <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -288,15 +287,26 @@ export default function CreateClientForm({
                                                         {sites.map((site) => (
                                                             <CommandItem
                                                                 value={`${site.siteId}:${site.name}:${site.niceId}`}
-                                                                key={site.siteId}
+                                                                key={
+                                                                    site.siteId
+                                                                }
                                                                 onSelect={() => {
-                                                                    addSite(site.siteId, site.name);
+                                                                    addSite(
+                                                                        site.siteId,
+                                                                        site.name
+                                                                    );
                                                                 }}
                                                             >
                                                                 <CheckIcon
                                                                     className={cn(
                                                                         "mr-2 h-4 w-4",
-                                                                        selectedSites.some(s => s.id === site.siteId)
+                                                                        selectedSites.some(
+                                                                            (
+                                                                                s
+                                                                            ) =>
+                                                                                s.id ===
+                                                                                site.siteId
+                                                                        )
                                                                             ? "opacity-100"
                                                                             : "opacity-0"
                                                                     )}
@@ -310,15 +320,20 @@ export default function CreateClientForm({
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                
+
                                 {selectedSites.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {selectedSites.map(site => (
-                                            <Badge key={site.id} variant="secondary">
+                                        {selectedSites.map((site) => (
+                                            <Badge
+                                                key={site.id}
+                                                variant="secondary"
+                                            >
                                                 {site.name}
-                                                <button 
+                                                <button
                                                     type="button"
-                                                    onClick={() => removeSite(site.id)} 
+                                                    onClick={() =>
+                                                        removeSite(site.id)
+                                                    }
                                                     className="ml-1 rounded-full outline-none focus:ring-2 focus:ring-offset-2"
                                                 >
                                                     <X className="h-3 w-3" />
@@ -327,9 +342,11 @@ export default function CreateClientForm({
                                         ))}
                                     </div>
                                 )}
-                                
+
                                 <FormDescription>
-                                    The client will have connectivity to the selected sites. The sites must be configured to accept client connections.
+                                    The client will have connectivity to the
+                                    selected sites. The sites must be configured
+                                    to accept client connections.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>

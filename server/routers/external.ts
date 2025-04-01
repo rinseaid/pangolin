@@ -102,8 +102,8 @@ authenticated.get(
 );
 
 authenticated.get(
-    "/pick-client-defaults",
-    verifySiteAccess,
+    "/org/:orgId/pick-client-defaults",
+    verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.createClient),
     client.pickClientDefaults
 );

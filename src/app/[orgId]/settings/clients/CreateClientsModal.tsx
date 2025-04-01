@@ -60,7 +60,7 @@ export default function CreateClientFormModal({
                     <CredenzaFooter>
                         <Button
                             type="submit"
-                            form="create-site-form"
+                            form="create-client-form"
                             loading={loading}
                             disabled={loading || !isChecked}
                             onClick={() => {

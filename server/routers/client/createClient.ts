@@ -30,7 +30,7 @@ const createClientParamsSchema = z
 const createClientSchema = z
     .object({
         name: z.string().min(1).max(255),
-        siteIds: z.array(z.string().transform(Number).pipe(z.number())),
+        siteIds: z.array(z.number().int().positive()),
         olmId: z.string(),
         secret: z.string(),
         type: z.enum(["olm"])

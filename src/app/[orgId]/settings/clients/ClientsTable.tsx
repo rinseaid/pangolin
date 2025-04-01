@@ -29,8 +29,6 @@ import CreateClientFormModal from "./CreateClientsModal";
 
 export type ClientRow = {
     id: number;
-    siteId: string;
-    siteName: string;
     name: string;
     mbIn: string;
     mbOut: string;
@@ -128,33 +126,33 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
                 );
             }
         },
-        {
-            accessorKey: "siteName",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        onClick={() =>
-                            column.toggleSorting(column.getIsSorted() === "asc")
-                        }
-                    >
-                        Site
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                );
-            },
-            cell: ({ row }) => {
-                const r = row.original;
-                return (
-                    <Link href={`/${r.orgId}/settings/sites/${r.siteId}`}>
-                        <Button variant="outline">
-                            {r.siteName}
-                            <ArrowUpRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </Link>
-                );
-            }
-        },
+        // {
+        //     accessorKey: "siteName",
+        //     header: ({ column }) => {
+        //         return (
+        //             <Button
+        //                 variant="ghost"
+        //                 onClick={() =>
+        //                     column.toggleSorting(column.getIsSorted() === "asc")
+        //                 }
+        //             >
+        //                 Site
+        //                 <ArrowUpDown className="ml-2 h-4 w-4" />
+        //             </Button>
+        //         );
+        //     },
+        //     cell: ({ row }) => {
+        //         const r = row.original;
+        //         return (
+        //             <Link href={`/${r.orgId}/settings/sites/${r.siteId}`}>
+        //                 <Button variant="outline">
+        //                     {r.siteName}
+        //                     <ArrowUpRight className="ml-2 h-4 w-4" />
+        //                 </Button>
+        //             </Link>
+        //         );
+        //     }
+        // },
         {
             accessorKey: "online",
             header: ({ column }) => {
