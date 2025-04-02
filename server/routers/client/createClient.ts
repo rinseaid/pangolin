@@ -8,7 +8,8 @@ import {
     roleClients,
     userClients,
     olms,
-    clientSites
+    clientSites,
+    exitNodes
 } from "@server/db/schema";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -57,8 +58,7 @@ export async function createClient(
             );
         }
 
-        const { name, type, siteIds, olmId, secret } =
-            parsedBody.data;
+        const { name, type, siteIds, olmId, secret } = parsedBody.data;
 
         const parsedParams = createClientParamsSchema.safeParse(req.params);
         if (!parsedParams.success) {
@@ -80,15 +80,29 @@ export async function createClient(
 
         const newSubnet = await getNextAvailableClientSubnet(orgId);
 
-        const subnet = `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}` // we want the block size of the whole org
+        const subnet = `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
 
         await db.transaction(async (trx) => {
+            // TODO: more intelligent way to pick the exit node
+
+            // make sure there is an exit node by counting the exit nodes table
+            const nodes = await db.select().from(exitNodes);
+            if (nodes.length === 0) {
+                return next(
+                    createHttpError(
+                        HttpCode.NOT_FOUND,
+                        "No exit nodes available"
+                    )
+                );
+            }
+
+            // get the first exit node
+            const exitNode = nodes[0];
+
             const adminRole = await trx
                 .select()
                 .from(roles)
-                .where(
-                    and(eq(roles.isAdmin, true), eq(roles.orgId, orgId))
-                )
+                .where(and(eq(roles.isAdmin, true), eq(roles.orgId, orgId)))
                 .limit(1);
 
             if (adminRole.length === 0) {
@@ -101,6 +115,7 @@ export async function createClient(
             const [newClient] = await trx
                 .insert(clients)
                 .values({
+                    exitNodeId: exitNode.exitNodeId,
                     orgId,
                     name,
                     subnet,
@@ -124,7 +139,7 @@ export async function createClient(
             // Create site to client associations
             if (siteIds && siteIds.length > 0) {
                 await trx.insert(clientSites).values(
-                    siteIds.map(siteId => ({
+                    siteIds.map((siteId) => ({
                         clientId: newClient.clientId,
                         siteId
                     }))
