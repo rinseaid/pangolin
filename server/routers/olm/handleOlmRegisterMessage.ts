@@ -13,9 +13,12 @@ import { addPeer, deletePeer } from "../newt/peers";
 import logger from "@server/logger";
 
 export const handleOlmRegisterMessage: MessageHandler = async (context) => {
+    logger.info("Handling register olm message!");
     const { message, client: c, sendToClient } = context;
     const olm = c as Olm;
-    logger.info("Handling register olm message!");
+
+    const now = new Date().getTime() / 1000;
+
     if (!olm) {
         logger.warn("Olm not found");
         return;
@@ -50,7 +53,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             .from(exitNodes)
             .where(eq(exitNodes.exitNodeId, client.exitNodeId))
             .limit(1);
-    
+
         // Send holepunch message for each site
         sendToClient(olm.olmId, {
             type: "olm/wg/holepunch",
@@ -58,6 +61,10 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
                 serverPubKey: exitNode.publicKey
             }
         });
+    }
+
+    if (client.lastHolePunch && now - client.lastHolePunch > 6) {
+        logger.warn("Client last hole punch is too old, skipping all sites");
     }
 
     // Update the client's public key
@@ -81,7 +88,6 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
 
     // Prepare an array to store site configurations
     const siteConfigurations = [];
-    const now = new Date().getTime() / 1000;
 
     // Process each site
     for (const { sites: site } of sitesData) {
@@ -105,13 +111,6 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             continue;
         }
 
-        if (client.lastHolePunch && now - client.lastHolePunch > 6) {
-            logger.warn(
-                "Client last hole punch is too old, skipping all sites"
-            );
-            break;
-        }
-
         // If public key changed, delete old peer from this site
         if (pubKeyChanged) {
             logger.info(
@@ -126,7 +125,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         }
 
         // Add the peer to the exit node for this site
-        if (client.endpoint) { 
+        if (client.endpoint) {
             logger.info(
                 `Adding peer ${publicKey} to site ${site.siteId} with endpoint ${client.endpoint}`
             );
@@ -138,7 +137,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         } else {
             logger.warn(
                 `Client ${client.clientId} has no endpoint, skipping peer addition`
-            );  
+            );
         }
 
         // Add site configuration to the array
