@@ -126,12 +126,19 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         }
 
         // Add the peer to the exit node for this site
-        if (client.endpoint) {
+        if (client.endpoint) { 
+            logger.info(
+                `Adding peer ${publicKey} to site ${site.siteId} with endpoint ${client.endpoint}`
+            );
             await addPeer(site.siteId, {
                 publicKey: publicKey,
                 allowedIps: [client.subnet],
                 endpoint: client.endpoint
             });
+        } else {
+            logger.warn(
+                `Client ${client.clientId} has no endpoint, skipping peer addition`
+            );  
         }
 
         // Add site configuration to the array
