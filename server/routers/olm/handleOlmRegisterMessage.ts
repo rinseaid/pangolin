@@ -73,11 +73,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         .set({
             pubKey: publicKey
         })
-        .where(eq(clients.clientId, olm.clientId))
-        .returning();
-
-    // Check if public key changed and handle old peer deletion later
-    const pubKeyChanged = client.pubKey && client.pubKey !== publicKey;
+        .where(eq(clients.clientId, olm.clientId));
 
     // Get all sites data
     const sitesData = await db
@@ -112,7 +108,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         }
 
         // If public key changed, delete old peer from this site
-        if (pubKeyChanged) {
+        if (client.pubKey && client.pubKey != publicKey) {
             logger.info(
                 `Public key mismatch. Deleting old peer from site ${site.siteId}...`
             );
