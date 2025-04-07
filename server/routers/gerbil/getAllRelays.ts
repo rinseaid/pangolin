@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { clients, exitNodes, newts, olms, Site, sites } from "@server/db/schema";
+import { clients, exitNodes, newts, olms, Site, sites, clientSites } from "@server/db/schema";
 import { db } from "@server/db";
 import { eq } from "drizzle-orm";
 import HttpCode from "@server/types/HttpCode";
@@ -12,6 +12,17 @@ import { fromError } from "zod-validation-error";
 const getAllRelaysSchema = z.object({
     publicKey: z.string().optional(),
 });
+
+// Type for peer destination
+interface PeerDestination {
+    destinationIP: string;
+    destinationPort: number;
+}
+
+// Updated mappings type to support multiple destinations per endpoint
+interface ProxyMapping {
+    destinations: PeerDestination[];
+}
 
 export async function getAllRelays(
     req: Request,
@@ -46,38 +57,96 @@ export async function getAllRelays(
         const sitesRes = await db.select().from(sites).where(eq(sites.exitNodeId, exitNode.exitNodeId));
 
         if (sitesRes.length === 0) {
-            return {
+            return res.status(HttpCode.OK).send({
                 mappings: {}
-            }
+            });
         }
         
-        // // get the clients on each site and map them to the site
-        // const sitesAndClients = await Promise.all(sitesRes.map(async (site) => {
-        //     const clientsRes = await db.select().from(clients).where(eq(clients.siteId, site.siteId));
-        //     return {
-        //         site,
-        //         clients: clientsRes 
-        //     };
-        // }));
+        // Initialize mappings object for multi-peer support
+        let mappings: { [key: string]: ProxyMapping } = {};
 
-        let mappings: { [key: string]: {
-            destinationIp: string;
-            destinationPort: number;
-        } } = {};
+        // Process each site
+        for (const site of sitesRes) {
+            if (!site.endpoint || !site.subnet || !site.listenPort) {
+                continue;
+            }
 
-        // for (const siteAndClients of sitesAndClients) {
-        //     const { site, clients } = siteAndClients;
-        //     for (const client of clients) {
-        //         if (!client.endpoint || !site.endpoint || !site.subnet) {
-        //             continue;
-        //         }
-        //         mappings[client.endpoint] = {
-        //             destinationIp: site.subnet.split("/")[0],
-        //             destinationPort: parseInt(site.endpoint.split(":")[1])
-        //         };
-        //     }
-        // }
+            // Find all clients associated with this site through clientSites
+            const clientSitesRes = await db
+                .select()
+                .from(clientSites)
+                .where(eq(clientSites.siteId, site.siteId));
+            
+            for (const clientSite of clientSitesRes) {
+                // Get client information
+                const [client] = await db
+                    .select()
+                    .from(clients)
+                    .where(eq(clients.clientId, clientSite.clientId));
 
+                if (!client || !client.endpoint) {
+                    continue;
+                }
+
+                // Add this site as a destination for the client
+                if (!mappings[client.endpoint]) {
+                    mappings[client.endpoint] = { destinations: [] };
+                }
+
+                // Add site as a destination for this client
+                const destination: PeerDestination = {
+                    destinationIP: site.subnet.split("/")[0],
+                    destinationPort: site.listenPort
+                };
+
+                // Check if this destination is already in the array to avoid duplicates
+                const isDuplicate = mappings[client.endpoint].destinations.some(
+                    dest => dest.destinationIP === destination.destinationIP && 
+                            dest.destinationPort === destination.destinationPort
+                );
+
+                if (!isDuplicate) {
+                    mappings[client.endpoint].destinations.push(destination);
+                }
+            }
+
+            // Also handle site-to-site communication (all sites in the same org)
+            if (site.orgId) {
+                const orgSites = await db
+                    .select()
+                    .from(sites)
+                    .where(eq(sites.orgId, site.orgId));
+                
+                for (const peer of orgSites) {
+                    // Skip self
+                    if (peer.siteId === site.siteId || !peer.endpoint || !peer.subnet || !peer.listenPort) {
+                        continue;
+                    }
+
+                    // Add peer site as a destination for this site
+                    if (!mappings[site.endpoint]) {
+                        mappings[site.endpoint] = { destinations: [] };
+                    }
+
+                    const destination: PeerDestination = {
+                        destinationIP: peer.subnet.split("/")[0],
+                        destinationPort: peer.listenPort
+                    };
+
+                    // Check for duplicates
+                    const isDuplicate = mappings[site.endpoint].destinations.some(
+                        dest => dest.destinationIP === destination.destinationIP && 
+                                dest.destinationPort === destination.destinationPort
+                    );
+
+                    if (!isDuplicate) {
+                        mappings[site.endpoint].destinations.push(destination);
+                    }
+                }
+            }
+        }
+
+        logger.debug(`Returning mappings for ${Object.keys(mappings).length} endpoints`);
         return res.status(HttpCode.OK).send({ mappings });
     } catch (error) {
         logger.error(error);

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { clients, newts, olms, Site, sites } from "@server/db/schema";
+import { clients, newts, olms, Site, sites, clientSites } from "@server/db/schema";
 import { db } from "@server/db";
 import { eq } from "drizzle-orm";
 import HttpCode from "@server/types/HttpCode";
@@ -19,6 +19,12 @@ const updateHolePunchSchema = z.object({
     port: z.number(),
     timestamp: z.number()
 });
+
+// New response type with multi-peer destination support
+interface PeerDestination {
+    destinationIP: string;
+    destinationPort: number;
+}
 
 export async function updateHolePunch(
     req: Request,
@@ -41,7 +47,8 @@ export async function updateHolePunch(
 
         // logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId} or newtId: ${newtId}`);
 
-        let site: Site | undefined;
+        let currentSiteId: number | undefined;
+        let destinations: PeerDestination[] = [];
 
         if (olmId) {
             const { session, olm: olmSession } =
@@ -79,11 +86,43 @@ export async function updateHolePunch(
                 })
                 .where(eq(clients.clientId, olm.clientId))
                 .returning();
+            
+            if (!client) {
+                logger.warn(`Client not found for olm: ${olmId}`);
+                return next(
+                    createHttpError(HttpCode.NOT_FOUND, "Client not found")
+                );
+            }
 
-            // [site] = await db
-            //     .select()
-            //     .from(sites)
-            //     .where(eq(sites.siteId, client.siteId));
+            // Get all sites that this client is connected to
+            const clientSitePairs = await db
+                .select()
+                .from(clientSites)
+                .where(eq(clientSites.clientId, client.clientId));
+            
+            if (clientSitePairs.length === 0) {
+                logger.warn(`No sites found for client: ${client.clientId}`);
+                return next(
+                    createHttpError(HttpCode.NOT_FOUND, "No sites found for client")
+                );
+            }
+            
+            // Get all sites details
+            const siteIds = clientSitePairs.map(pair => pair.siteId);
+            
+            for (const siteId of siteIds) {
+                const [site] = await db
+                    .select()
+                    .from(sites)
+                    .where(eq(sites.siteId, siteId));
+                
+                if (site && site.subnet && site.listenPort) {
+                    destinations.push({
+                        destinationIP: site.subnet.split("/")[0],
+                        destinationPort: site.listenPort
+                    });
+                }
+            }
 
         } else if (newtId) {
             const { session, newt: newtSession } =
@@ -114,7 +153,10 @@ export async function updateHolePunch(
                 );
             }
 
-            [site] = await db
+            currentSiteId = newt.siteId;
+
+            // Update the current site with the new endpoint
+            const [updatedSite] = await db
                 .update(sites)
                 .set({
                     endpoint: `${ip}:${port}`,
@@ -122,18 +164,70 @@ export async function updateHolePunch(
                 })
                 .where(eq(sites.siteId, newt.siteId))
                 .returning();
+            
+            if (!updatedSite || !updatedSite.subnet) {
+                logger.warn(`Site not found: ${newt.siteId}`);
+                return next(
+                    createHttpError(HttpCode.NOT_FOUND, "Site not found")
+                );
+            }
+
+            // Find all clients that connect to this site
+            const sitesClientPairs = await db
+                .select()
+                .from(clientSites)
+                .where(eq(clientSites.siteId, newt.siteId));
+            
+            // Get client details for each client
+            for (const pair of sitesClientPairs) {
+                const [client] = await db
+                    .select()
+                    .from(clients)
+                    .where(eq(clients.clientId, pair.clientId));
+                
+                if (client && client.endpoint) {
+                    const [host, portStr] = client.endpoint.split(':');
+                    if (host && portStr) {
+                        destinations.push({
+                            destinationIP: host,
+                            destinationPort: parseInt(portStr, 10)
+                        });
+                    }
+                }
+            }
+            
+            // If this is a newt/site, also add other sites in the same org
+            if (updatedSite.orgId) {
+                const orgSites = await db
+                    .select()
+                    .from(sites)
+                    .where(eq(sites.orgId, updatedSite.orgId));
+                
+                for (const site of orgSites) {
+                    // Don't add the current site to the destinations
+                    if (site.siteId !== currentSiteId && site.subnet && site.endpoint && site.listenPort) {
+                        const [host, portStr] = site.endpoint.split(':');
+                        if (host && portStr) {
+                            destinations.push({
+                                destinationIP: host,
+                                destinationPort: site.listenPort
+                            });
+                        }
+                    }
+                }
+            }
         }
 
-        if (!site || !site.endpoint || !site.subnet) {
+        if (destinations.length === 0) {
             logger.warn(
-                `Site not found for olmId: ${olmId} or newtId: ${newtId}`
+                `No peer destinations found for olmId: ${olmId} or newtId: ${newtId}`
             );
-            return next(createHttpError(HttpCode.NOT_FOUND, "Site not found"));
+            return next(createHttpError(HttpCode.NOT_FOUND, "No peer destinations found"));
         }
 
+        // Return the new multi-peer structure
         return res.status(HttpCode.OK).send({
-            destinationIp: site.subnet.split("/")[0],
-            destinationPort: site.listenPort
+            destinations: destinations
         });
     } catch (error) {
         logger.error(error);
