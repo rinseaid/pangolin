@@ -45,12 +45,13 @@ export async function updateHolePunch(
 
         const { olmId, newtId, ip, port, timestamp, token } = parsedParams.data;
 
-        // logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId} or newtId: ${newtId}`);
-
+        
         let currentSiteId: number | undefined;
         let destinations: PeerDestination[] = [];
-
+        
         if (olmId) {
+            logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId}`);
+
             const { session, olm: olmSession } =
                 await validateOlmSessionToken(token);
             if (!session || !olmSession) {
@@ -197,33 +198,33 @@ export async function updateHolePunch(
             }
             
             // If this is a newt/site, also add other sites in the same org
-            if (updatedSite.orgId) {
-                const orgSites = await db
-                    .select()
-                    .from(sites)
-                    .where(eq(sites.orgId, updatedSite.orgId));
+        //     if (updatedSite.orgId) {
+        //         const orgSites = await db
+        //             .select()
+        //             .from(sites)
+        //             .where(eq(sites.orgId, updatedSite.orgId));
                 
-                for (const site of orgSites) {
-                    // Don't add the current site to the destinations
-                    if (site.siteId !== currentSiteId && site.subnet && site.endpoint && site.listenPort) {
-                        const [host, portStr] = site.endpoint.split(':');
-                        if (host && portStr) {
-                            destinations.push({
-                                destinationIP: host,
-                                destinationPort: site.listenPort
-                            });
-                        }
-                    }
-                }
-            }
+        //         for (const site of orgSites) {
+        //             // Don't add the current site to the destinations
+        //             if (site.siteId !== currentSiteId && site.subnet && site.endpoint && site.listenPort) {
+        //                 const [host, portStr] = site.endpoint.split(':');
+        //                 if (host && portStr) {
+        //                     destinations.push({
+        //                         destinationIP: host,
+        //                         destinationPort: site.listenPort
+        //                     });
+        //                 }
+        //             }
+        //         }
+        //     }
         }
 
-        if (destinations.length === 0) {
-            logger.warn(
-                `No peer destinations found for olmId: ${olmId} or newtId: ${newtId}`
-            );
-            return next(createHttpError(HttpCode.NOT_FOUND, "No peer destinations found"));
-        }
+        // if (destinations.length === 0) {
+        //     logger.warn(
+        //         `No peer destinations found for olmId: ${olmId} or newtId: ${newtId}`
+        //     );
+        //     return next(createHttpError(HttpCode.NOT_FOUND, "No peer destinations found"));
+        // }
 
         // Return the new multi-peer structure
         return res.status(HttpCode.OK).send({

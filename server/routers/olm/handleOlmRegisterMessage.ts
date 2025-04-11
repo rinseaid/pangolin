@@ -63,8 +63,9 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         });
     }
 
-    if (client.lastHolePunch && now - client.lastHolePunch > 6) {
+    if (now - (client.lastHolePunch || 0) > 6) {
         logger.warn("Client last hole punch is too old, skipping all sites");
+        return;
     }
 
     // Update the client's public key
