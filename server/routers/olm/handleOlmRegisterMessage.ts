@@ -142,7 +142,8 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             siteId: site.siteId,
             endpoint: site.endpoint,
             publicKey: site.publicKey,
-            serverIP: site.address
+            serverIP: site.address,
+            serverPort: site.listenPort,
         });
     }
 

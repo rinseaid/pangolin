@@ -40,22 +40,12 @@ export const handleOlmRelayMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const sitesData = await db
-        .select()
-        .from(sites)
-        .innerJoin(clientSites, eq(sites.siteId, clientSites.siteId))
-        .where(eq(clientSites.clientId, client.clientId));
+    const { siteId } = message.data;
 
-    let jobs: Array<Promise<void>> = [];
-    for (const site of sitesData) {
-        // update the peer on the exit node
-        const job = updatePeer(site.sites.siteId, client.pubKey, {
-            endpoint: "" // this removes the endpoint
-        });
-        jobs.push(job);
-    }
-
-    await Promise.all(jobs);
+    // update the peer on the exit node
+    await updatePeer(siteId, client.pubKey, {
+        endpoint: "" // this removes the endpoint
+    });
 
     return;
 };
