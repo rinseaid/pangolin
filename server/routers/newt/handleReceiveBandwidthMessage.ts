@@ -37,22 +37,6 @@ export const handleReceiveBandwidthMessage: MessageHandler = async (context) => 
             if (!client) {
                 continue;
             }
-            let online = client.online;
-
-            // if the bandwidth for the client is > 0 then set it to online. if it has been less than 0 (no update) for 5 minutes then set it to offline
-            if (bytesIn > 0) { // only track the bytes in because we are always sending bytes out with persistent keep alive
-                online = true;
-            } else if (client.lastBandwidthUpdate) {
-                const lastBandwidthUpdate = new Date(
-                    client.lastBandwidthUpdate
-                );
-                const currentTime = new Date();
-                const diff =
-                    currentTime.getTime() - lastBandwidthUpdate.getTime();
-                if (diff < 300000) {
-                    online = false;
-                }
-            }
 
             // Update the client's bandwidth usage
             await trx
@@ -61,7 +45,6 @@ export const handleReceiveBandwidthMessage: MessageHandler = async (context) => 
                     megabytesOut: (client.megabytesIn || 0) + bytesIn,
                     megabytesIn: (client.megabytesOut || 0) + bytesOut,
                     lastBandwidthUpdate: new Date().toISOString(),
-                    online
                 })
                 .where(eq(clients.clientId, client.clientId));
         }

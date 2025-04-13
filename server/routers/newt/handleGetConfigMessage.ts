@@ -105,18 +105,22 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         .innerJoin(clientSites, eq(clients.clientId, clientSites.clientId))
         .where(eq(clientSites.siteId, siteId));
 
-    const now = new Date().getTime() / 1000;
     const peers = await Promise.all(
         clientsRes
             .filter((client) => {
-                // This filter wasn't returning anything - fixed to properly filter clients
-                if (
-                    !client.clients.lastHolePunch ||
-                    now - client.clients.lastHolePunch > 6
-                ) {
-                    logger.warn("Client last hole punch is too old");
+                if (!client.clients.pubKey) {
                     return false;
                 }
+                if (!client.clients.subnet) {
+                    return false;
+                }
+                if (!client.clients.endpoint) {
+                    return false;
+                }
+                if (!client.clients.online) {
+                    return false;
+                }
+
                 return true;
             })
             .map(async (client) => {

@@ -153,6 +153,7 @@ export const clients = sqliteTable("clients", {
     megabytesIn: integer("bytesIn"),
     megabytesOut: integer("bytesOut"),
     lastBandwidthUpdate: text("lastBandwidthUpdate"),
+    lastPing: text("lastPing"),
     type: text("type").notNull(), // "olm"
     online: integer("online", { mode: "boolean" }).notNull().default(false),
     endpoint: text("endpoint"),

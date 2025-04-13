@@ -1,6 +1,5 @@
-import { handleNewtRegisterMessage, handleReceiveBandwidthMessage } from "./newt";
-import { handleOlmRegisterMessage, handleOlmRelayMessage } from "./olm";
-import { handleGetConfigMessage } from "./newt/handleGetConfigMessage";
+import { handleNewtRegisterMessage, handleReceiveBandwidthMessage, handleGetConfigMessage } from "./newt";
+import { handleOlmRegisterMessage, handleOlmRelayMessage, handleOlmPingMessage } from "./olm";
 import { MessageHandler } from "./ws";
 
 export const messageHandlers: Record<string, MessageHandler> = {
@@ -8,5 +7,6 @@ export const messageHandlers: Record<string, MessageHandler> = {
     "olm/wg/register": handleOlmRegisterMessage,
     "newt/wg/get-config": handleGetConfigMessage,
     "newt/receive-bandwidth": handleReceiveBandwidthMessage,
-    "olm/wg/relay": handleOlmRelayMessage
+    "olm/wg/relay": handleOlmRelayMessage,
+    "olm/ping": handleOlmPingMessage
 };
