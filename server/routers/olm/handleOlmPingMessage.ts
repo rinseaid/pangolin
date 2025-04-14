@@ -3,7 +3,6 @@ import { MessageHandler } from "../ws";
 import { clients, Olm } from "@server/db/schema";
 import { eq, lt, isNull } from "drizzle-orm";
 import logger from "@server/logger";
-import { time } from "console";
 
 // Track if the offline checker interval is running
 let offlineCheckerInterval: NodeJS.Timeout | null = null;

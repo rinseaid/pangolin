@@ -3,14 +3,22 @@ import { MessageHandler } from "../ws";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import db from "@server/db";
-import { clients, clientSites, Newt, Site, sites } from "@server/db/schema";
+import {
+    clients,
+    clientSites,
+    Newt,
+    Site,
+    sites,
+    olms
+} from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import { getNextAvailableClientSubnet } from "@server/lib/ip";
 import config from "@server/lib/config";
+import { addPeer } from "../olm/peers";
 
 const inputSchema = z.object({
     publicKey: z.string(),
-    port: z.number().int().positive(),
+    port: z.number().int().positive()
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -43,42 +51,42 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     }
 
     const { publicKey, port } = message.data as Input;
-
     const siteId = newt.siteId;
 
-    const [siteRes] = await db
+    // Get the current site data
+    const [existingSite] = await db
         .select()
         .from(sites)
         .where(eq(sites.siteId, siteId));
 
-    if (!siteRes) {
+    if (!existingSite) {
         logger.warn("handleGetConfigMessage: Site not found");
         return;
     }
 
     let site: Site | undefined;
-    if (!siteRes.address) {
-        let address = await getNextAvailableClientSubnet(siteRes.orgId);
+    if (!existingSite.address) {
+        // This is a new site configuration
+        let address = await getNextAvailableClientSubnet(existingSite.orgId);
         if (!address) {
             logger.error("handleGetConfigMessage: No available address");
             return;
         }
 
-        address = `${address.split("/")[0]}/${config.getRawConfig().orgs.block_size}` // we want the block size of the whole org
+        address = `${address.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
 
-        // create a new exit node
+        // Update the site with new WireGuard info
         const [updateRes] = await db
             .update(sites)
             .set({
                 publicKey,
                 address,
-                listenPort: port,
+                listenPort: port
             })
             .where(eq(sites.siteId, siteId))
             .returning();
 
         site = updateRes;
-
         logger.info(`Updated site ${siteId} with new WG Newt info`);
     } else {
         // update the endpoint and the public key
@@ -86,7 +94,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             .update(sites)
             .set({
                 publicKey,
-                listenPort: port,
+                listenPort: port
             })
             .where(eq(sites.siteId, siteId))
             .returning();
@@ -99,12 +107,14 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
+    // Get all clients connected to this site
     const clientsRes = await db
         .select()
         .from(clients)
         .innerJoin(clientSites, eq(clients.clientId, clientSites.clientId))
         .where(eq(clientSites.siteId, siteId));
 
+    // Prepare peers data for the response
     const peers = await Promise.all(
         clientsRes
             .filter((client) => {
@@ -124,29 +134,49 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
                 return true;
             })
             .map(async (client) => {
-                return {
-                    publicKey: client.clients.pubKey,
-                    allowedIps: [client.clients.subnet],
-                    endpoint: client.clients.endpoint
+                const peerData = {
+                    publicKey: client.clients.pubKey!,
+                    allowedIps: [client.clients.subnet!],
+                    endpoint: client.clientSites.isRelayed ? "" : client.clients.endpoint! // if its relayed it should be localhost
                 };
+
+                // Add or update this peer on the olm if it is connected
+                try {
+                    await addPeer(client.clients.clientId, {
+                        ...peerData,
+                        siteId: siteId,
+                        serverIP: site.address,
+                        serverPort: site.listenPort
+                    });
+                } catch (error) {
+                    logger.error(
+                        `Failed to add/update peer ${client.clients.pubKey} to newt ${newt.newtId}: ${error}`
+                    );
+                }
+
+                return peerData;
             })
     );
 
+    // Filter out any null values from peers that didn't have an olm
+    const validPeers = peers.filter((peer) => peer !== null);
+
+    // Build the configuration response
     const configResponse = {
         ipAddress: site.address,
-        peers
+        peers: validPeers
     };
 
     logger.debug("Sending config: ", configResponse);
 
     return {
         message: {
-            type: "newt/wg/receive-config", // what to make the response type?
+            type: "newt/wg/receive-config",
             data: {
                 ...configResponse
             }
         },
-        broadcast: false, // Send to all clients
-        excludeSender: false // Include sender in broadcast
+        broadcast: false,
+        excludeSender: false
     };
 };

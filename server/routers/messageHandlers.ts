@@ -1,5 +1,5 @@
 import { handleNewtRegisterMessage, handleReceiveBandwidthMessage, handleGetConfigMessage } from "./newt";
-import { handleOlmRegisterMessage, handleOlmRelayMessage, handleOlmPingMessage } from "./olm";
+import { handleOlmRegisterMessage, handleOlmRelayMessage, handleOlmPingMessage, startOfflineChecker } from "./olm";
 import { MessageHandler } from "./ws";
 
 export const messageHandlers: Record<string, MessageHandler> = {
@@ -10,3 +10,5 @@ export const messageHandlers: Record<string, MessageHandler> = {
     "olm/wg/relay": handleOlmRelayMessage,
     "olm/ping": handleOlmPingMessage
 };
+
+startOfflineChecker(); // this is to handle the offline check for olms

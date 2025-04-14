@@ -68,13 +68,26 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         return;
     }
 
-    // Update the client's public key
-    await db
-        .update(clients)
-        .set({
-            pubKey: publicKey
-        })
-        .where(eq(clients.clientId, olm.clientId));
+    if (client.pubKey !== publicKey) {
+        logger.info(
+            "Public key mismatch. Updating public key and clearing session info..."
+        );
+        // Update the client's public key
+        await db
+            .update(clients)
+            .set({
+                pubKey: publicKey
+            })
+            .where(eq(clients.clientId, olm.clientId));
+
+        // set isRelay to false for all of the client's sites to reset the connection metadata
+        await db
+            .update(clientSites)
+            .set({
+                isRelayed: false
+            })
+            .where(eq(clientSites.clientId, olm.clientId));
+    }
 
     // Get all sites data
     const sitesData = await db
@@ -143,7 +156,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             endpoint: site.endpoint,
             publicKey: site.publicKey,
             serverIP: site.address,
-            serverPort: site.listenPort,
+            serverPort: site.listenPort
         });
     }
 
