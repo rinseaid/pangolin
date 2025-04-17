@@ -9,7 +9,8 @@ import {
     userClients,
     olms,
     clientSites,
-    exitNodes
+    exitNodes,
+    orgs
 } from "@server/db/schema";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -19,7 +20,8 @@ import { eq, and } from "drizzle-orm";
 import { fromError } from "zod-validation-error";
 import moment from "moment";
 import { hashPassword } from "@server/auth/password";
-import { isValidCIDR } from "@server/lib/validators";
+import { isValidCIDR, isValidIP } from "@server/lib/validators";
+import { isIpInCidr } from "@server/lib/ip";
 
 const createClientParamsSchema = z
     .object({
@@ -78,7 +80,7 @@ export async function createClient(
             );
         }
 
-        if (subnet && !isValidCIDR(subnet)) {
+        if (subnet && !isValidIP(subnet)) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
@@ -86,6 +88,31 @@ export async function createClient(
                 )
             );
         }
+
+        const [org] = await db
+            .select()
+            .from(orgs)
+            .where(eq(orgs.orgId, orgId));
+
+        if (!org) {
+            return next(
+                createHttpError(
+                    HttpCode.NOT_FOUND,
+                    `Organization with ID ${orgId} not found`
+                )
+            );
+        }
+
+        if (subnet && !isIpInCidr(subnet, org.subnet)) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    "IP is not in the CIDR range of the subnet."
+                )
+            );
+        }
+
+        const updatedSubnet = `${subnet}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
 
         await db.transaction(async (trx) => {
             // TODO: more intelligent way to pick the exit node
@@ -123,7 +150,7 @@ export async function createClient(
                     exitNodeId: exitNode.exitNodeId,
                     orgId,
                     name,
-                    subnet,
+                    subnet: updatedSubnet,
                     type
                 })
                 .returning();

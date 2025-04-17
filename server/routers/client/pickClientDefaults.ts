@@ -44,7 +44,7 @@ export async function pickClientDefaults(
 
         const newSubnet = await getNextAvailableClientSubnet(orgId);
 
-        const subnet = `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
+        const subnet = newSubnet.split("/")[0];
 
         return response<PickClientDefaultsResponse>(res, {
             data: {

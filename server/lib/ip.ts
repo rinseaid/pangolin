@@ -275,12 +275,3 @@ export async function getNextAvailableOrgSubnet(): Promise<string> {
 
     return subnet;
 }
-
-export function isValidCidr(cidr: string): boolean {
-    try {
-        cidrToRange(cidr);
-        return true;
-    } catch (e) {
-        return false;
-    }
-}

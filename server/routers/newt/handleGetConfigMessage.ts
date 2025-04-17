@@ -73,6 +73,8 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
             return;
         }
 
+        // TODO: WE NEED TO PULL THE CIDR FROM THE DB SUBNET ON THE ORG INSTEAD BECAUSE IT CAN BE DIFFERENT
+        // TODO: SOMEHOW WE NEED TO ALLOW THEM TO PUT IN THEIR OWN ADDRESS
         address = `${address.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
 
         // Update the site with new WireGuard info
