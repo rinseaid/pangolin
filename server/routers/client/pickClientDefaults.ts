@@ -4,11 +4,22 @@ import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { generateId } from "@server/auth/sessions/app";
+import { getNextAvailableClientSubnet } from "@server/lib/ip";
+import config from "@server/lib/config";
+import { z } from "zod";
+import { fromError } from "zod-validation-error";
 
 export type PickClientDefaultsResponse = {
     olmId: string;
     olmSecret: string;
+    subnet: string;
 };
+
+const pickClientDefaultsSchema = z
+    .object({
+        orgId: z.string()
+    })
+    .strict();
 
 export async function pickClientDefaults(
     req: Request,
@@ -16,13 +27,30 @@ export async function pickClientDefaults(
     next: NextFunction
 ): Promise<any> {
     try {
+        const parsedParams = pickClientDefaultsSchema.safeParse(req.params);
+        if (!parsedParams.success) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    fromError(parsedParams.error).toString()
+                )
+            );
+        }
+
+        const { orgId } = parsedParams.data;
+
         const olmId = generateId(15);
         const secret = generateId(48);
+
+        const newSubnet = await getNextAvailableClientSubnet(orgId);
+
+        const subnet = `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
 
         return response<PickClientDefaultsResponse>(res, {
             data: {
                 olmId: olmId,
-                olmSecret: secret
+                olmSecret: secret,
+                subnet: subnet
             },
             success: true,
             error: false,

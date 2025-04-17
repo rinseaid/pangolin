@@ -19,8 +19,7 @@ import { eq, and } from "drizzle-orm";
 import { fromError } from "zod-validation-error";
 import moment from "moment";
 import { hashPassword } from "@server/auth/password";
-import { getNextAvailableClientSubnet } from "@server/lib/ip";
-import config from "@server/lib/config";
+import { isValidCIDR } from "@server/lib/validators";
 
 const createClientParamsSchema = z
     .object({
@@ -34,6 +33,7 @@ const createClientSchema = z
         siteIds: z.array(z.number().int().positive()),
         olmId: z.string(),
         secret: z.string(),
+        subnet: z.string(),
         type: z.enum(["olm"])
     })
     .strict();
@@ -58,7 +58,7 @@ export async function createClient(
             );
         }
 
-        const { name, type, siteIds, olmId, secret } = parsedBody.data;
+        const { name, type, siteIds, olmId, secret, subnet } = parsedBody.data;
 
         const parsedParams = createClientParamsSchema.safeParse(req.params);
         if (!parsedParams.success) {
@@ -78,9 +78,14 @@ export async function createClient(
             );
         }
 
-        const newSubnet = await getNextAvailableClientSubnet(orgId);
-
-        const subnet = `${newSubnet.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
+        if (subnet && !isValidCIDR(subnet)) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    "Invalid subnet format. Please provide a valid CIDR notation."
+                )
+            );
+        }
 
         await db.transaction(async (trx) => {
             // TODO: more intelligent way to pick the exit node

@@ -19,12 +19,13 @@ import { createAdminRole } from "@server/setup/ensureActions";
 import config from "@server/lib/config";
 import { fromError } from "zod-validation-error";
 import { defaultRoleAllowedActions } from "../role";
-import { getNextAvailableOrgSubnet } from "@server/lib/ip";
+import { isValidCIDR } from "@server/lib/validators";
 
 const createOrgSchema = z
     .object({
         orgId: z.string(),
-        name: z.string().min(1).max(255)
+        name: z.string().min(1).max(255),
+        subnet: z.string()
     })
     .strict();
 
@@ -68,7 +69,16 @@ export async function createOrg(
             );
         }
 
-        const { orgId, name } = parsedBody.data;
+        const { orgId, name, subnet } = parsedBody.data;
+
+        if (subnet && !isValidCIDR(subnet)) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    "Invalid subnet format. Please provide a valid CIDR notation."
+                )
+            );
+        }
 
         // make sure the orgId is unique
         const orgExists = await db
@@ -88,8 +98,6 @@ export async function createOrg(
 
         let error = "";
         let org: Org | null = null;
-
-        const subnet = await getNextAvailableOrgSubnet();
 
         await db.transaction(async (trx) => {
             const allDomains = await trx

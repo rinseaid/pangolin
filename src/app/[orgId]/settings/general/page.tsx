@@ -1,5 +1,4 @@
 "use client";
-
 import ConfirmDeleteDialog from "@app/components/ConfirmDeleteDialog";
 import { Button } from "@app/components/ui/button";
 import { useOrgContext } from "@app/hooks/useOrgContext";
@@ -22,17 +21,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
 import { formatAxiosError } from "@app/lib/api";
-import { AlertTriangle, Trash2 } from "lucide-react";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle
-} from "@/components/ui/card";
 import { AxiosResponse } from "axios";
 import { DeleteOrgResponse, ListOrgsResponse } from "@server/routers/org";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
     SettingsContainer,
     SettingsSection,
@@ -44,27 +35,28 @@ import {
     SettingsSectionFooter
 } from "@app/components/Settings";
 
+// Updated schema to include subnet field
 const GeneralFormSchema = z.object({
-    name: z.string()
+    name: z.string(),
+    subnet: z.string().optional()
 });
 
 type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
 
 export default function GeneralPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
     const { orgUser } = userOrgUserContext();
     const router = useRouter();
     const { org } = useOrgContext();
     const api = createApiClient(useEnvContext());
-
     const [loadingDelete, setLoadingDelete] = useState(false);
     const [loadingSave, setLoadingSave] = useState(false);
-
+    
     const form = useForm<GeneralFormValues>({
         resolver: zodResolver(GeneralFormSchema),
         defaultValues: {
-            name: org?.org.name
+            name: org?.org.name,
+            subnet: org?.org.subnet || "" // Add default value for subnet
         },
         mode: "onChange"
     });
@@ -75,12 +67,10 @@ export default function GeneralPage() {
             const res = await api.delete<AxiosResponse<DeleteOrgResponse>>(
                 `/org/${org?.org.orgId}`
             );
-
             toast({
                 title: "Organization deleted",
                 description: "The organization and its data has been deleted."
             });
-
             if (res.status === 200) {
                 pickNewOrgAndNavigate();
             }
@@ -102,7 +92,6 @@ export default function GeneralPage() {
     async function pickNewOrgAndNavigate() {
         try {
             const res = await api.get<AxiosResponse<ListOrgsResponse>>(`/orgs`);
-
             if (res.status === 200) {
                 if (res.data.data.orgs.length > 0) {
                     const orgId = res.data.data.orgs[0].orgId;
@@ -130,14 +119,14 @@ export default function GeneralPage() {
         setLoadingSave(true);
         await api
             .post(`/org/${org?.org.orgId}`, {
-                name: data.name
+                name: data.name,
+                subnet: data.subnet // Include subnet in the API request
             })
             .then(() => {
                 toast({
                     title: "Organization updated",
                     description: "The organization has been updated."
                 });
-
                 router.refresh();
             })
             .catch((e) => {
@@ -182,7 +171,6 @@ export default function GeneralPage() {
                 string={org?.org.name || ""}
                 title="Delete Organization"
             />
-
             <SettingsSection>
                 <SettingsSectionHeader>
                     <SettingsSectionTitle>
@@ -192,7 +180,6 @@ export default function GeneralPage() {
                         Manage your organization details and configuration
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
-
                 <SettingsSectionBody>
                     <SettingsSectionForm>
                         <Form {...form}>
@@ -218,11 +205,31 @@ export default function GeneralPage() {
                                         </FormItem>
                                     )}
                                 />
+                                
+                                {/* New FormField for subnet input */}
+                                <FormField
+                                    control={form.control}
+                                    name="subnet"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Subnet</FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    {...field} 
+                                                    placeholder="e.g., 192.168.1.0/24"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                            <FormDescription>
+                                                The subnet for this organization's network configuration.
+                                            </FormDescription>
+                                        </FormItem>
+                                    )}
+                                />
                             </form>
                         </Form>
                     </SettingsSectionForm>
                 </SettingsSectionBody>
-
                 <SettingsSectionFooter>
                     <Button
                         type="submit"
@@ -234,7 +241,6 @@ export default function GeneralPage() {
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
-
             <SettingsSection>
                 <SettingsSectionHeader>
                     <SettingsSectionTitle>
@@ -245,7 +251,6 @@ export default function GeneralPage() {
                         be certain.
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
-
                 <SettingsSectionFooter>
                     <Button
                         variant="destructive"

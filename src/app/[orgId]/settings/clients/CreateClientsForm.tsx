@@ -59,6 +59,9 @@ const createClientFormSchema = z.object({
         }),
     siteIds: z.array(z.number()).min(1, {
         message: "Select at least one site."
+    }),
+    subnet: z.string().min(1, {
+        message: "Subnet is required."
     })
 });
 
@@ -66,7 +69,8 @@ type CreateClientFormValues = z.infer<typeof createClientFormSchema>;
 
 const defaultValues: Partial<CreateClientFormValues> = {
     name: "",
-    siteIds: []
+    siteIds: [],
+    subnet: ""
 };
 
 type CreateClientFormProps = {
@@ -151,6 +155,11 @@ export default function CreateClientForm({
                         setClientDefaults(data);
                         const olmConfig = `olm --id ${data?.olmId} --secret ${data?.olmSecret} --endpoint ${env.app.dashboardUrl}`;
                         setOlmCommand(olmConfig);
+                        
+                        // Set the subnet value from client defaults
+                        if (data?.subnet) {
+                            form.setValue("subnet", data.subnet);
+                        }
                     }
                 });
         };
@@ -191,6 +200,7 @@ export default function CreateClientForm({
             siteIds: data.siteIds,
             olmId: clientDefaults.olmId,
             secret: clientDefaults.olmSecret,
+            subnet: data.subnet,
             type: "olm"
         } as CreateClientBody;
 
@@ -244,6 +254,27 @@ export default function CreateClientForm({
                                         {...field}
                                     />
                                 </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="subnet"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Subnet</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        autoComplete="off"
+                                        placeholder="Subnet"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    The subnet that this client will use for connectivity.
+                                </FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
