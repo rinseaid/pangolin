@@ -108,6 +108,7 @@ export async function createSite(
             );
         }
 
+        let updatedAddress = null;
         if (address) {
             if (!isValidIP(address)) {
                 return next(
@@ -142,6 +143,8 @@ export async function createSite(
                     )
                 );
             }
+
+            updatedAddress = `${address}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
         }
 
         const niceId = await getUniqueSiteName(orgId);
@@ -167,7 +170,7 @@ export async function createSite(
                         exitNodeId,
                         name,
                         niceId,
-                        address: address || null,
+                        address: updatedAddress || null,
                         subnet,
                         type,
                         ...(pubKey && type == "wireguard" && { pubKey })
@@ -182,7 +185,7 @@ export async function createSite(
                         orgId,
                         name,
                         niceId,
-                        address: address || null,
+                        address: updatedAddress || null,
                         type,
                         subnet: "0.0.0.0/0"
                     })
