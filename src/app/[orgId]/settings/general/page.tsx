@@ -206,7 +206,6 @@ export default function GeneralPage() {
                                     )}
                                 />
                                 
-                                {/* New FormField for subnet input */}
                                 <FormField
                                     control={form.control}
                                     name="subnet"
@@ -215,8 +214,8 @@ export default function GeneralPage() {
                                             <FormLabel>Subnet</FormLabel>
                                             <FormControl>
                                                 <Input 
-                                                    {...field} 
-                                                    placeholder="e.g., 192.168.1.0/24"
+                                                    {...field}
+                                                    disabled={true}
                                                 />
                                             </FormControl>
                                             <FormMessage />

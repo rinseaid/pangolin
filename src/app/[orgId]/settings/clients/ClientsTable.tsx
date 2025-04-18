@@ -30,6 +30,8 @@ import CreateClientFormModal from "./CreateClientsModal";
 export type ClientRow = {
     id: number;
     name: string;
+    subnet: string;
+    // siteIds: string;
     mbIn: string;
     mbOut: string;
     orgId: string;
@@ -53,7 +55,7 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
 
     const api = createApiClient(useEnvContext());
 
-    const deleteSite = (clientId: number) => {
+    const deleteClient = (clientId: number) => {
         api.delete(`/client/${clientId}`)
             .catch((e) => {
                 console.error("Error deleting client", e);
@@ -218,25 +220,41 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
                     </Button>
                 );
             }
+        },
+        {
+            accessorKey: "subnet",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() =>
+                            column.toggleSorting(column.getIsSorted() === "asc")
+                        }
+                    >
+                        Address
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                );
+            }
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const clientRow = row.original;
+                return (
+                    <div className="flex items-center justify-end">
+                        <Link
+                            href={`/${clientRow.orgId}/settings/clients/${clientRow.id}`}
+                        >
+                            <Button variant={"outlinePrimary"} className="ml-2">
+                                Edit
+                                <ArrowRight className="ml-2 w-4 h-4" />
+                            </Button>
+                        </Link>
+                    </div>
+                );
+            }
         }
-        // {
-        //     id: "actions",
-        //     cell: ({ row }) => {
-        //         const siteRow = row.original;
-        //         return (
-        //             <div className="flex items-center justify-end">
-        //                 <Link
-        //                     href={`/${siteRow.orgId}/settings/sites/${siteRow.nice}`}
-        //                 >
-        //                     <Button variant={"outline"} className="ml-2">
-        //                         Edit
-        //                         <ArrowRight className="ml-2 w-4 h-4" />
-        //                     </Button>
-        //                 </Link>
-        //             </div>
-        //         );
-        //     }
-        // }
     ];
 
     return (
@@ -281,7 +299,7 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
                         </div>
                     }
                     buttonText="Confirm Delete Client"
-                    onConfirm={async () => deleteSite(selectedClient!.id)}
+                    onConfirm={async () => deleteClient(selectedClient!.id)}
                     string={selectedClient.name}
                     title="Delete Client"
                 />

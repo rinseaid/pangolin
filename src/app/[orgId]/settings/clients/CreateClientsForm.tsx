@@ -222,6 +222,7 @@ export default function CreateClientForm({
             onCreate?.({
                 name: data.name,
                 id: data.clientId,
+                subnet: data.subnet,
                 mbIn: "0 MB",
                 mbOut: "0 MB",
                 orgId: orgId as string,

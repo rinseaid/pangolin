@@ -120,6 +120,13 @@ authenticated.get(
     client.listClients
 );
 
+authenticated.get(
+    "/org/:orgId/client/:clientId",
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.getClient),
+    client.getClient
+);
+
 authenticated.put(
     "/org/:orgId/client",
     verifyOrgAccess,

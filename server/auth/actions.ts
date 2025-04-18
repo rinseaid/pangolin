@@ -66,6 +66,7 @@ export enum ActionsEnum {
     deleteClient = "deleteClient",
     updateClient = "updateClient",
     listClients = "listClients",
+    getClient = "getClient",
     listOrgDomains = "listOrgDomains",
 }
 

@@ -34,6 +34,7 @@ export function SidebarNav({
     const niceId = params.niceId as string;
     const resourceId = params.resourceId as string;
     const userId = params.userId as string;
+    const clientId = params.clientId as string;
 
     const [selectedValue, setSelectedValue] = React.useState<string>(getSelectedValue());
 
@@ -59,7 +60,8 @@ export function SidebarNav({
             .replace("{orgId}", orgId)
             .replace("{niceId}", niceId)
             .replace("{resourceId}", resourceId)
-            .replace("{userId}", userId);
+            .replace("{userId}", userId)
+            .replace("{clientId}", clientId);
     }
 
     return (

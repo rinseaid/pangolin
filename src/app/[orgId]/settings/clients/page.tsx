@@ -37,6 +37,7 @@ export default async function ClientsPage(props: ClientsPageProps) {
         return {
             name: client.name,
             id: client.clientId,
+            subnet: client.subnet.split("/")[0],
             mbIn: formatSize(client.megabytesIn || 0),
             mbOut: formatSize(client.megabytesOut || 0),
             orgId: params.orgId,
