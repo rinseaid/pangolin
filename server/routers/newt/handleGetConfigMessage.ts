@@ -64,45 +64,15 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         return;
     }
 
-    let site: Site | undefined;
-    if (!existingSite.address) {
-        // This is a new site configuration
-        let address = await getNextAvailableClientSubnet(existingSite.orgId);
-        if (!address) {
-            logger.error("handleGetConfigMessage: No available address");
-            return;
-        }
-
-        // TODO: WE NEED TO PULL THE CIDR FROM THE DB SUBNET ON THE ORG INSTEAD BECAUSE IT CAN BE DIFFERENT
-        // TODO: SOMEHOW WE NEED TO ALLOW THEM TO PUT IN THEIR OWN ADDRESS
-        address = `${address.split("/")[0]}/${config.getRawConfig().orgs.block_size}`; // we want the block size of the whole org
-
-        // Update the site with new WireGuard info
-        const [updateRes] = await db
-            .update(sites)
-            .set({
-                publicKey,
-                address,
-                listenPort: port
-            })
-            .where(eq(sites.siteId, siteId))
-            .returning();
-
-        site = updateRes;
-        logger.info(`Updated site ${siteId} with new WG Newt info`);
-    } else {
-        // update the endpoint and the public key
-        const [siteRes] = await db
-            .update(sites)
-            .set({
-                publicKey,
-                listenPort: port
-            })
-            .where(eq(sites.siteId, siteId))
-            .returning();
-
-        site = siteRes;
-    }
+    // update the endpoint and the public key
+    const [site] = await db
+        .update(sites)
+        .set({
+            publicKey,
+            listenPort: port
+        })
+        .where(eq(sites.siteId, siteId))
+        .returning();
 
     if (!site) {
         logger.error("handleGetConfigMessage: Failed to update site");
@@ -139,7 +109,9 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
                 const peerData = {
                     publicKey: client.clients.pubKey!,
                     allowedIps: [client.clients.subnet!],
-                    endpoint: client.clientSites.isRelayed ? "" : client.clients.endpoint! // if its relayed it should be localhost
+                    endpoint: client.clientSites.isRelayed
+                        ? ""
+                        : client.clients.endpoint! // if its relayed it should be localhost
                 };
 
                 // Add or update this peer on the olm if it is connected

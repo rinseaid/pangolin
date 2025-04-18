@@ -80,7 +80,7 @@ export async function createClient(
             );
         }
 
-        if (subnet && !isValidIP(subnet)) {
+        if (!isValidIP(subnet)) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
@@ -103,7 +103,7 @@ export async function createClient(
             );
         }
 
-        if (subnet && !isIpInCidr(subnet, org.subnet)) {
+        if (!isIpInCidr(subnet, org.subnet)) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
@@ -113,6 +113,22 @@ export async function createClient(
         }
 
         const updatedSubnet = `${subnet}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
+
+        // make sure the subnet is unique
+        const subnetExists = await db
+            .select()
+            .from(clients)
+            .where(eq(clients.subnet, updatedSubnet))
+            .limit(1);
+
+        if (subnetExists.length > 0) {
+            return next(
+                createHttpError(
+                    HttpCode.CONFLICT,
+                    `Subnet ${subnet} already exists`
+                )
+            );
+        }
 
         await db.transaction(async (trx) => {
             // TODO: more intelligent way to pick the exit node

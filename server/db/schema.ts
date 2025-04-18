@@ -44,8 +44,8 @@ export const sites = sqliteTable("sites", {
     type: text("type").notNull(), // "newt" or "wireguard"
     online: integer("online", { mode: "boolean" }).notNull().default(false),
 
-    // exit node stuff that is how to connect to the site when it has a gerbil
-    address: text("address"), // this is the address of the wireguard interface in gerbil
+    // exit node stuff that is how to connect to the site when it has a wg server
+    address: text("address"), // this is the address of the wireguard interface in newt
     endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
     publicKey: text("pubicKey"),
     lastHolePunch: integer("lastHolePunch"),

@@ -69,7 +69,8 @@ const createSiteFormSchema = z
                 message: "Name must not be longer than 30 characters."
             }),
         method: z.string(),
-        copied: z.boolean()
+        copied: z.boolean(),
+        clientAddress: z.string().optional()
     })
     .refine(
         (data) => {
@@ -130,7 +131,7 @@ export default function Page() {
     const [newtId, setNewtId] = useState("");
     const [newtSecret, setNewtSecret] = useState("");
     const [newtEndpoint, setNewtEndpoint] = useState("");
-
+    const [clientAddress, setClientAddress] = useState("");
     const [publicKey, setPublicKey] = useState("");
     const [privateKey, setPrivateKey] = useState("");
     const [wgConfig, setWgConfig] = useState("");
@@ -315,7 +316,8 @@ PersistentKeepalive = 5`;
         defaultValues: {
             name: "",
             copied: false,
-            method: "newt"
+            method: "newt",
+            clientAddress: ""
         }
     });
 
@@ -324,7 +326,7 @@ PersistentKeepalive = 5`;
 
         let payload: CreateSiteBody = {
             name: data.name,
-            type: data.method as any,
+            type: data.method as any
         };
 
         if (data.method == "wireguard") {
@@ -361,7 +363,8 @@ PersistentKeepalive = 5`;
                 subnet: siteDefaults.subnet,
                 exitNodeId: siteDefaults.exitNodeId,
                 secret: siteDefaults.newtSecret,
-                newtId: siteDefaults.newtId
+                newtId: siteDefaults.newtId,
+                address: clientAddress
             };
         }
 
@@ -431,10 +434,12 @@ PersistentKeepalive = 5`;
                         const newtId = data.newtId;
                         const newtSecret = data.newtSecret;
                         const newtEndpoint = data.endpoint;
+                        const clientAddress = data.clientAddress;
 
                         setNewtId(newtId);
                         setNewtSecret(newtSecret);
                         setNewtEndpoint(newtEndpoint);
+                        setClientAddress(clientAddress);
 
                         hydrateCommands(
                             newtId,
@@ -617,18 +622,6 @@ PersistentKeepalive = 5`;
                                             </InfoSection>
                                         </InfoSections>
 
-                                        <Alert variant="default" className="">
-                                            <InfoIcon className="h-4 w-4" />
-                                            <AlertTitle className="font-semibold">
-                                                Save Your Credentials
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                You will only be able to see
-                                                this once. Make sure to copy it
-                                                to a secure place.
-                                            </AlertDescription>
-                                        </Alert>
-
                                         <Form {...form}>
                                             <form
                                                 className="space-y-4"
@@ -669,95 +662,47 @@ PersistentKeepalive = 5`;
                                                         </FormItem>
                                                     )}
                                                 />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="clientAddress"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                Client Address
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    autoComplete="off"
+                                                                    value={
+                                                                        clientAddress
+                                                                    }
+                                                                    onChange={(
+                                                                        e
+                                                                    ) => {
+                                                                        setClientAddress(
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        );
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                            <FormDescription>
+                                                                Specify the IP
+                                                                address of the
+                                                                host.
+                                                            </FormDescription>
+                                                        </FormItem>
+                                                    )}
+                                                />
                                             </form>
                                         </Form>
-                                    </SettingsSectionBody>
-                                </SettingsSection>
-
-                                <SettingsSection>
-                                    <SettingsSectionHeader>
-                                        <SettingsSectionTitle>
-                                            Install Newt
-                                        </SettingsSectionTitle>
-                                        <SettingsSectionDescription>
-                                            Get Newt running on your system
-                                        </SettingsSectionDescription>
-                                    </SettingsSectionHeader>
-                                    <SettingsSectionBody>
-                                        <div>
-                                            <p className="font-bold mb-3">
-                                                Operating System
-                                            </p>
-                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                                                {[
-                                                    "linux",
-                                                    "docker",
-                                                    "mac",
-                                                    "windows",
-                                                    "freebsd"
-                                                ].map((os) => (
-                                                    <Button
-                                                        key={os}
-                                                        variant={
-                                                            platform === os
-                                                                ? "squareOutlinePrimary"
-                                                                : "squareOutline"
-                                                        }
-                                                        className={`flex-1 min-w-[120px] ${platform === os ? "bg-primary/10" : ""}`}
-                                                        onClick={() => {
-                                                            setPlatform(os);
-                                                        }}
-                                                    >
-                                                        {getPlatformIcon(os)}
-                                                        {getPlatformName(os)}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-bold mb-3">
-                                                {platform === "docker"
-                                                    ? "Method"
-                                                    : "Architecture"}
-                                            </p>
-                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                                                {getArchitectures().map(
-                                                    (arch) => (
-                                                        <Button
-                                                            key={arch}
-                                                            variant={
-                                                                architecture ===
-                                                                arch
-                                                                    ? "squareOutlinePrimary"
-                                                                    : "squareOutline"
-                                                            }
-                                                            className={`flex-1 min-w-[120px] ${architecture === arch ? "bg-primary/10" : ""}`}
-                                                            onClick={() =>
-                                                                setArchitecture(
-                                                                    arch
-                                                                )
-                                                            }
-                                                        >
-                                                            {arch}
-                                                        </Button>
-                                                    )
-                                                )}
-                                            </div>
-                                            <div className="pt-4">
-                                                <p className="font-bold mb-3">
-                                                    Commands
-                                                </p>
-                                                <div className="mt-2">
-                                                    <CopyTextBox
-                                                        text={getCommand().join(
-                                                            "\n"
-                                                        )}
-                                                        outline={true}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
                                     </SettingsSectionBody>
                                 </SettingsSection>
                             </>

@@ -264,7 +264,7 @@ export default function CreateClientForm({
                         name="subnet"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Subnet</FormLabel>
+                                <FormLabel>Address</FormLabel>
                                 <FormControl>
                                     <Input
                                         autoComplete="off"
@@ -273,7 +273,7 @@ export default function CreateClientForm({
                                     />
                                 </FormControl>
                                 <FormDescription>
-                                    The subnet that this client will use for connectivity.
+                                    The address that this client will use for connectivity.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>

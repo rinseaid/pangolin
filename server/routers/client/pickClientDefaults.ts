@@ -5,7 +5,6 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { generateId } from "@server/auth/sessions/app";
 import { getNextAvailableClientSubnet } from "@server/lib/ip";
-import config from "@server/lib/config";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 
@@ -43,6 +42,14 @@ export async function pickClientDefaults(
         const secret = generateId(48);
 
         const newSubnet = await getNextAvailableClientSubnet(orgId);
+        if (!newSubnet) {
+            return next(
+                createHttpError(
+                    HttpCode.INTERNAL_SERVER_ERROR,
+                    "No available subnet found"
+                )
+            );
+        }
 
         const subnet = newSubnet.split("/")[0];
 

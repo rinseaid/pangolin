@@ -71,11 +71,27 @@ export async function createOrg(
 
         const { orgId, name, subnet } = parsedBody.data;
 
-        if (subnet && !isValidCIDR(subnet)) {
+        if (!isValidCIDR(subnet)) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
                     "Invalid subnet format. Please provide a valid CIDR notation."
+                )
+            );
+        }
+
+        // make sure the subnet is unique
+        const subnetExists = await db
+            .select()
+            .from(orgs)
+            .where(eq(orgs.subnet, subnet))
+            .limit(1);
+
+        if (subnetExists.length > 0) {
+            return next(
+                createHttpError(
+                    HttpCode.CONFLICT,
+                    `Subnet ${subnet} already exists`
                 )
             );
         }

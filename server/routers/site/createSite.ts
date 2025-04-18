@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "@server/db";
-import { roles, userSites, sites, roleSites, Site } from "@server/db/schema";
+import {
+    roles,
+    userSites,
+    sites,
+    roleSites,
+    Site,
+    orgs
+} from "@server/db/schema";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
@@ -13,6 +20,8 @@ import { fromError } from "zod-validation-error";
 import { newts } from "@server/db/schema";
 import moment from "moment";
 import { hashPassword } from "@server/auth/password";
+import { isValidIP } from "@server/lib/validators";
+import { isIpInCidr } from "@server/lib/ip";
 
 const createSiteParamsSchema = z
     .object({
@@ -34,6 +43,7 @@ const createSiteSchema = z
         subnet: z.string().optional(),
         newtId: z.string().optional(),
         secret: z.string().optional(),
+        address: z.string().optional(),
         type: z.enum(["newt", "wireguard", "local"])
     })
     .strict();
@@ -58,8 +68,16 @@ export async function createSite(
             );
         }
 
-        const { name, type, exitNodeId, pubKey, subnet, newtId, secret } =
-            parsedBody.data;
+        const {
+            name,
+            type,
+            exitNodeId,
+            pubKey,
+            subnet,
+            newtId,
+            secret,
+            address
+        } = parsedBody.data;
 
         const parsedParams = createSiteParamsSchema.safeParse(req.params);
         if (!parsedParams.success) {
@@ -77,6 +95,53 @@ export async function createSite(
             return next(
                 createHttpError(HttpCode.FORBIDDEN, "User does not have a role")
             );
+        }
+
+        const [org] = await db.select().from(orgs).where(eq(orgs.orgId, orgId));
+
+        if (!org) {
+            return next(
+                createHttpError(
+                    HttpCode.NOT_FOUND,
+                    `Organization with ID ${orgId} not found`
+                )
+            );
+        }
+
+        if (address) {
+            if (!isValidIP(address)) {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "Invalid subnet format. Please provide a valid CIDR notation."
+                    )
+                );
+            }
+
+            if (!isIpInCidr(address, org.subnet)) {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "IP is not in the CIDR range of the subnet."
+                    )
+                );
+            }
+
+            // make sure the subnet is unique
+            const addressExists = await db
+                .select()
+                .from(sites)
+                .where(eq(sites.address, address))
+                .limit(1);
+
+            if (addressExists.length > 0) {
+                return next(
+                    createHttpError(
+                        HttpCode.CONFLICT,
+                        `Subnet ${subnet} already exists`
+                    )
+                );
+            }
         }
 
         const niceId = await getUniqueSiteName(orgId);
@@ -102,6 +167,7 @@ export async function createSite(
                         exitNodeId,
                         name,
                         niceId,
+                        address: address || null,
                         subnet,
                         type,
                         ...(pubKey && type == "wireguard" && { pubKey })
@@ -116,6 +182,7 @@ export async function createSite(
                         orgId,
                         name,
                         niceId,
+                        address: address || null,
                         type,
                         subnet: "0.0.0.0/0"
                     })
