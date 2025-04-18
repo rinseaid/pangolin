@@ -705,6 +705,92 @@ PersistentKeepalive = 5`;
                                         </Form>
                                     </SettingsSectionBody>
                                 </SettingsSection>
+                               <SettingsSection>
+                                    <SettingsSectionHeader>
+                                        <SettingsSectionTitle>
+                                            Install Newt
+                                        </SettingsSectionTitle>
+                                        <SettingsSectionDescription>
+                                            Get Newt running on your system
+                                        </SettingsSectionDescription>
+                                    </SettingsSectionHeader>
+                                    <SettingsSectionBody>
+                                        <div>
+                                            <p className="font-bold mb-3">
+                                                Operating System
+                                            </p>
+                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                                                {[
+                                                    "linux",
+                                                    "docker",
+                                                    "mac",
+                                                    "windows",
+                                                    "freebsd"
+                                                ].map((os) => (
+                                                    <Button
+                                                        key={os}
+                                                        variant={
+                                                            platform === os
+                                                                ? "squareOutlinePrimary"
+                                                                : "squareOutline"
+                                                        }
+                                                        className={`flex-1 min-w-[120px] ${platform === os ? "bg-primary/10" : ""}`}
+                                                        onClick={() => {
+                                                            setPlatform(os);
+                                                        }}
+                                                    >
+                                                        {getPlatformIcon(os)}
+                                                        {getPlatformName(os)}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-bold mb-3">
+                                                {platform === "docker"
+                                                    ? "Method"
+                                                    : "Architecture"}
+                                            </p>
+                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                                                {getArchitectures().map(
+                                                    (arch) => (
+                                                        <Button
+                                                            key={arch}
+                                                            variant={
+                                                                architecture ===
+                                                                arch
+                                                                    ? "squareOutlinePrimary"
+                                                                    : "squareOutline"
+                                                            }
+                                                            className={`flex-1 min-w-[120px] ${architecture === arch ? "bg-primary/10" : ""}`}
+                                                            onClick={() =>
+                                                                setArchitecture(
+                                                                    arch
+                                                                )
+                                                            }
+                                                        >
+                                                            {arch}
+                                                        </Button>
+                                                    )
+                                                )}
+                                            </div>
+                                            <div className="pt-4">
+                                                <p className="font-bold mb-3">
+                                                    Commands
+                                                </p>
+                                                <div className="mt-2">
+                                                    <CopyTextBox
+                                                        text={getCommand().join(
+                                                            "\n"
+                                                        )}
+                                                        outline={true}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </SettingsSectionBody>
+                                </SettingsSection>
                             </>
                         )}
 
