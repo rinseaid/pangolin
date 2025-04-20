@@ -1,6 +1,6 @@
 import { generateSessionToken } from "@server/auth/sessions/app";
 import db from "@server/db";
-import { newts } from "@server/db/schemas";
+import { olms } from "@server/db/schema";
 import HttpCode from "@server/types/HttpCode";
 import response from "@server/lib/response";
 import { eq } from "drizzle-orm";
@@ -9,27 +9,27 @@ import createHttpError from "http-errors";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import {
-    createNewtSession,
-    validateNewtSessionToken
-} from "@server/auth/sessions/newt";
+    createOlmSession,
+    validateOlmSessionToken
+} from "@server/auth/sessions/olm";
 import { verifyPassword } from "@server/auth/password";
 import logger from "@server/logger";
 import config from "@server/lib/config";
 
-export const newtGetTokenBodySchema = z.object({
-    newtId: z.string(),
+export const olmGetTokenBodySchema = z.object({
+    olmId: z.string(),
     secret: z.string(),
     token: z.string().optional()
 });
 
-export type NewtGetTokenBody = z.infer<typeof newtGetTokenBodySchema>;
+export type OlmGetTokenBody = z.infer<typeof olmGetTokenBodySchema>;
 
-export async function getToken(
+export async function getOlmToken(
     req: Request,
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const parsedBody = newtGetTokenBodySchema.safeParse(req.body);
+    const parsedBody = olmGetTokenBodySchema.safeParse(req.body);
 
     if (!parsedBody.success) {
         return next(
@@ -40,15 +40,15 @@ export async function getToken(
         );
     }
 
-    const { newtId, secret, token } = parsedBody.data;
+    const { olmId, secret, token } = parsedBody.data;
 
     try {
         if (token) {
-            const { session, newt } = await validateNewtSessionToken(token);
+            const { session, olm } = await validateOlmSessionToken(token);
             if (session) {
                 if (config.getRawConfig().app.log_failed_attempts) {
                     logger.info(
-                        `Newt session already valid. Newt ID: ${newtId}. IP: ${req.ip}.`
+                        `Olm session already valid. Olm ID: ${olmId}. IP: ${req.ip}.`
                     );
                 }
                 return response<null>(res, {
@@ -61,29 +61,29 @@ export async function getToken(
             }
         }
 
-        const existingNewtRes = await db
+        const existingOlmRes = await db
             .select()
-            .from(newts)
-            .where(eq(newts.newtId, newtId));
-        if (!existingNewtRes || !existingNewtRes.length) {
+            .from(olms)
+            .where(eq(olms.olmId, olmId));
+        if (!existingOlmRes || !existingOlmRes.length) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "No newt found with that newtId"
+                    "No olm found with that olmId"
                 )
             );
         }
 
-        const existingNewt = existingNewtRes[0];
+        const existingOlm = existingOlmRes[0];
 
         const validSecret = await verifyPassword(
             secret,
-            existingNewt.secretHash
+            existingOlm.secretHash
         );
         if (!validSecret) {
             if (config.getRawConfig().app.log_failed_attempts) {
                 logger.info(
-                    `Newt id or secret is incorrect. Newt: ID ${newtId}. IP: ${req.ip}.`
+                    `Olm id or secret is incorrect. Olm: ID ${olmId}. IP: ${req.ip}.`
                 );
             }
             return next(
@@ -91,8 +91,12 @@ export async function getToken(
             );
         }
 
+        logger.debug("Creating new olm session token");
+
         const resToken = generateSessionToken();
-        await createNewtSession(resToken, existingNewt.newtId);
+        await createOlmSession(resToken, existingOlm.olmId);
+
+        logger.debug("Token created successfully");
 
         return response<{ token: string }>(res, {
             data: {
@@ -103,12 +107,12 @@ export async function getToken(
             message: "Token created successfully",
             status: HttpCode.OK
         });
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        logger.error(error);
         return next(
             createHttpError(
                 HttpCode.INTERNAL_SERVER_ERROR,
-                "Failed to authenticate newt"
+                "Failed to authenticate olm"
             )
         );
     }

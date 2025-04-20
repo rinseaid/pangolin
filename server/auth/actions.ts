@@ -64,6 +64,11 @@ export enum ActionsEnum {
     deleteResourceRule = "deleteResourceRule",
     listResourceRules = "listResourceRules",
     updateResourceRule = "updateResourceRule",
+    createClient = "createClient",
+    deleteClient = "deleteClient",
+    updateClient = "updateClient",
+    listClients = "listClients",
+    getClient = "getClient",
     listOrgDomains = "listOrgDomains",
     createNewt = "createNewt"
 }

@@ -35,6 +35,7 @@ export function SidebarNav({
     const resourceId = params.resourceId as string;
     const userId = params.userId as string;
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+    const clientId = params.clientId as string;
 
     const { user } = useUserContext();
 
@@ -43,7 +44,8 @@ export function SidebarNav({
             .replace("{orgId}", orgId)
             .replace("{niceId}", niceId)
             .replace("{resourceId}", resourceId)
-            .replace("{userId}", userId);
+            .replace("{userId}", userId)
+            .replace("{clientId}", clientId);
     }
 
     // Initialize expanded items based on autoExpand property and current path

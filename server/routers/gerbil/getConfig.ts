@@ -79,14 +79,12 @@ export async function getConfig(req: Request, res: Response, next: NextFunction)
         }
 
         // Fetch sites for this exit node
-        const sitesRes = await db.query.sites.findMany({
-            where: eq(sites.exitNodeId, exitNode[0].exitNodeId),
-        });
+        const sitesRes = await db.select().from(sites).where(eq(sites.exitNodeId, exitNode[0].exitNodeId));
 
         const peers = await Promise.all(sitesRes.map(async (site) => {
             return {
                 publicKey: site.pubKey,
-                allowedIps: await getAllowedIps(site.siteId)
+                allowedIps: await getAllowedIps(site.siteId) // put 0.0.0.0/0 for now
             };
         }));
 

@@ -16,3 +16,4 @@ export * from "./verifyUserInRole";
 export * from "./verifyAccessTokenAccess";
 export * from "./verifyUserIsServerAdmin";
 export * from "./verifyIsLoggedInUser";
+export * from "./verifyClientAccess";

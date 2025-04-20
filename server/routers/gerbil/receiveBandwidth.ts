@@ -30,12 +30,13 @@ export const receiveBandwidth = async (
                 const { publicKey, bytesIn, bytesOut } = peer;
 
                 // Find the site by public key
-                const site = await trx.query.sites.findFirst({
-                    where: eq(sites.pubKey, publicKey)
-                });
+                const [site] = await trx
+                    .select()
+                    .from(sites)
+                    .where(eq(sites.pubKey, publicKey))
+                    .limit(1);
 
                 if (!site) {
-                    logger.warn(`Site not found for public key: ${publicKey}`);
                     continue;
                 }
                 let online = site.online;

@@ -41,6 +41,10 @@ gerbil:
     site_block_size: 30
     subnet_group: 100.89.137.0/20
 
+orgs:
+    block_size: 24
+    subnet_group: 100.89.138.0/20
+
 rate_limits:
     global:
         window_minutes: 1

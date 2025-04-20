@@ -12,7 +12,6 @@ import { passwordSchema } from "@server/auth/passwordSchema";
 import stoi from "./stoi";
 import db from "@server/db";
 import { SupporterKey, supporterKey } from "@server/db/schemas";
-import { suppressDeprecationWarnings } from "moment";
 import { eq } from "drizzle-orm";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
@@ -121,6 +120,10 @@ const configSchema = z.object({
         subnet_group: z.string(),
         block_size: z.number().positive().gt(0),
         site_block_size: z.number().positive().gt(0)
+    }),
+    orgs: z.object({
+        block_size: z.number().positive().gt(0),
+        subnet_group: z.string(),
     }),
     rate_limits: z.object({
         global: z.object({

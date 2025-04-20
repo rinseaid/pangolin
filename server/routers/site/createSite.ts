@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "@server/db";
-import { roles, userSites, sites, roleSites, Site } from "@server/db/schemas";
+import { roles, userSites, sites, roleSites, Site, orgs } from "@server/db/schemas";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
@@ -10,11 +10,12 @@ import { eq, and } from "drizzle-orm";
 import { getUniqueSiteName } from "@server/db/names";
 import { addPeer } from "../gerbil/peers";
 import { fromError } from "zod-validation-error";
-import { hash } from "@node-rs/argon2";
 import { newts } from "@server/db/schemas";
 import moment from "moment";
 import { OpenAPITags, registry } from "@server/openApi";
 import { hashPassword } from "@server/auth/password";
+import { isValidIP } from "@server/lib/validators";
+import { isIpInCidr } from "@server/lib/ip";
 
 const createSiteParamsSchema = z
     .object({
@@ -36,6 +37,7 @@ const createSiteSchema = z
         subnet: z.string().optional(),
         newtId: z.string().optional(),
         secret: z.string().optional(),
+        address: z.string().optional(),
         type: z.enum(["newt", "wireguard", "local"])
     })
     .strict();
@@ -78,8 +80,16 @@ export async function createSite(
             );
         }
 
-        const { name, type, exitNodeId, pubKey, subnet, newtId, secret } =
-            parsedBody.data;
+        const {
+            name,
+            type,
+            exitNodeId,
+            pubKey,
+            subnet,
+            newtId,
+            secret,
+            address
+        } = parsedBody.data;
 
         const parsedParams = createSiteParamsSchema.safeParse(req.params);
         if (!parsedParams.success) {
@@ -97,6 +107,70 @@ export async function createSite(
             return next(
                 createHttpError(HttpCode.FORBIDDEN, "User does not have a role")
             );
+        }
+
+        const [org] = await db.select().from(orgs).where(eq(orgs.orgId, orgId));
+
+        if (!org) {
+            return next(
+                createHttpError(
+                    HttpCode.NOT_FOUND,
+                    `Organization with ID ${orgId} not found`
+                )
+            );
+        }
+
+        let updatedAddress = null;
+        if (address) {
+            if (!isValidIP(address)) {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "Invalid subnet format. Please provide a valid CIDR notation."
+                    )
+                );
+            }
+
+            if (!isIpInCidr(address, org.subnet)) {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "IP is not in the CIDR range of the subnet."
+                    )
+                );
+            }
+
+            updatedAddress = `${address}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
+
+            // make sure the subnet is unique
+            const addressExistsSites = await db
+                .select()
+                .from(sites)
+                .where(eq(sites.address, updatedAddress))
+                .limit(1);
+
+            if (addressExistsSites.length > 0) {
+                return next(
+                    createHttpError(
+                        HttpCode.CONFLICT,
+                        `Subnet ${subnet} already exists`
+                    )
+                );
+            }
+
+            const addressExistsClients = await db
+                .select()
+                .from(sites)
+                .where(eq(sites.subnet, updatedAddress))
+                .limit(1);
+            if (addressExistsClients.length > 0) {
+                return next(
+                    createHttpError(
+                        HttpCode.CONFLICT,
+                        `Subnet ${subnet} already exists`
+                    )
+                );
+            }
         }
 
         const niceId = await getUniqueSiteName(orgId);
@@ -122,6 +196,7 @@ export async function createSite(
                         exitNodeId,
                         name,
                         niceId,
+                        address: updatedAddress || null,
                         subnet,
                         type,
                         ...(pubKey && type == "wireguard" && { pubKey })
@@ -136,6 +211,7 @@ export async function createSite(
                         orgId,
                         name,
                         niceId,
+                        address: updatedAddress || null,
                         type,
                         subnet: "0.0.0.0/0"
                     })

@@ -1,3 +1,8 @@
+import db from "@server/db";
+import { clients, orgs, sites } from "@server/db/schema";
+import { and, eq, isNotNull } from "drizzle-orm";
+import config from "@server/lib/config";
+
 interface IPRange {
     start: bigint;
     end: bigint;
@@ -132,7 +137,6 @@ export function findNextAvailableCidr(
     blockSize: number,
     startCidr?: string
 ): string | null {
-
     if (!startCidr && existingCidrs.length === 0) {
         return null;
     }
@@ -150,40 +154,47 @@ export function findNextAvailableCidr(
         existingCidrs.some(cidr => detectIpVersion(cidr.split('/')[0]) !== version)) {
         throw new Error('All CIDRs must be of the same IP version');
     }
-
+    
+    // Extract the network part from startCidr to ensure we stay in the right subnet
+    const startCidrRange = cidrToRange(startCidr);
+    
     // Convert existing CIDRs to ranges and sort them
     const existingRanges = existingCidrs
         .map(cidr => cidrToRange(cidr))
         .sort((a, b) => (a.start < b.start ? -1 : 1));
-
+    
     // Calculate block size
     const maxPrefix = version === 4 ? 32 : 128;
     const blockSizeBigInt = BigInt(1) << BigInt(maxPrefix - blockSize);
-
+    
     // Start from the beginning of the given CIDR
-    let current = cidrToRange(startCidr).start;
-    const maxIp = cidrToRange(startCidr).end;
-
+    let current = startCidrRange.start;
+    const maxIp = startCidrRange.end;
+    
     // Iterate through existing ranges
     for (let i = 0; i <= existingRanges.length; i++) {
         const nextRange = existingRanges[i];
+        
         // Align current to block size
         const alignedCurrent = current + ((blockSizeBigInt - (current % blockSizeBigInt)) % blockSizeBigInt);
-
+        
         // Check if we've gone beyond the maximum allowed IP
         if (alignedCurrent + blockSizeBigInt - BigInt(1) > maxIp) {
             return null;
         }
-
+        
         // If we're at the end of existing ranges or found a gap
         if (!nextRange || alignedCurrent + blockSizeBigInt - BigInt(1) < nextRange.start) {
             return `${bigIntToIp(alignedCurrent, version)}/${blockSize}`;
         }
-
-        // Move current pointer to after the current range
-        current = nextRange.end + BigInt(1);
+        
+        // If next range overlaps with our search space, move past it
+        if (nextRange.end >= startCidrRange.start && nextRange.start <= maxIp) {
+            // Move current pointer to after the current range
+            current = nextRange.end + BigInt(1);
+        }
     }
-
+    
     return null;
 }
 
@@ -204,4 +215,63 @@ export function isIpInCidr(ip: string, cidr: string): boolean {
     const ipBigInt = ipToBigInt(ip);
     const range = cidrToRange(cidr);
     return ipBigInt >= range.start && ipBigInt <= range.end;
+}
+
+export async function getNextAvailableClientSubnet(orgId: string): Promise<string> {
+    const [org] = await db  
+        .select()
+        .from(orgs)
+        .where(eq(orgs.orgId, orgId));
+
+    const existingAddressesSites = await db
+        .select({
+            address: sites.address
+        })
+        .from(sites)
+        .where(and(isNotNull(sites.address), eq(sites.orgId, orgId)));
+
+    const existingAddressesClients = await db
+        .select({
+            address: clients.subnet
+        })
+        .from(clients)
+        .where(and(isNotNull(clients.subnet), eq(clients.orgId, orgId)));
+
+    const addresses = [
+        ...existingAddressesSites.map((site) => `${site.address?.split("/")[0]}/32`), // we are overriding the 32 so that we pick individual addresses in the subnet of the org for the site and the client even though they are stored with the /block_size of the org
+        ...existingAddressesClients.map((client) => `${client.address.split("/")}/32`)
+    ].filter((address) => address !== null) as string[];
+
+    let subnet = findNextAvailableCidr(
+        addresses,
+        32,
+        org.subnet
+    ); // pick the sites address in the org
+    if (!subnet) {
+        throw new Error("No available subnets remaining in space");
+    }
+
+    return subnet;
+}
+
+export async function getNextAvailableOrgSubnet(): Promise<string> {
+    const existingAddresses = await db
+        .select({
+            subnet: orgs.subnet
+        })
+        .from(orgs)
+        .where(isNotNull(orgs.subnet));
+
+    const addresses = existingAddresses.map((org) => org.subnet);
+
+    let subnet = findNextAvailableCidr(
+        addresses,
+        config.getRawConfig().orgs.block_size,
+        config.getRawConfig().orgs.subnet_group
+    );
+    if (!subnet) {
+        throw new Error("No available subnets remaining in space");
+    }
+
+    return subnet;
 }

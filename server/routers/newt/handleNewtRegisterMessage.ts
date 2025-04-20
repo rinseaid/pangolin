@@ -2,6 +2,7 @@ import db from "@server/db";
 import { MessageHandler } from "../ws";
 import {
     exitNodes,
+    Newt,
     resources,
     sites,
     Target,
@@ -11,10 +12,11 @@ import { eq, and, sql, inArray } from "drizzle-orm";
 import { addPeer, deletePeer } from "../gerbil/peers";
 import logger from "@server/logger";
 
-export const handleRegisterMessage: MessageHandler = async (context) => {
-    const { message, newt, sendToClient } = context;
+export const handleNewtRegisterMessage: MessageHandler = async (context) => {
+    const { message, client, sendToClient } = context;
+    const newt = client as Newt;
 
-    logger.info("Handling register message!");
+    logger.info("Handling register newt message!");
 
     if (!newt) {
         logger.warn("Newt not found");

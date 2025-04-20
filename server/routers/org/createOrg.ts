@@ -20,11 +20,13 @@ import config from "@server/lib/config";
 import { fromError } from "zod-validation-error";
 import { defaultRoleAllowedActions } from "../role";
 import { OpenAPITags, registry } from "@server/openApi";
+import { isValidCIDR } from "@server/lib/validators";
 
 const createOrgSchema = z
     .object({
         orgId: z.string(),
-        name: z.string().min(1).max(255)
+        name: z.string().min(1).max(255),
+        subnet: z.string()
     })
     .strict();
 
@@ -85,7 +87,32 @@ export async function createOrg(
         //     );
         // }
 
-        const { orgId, name } = parsedBody.data;
+        const { orgId, name, subnet } = parsedBody.data;
+
+        if (!isValidCIDR(subnet)) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    "Invalid subnet format. Please provide a valid CIDR notation."
+                )
+            );
+        }
+
+        // make sure the subnet is unique
+        const subnetExists = await db
+            .select()
+            .from(orgs)
+            .where(eq(orgs.subnet, subnet))
+            .limit(1);
+
+        if (subnetExists.length > 0) {
+            return next(
+                createHttpError(
+                    HttpCode.CONFLICT,
+                    `Subnet ${subnet} already exists`
+                )
+            );
+        }
 
         // make sure the orgId is unique
         const orgExists = await db
@@ -116,7 +143,8 @@ export async function createOrg(
                 .insert(orgs)
                 .values({
                     orgId,
-                    name
+                    name,
+                    subnet,
                 })
                 .returning();
 

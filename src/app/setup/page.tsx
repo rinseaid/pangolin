@@ -2,8 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { toast } from "@app/hooks/useToast";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -13,7 +11,6 @@ import {
     CardHeader,
     CardTitle
 } from "@app/components/ui/card";
-import CopyTextBox from "@app/components/CopyTextBox";
 import { formatAxiosError } from "@app/lib/api";;
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
@@ -32,13 +29,13 @@ import {
     FormMessage
 } from "@app/components/ui/form";
 import { Alert, AlertDescription } from "@app/components/ui/alert";
-import CreateSiteForm from "../[orgId]/settings/sites/CreateSiteForm";
 
 type Step = "org" | "site" | "resources";
 
 const orgSchema = z.object({
     orgName: z.string().min(1, { message: "Organization name is required" }),
-    orgId: z.string().min(1, { message: "Organization ID is required" })
+    orgId: z.string().min(1, { message: "Organization ID is required" }),
+    subnet: z.string().min(1, { message: "Subnet is required" })
 });
 
 export default function StepperForm() {
@@ -53,12 +50,34 @@ export default function StepperForm() {
         resolver: zodResolver(orgSchema),
         defaultValues: {
             orgName: "",
-            orgId: ""
+            orgId: "",
+            subnet: ""
         }
     });
 
     const api = createApiClient(useEnvContext());
     const router = useRouter();
+
+    // Fetch default subnet on component mount
+    useEffect(() => {
+        fetchDefaultSubnet();
+    }, []);
+
+    const fetchDefaultSubnet = async () => {
+        try {
+            const res = await api.get(`/pick-org-defaults`);
+            if (res && res.data && res.data.data) {
+                orgForm.setValue("subnet", res.data.data.subnet);
+            }
+        } catch (e) {
+            console.error("Failed to fetch default subnet:", e);
+            toast({
+                title: "Error",
+                description: "Failed to fetch default subnet",
+                variant: "destructive"
+            });
+        }
+    };
 
     const checkOrgIdAvailability = useCallback(async (value: string) => {
         try {
@@ -92,7 +111,8 @@ export default function StepperForm() {
         try {
             const res = await api.put(`/org`, {
                 orgId: values.orgId,
-                name: values.orgName
+                name: values.orgName,
+                subnet: values.subnet
             });
 
             if (res && res.status === 201) {
@@ -252,6 +272,29 @@ export default function StepperForm() {
                                                     organization. This is
                                                     separate from the display
                                                     name.
+                                                </FormDescription>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    <FormField
+                                        control={orgForm.control}
+                                        name="subnet"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Subnet
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="text"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                                <FormDescription>
+                                                    Network subnet for this organization.
+                                                    A default value has been provided.
                                                 </FormDescription>
                                             </FormItem>
                                         )}

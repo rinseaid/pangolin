@@ -21,7 +21,7 @@ import {
 } from "@app/components/ui/form";
 import HeaderTitle from "@app/components/SettingsSectionTitle";
 import { z } from "zod";
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@app/components/ui/input";
@@ -58,7 +58,8 @@ const createSiteFormSchema = z
                 message: "Name must not be longer than 30 characters."
             }),
         method: z.enum(["newt", "wireguard", "local"]),
-        copied: z.boolean()
+        copied: z.boolean(),
+        clientAddress: z.string().optional()
     })
     .refine(
         (data) => {
@@ -142,7 +143,7 @@ export default function Page() {
     const [newtId, setNewtId] = useState("");
     const [newtSecret, setNewtSecret] = useState("");
     const [newtEndpoint, setNewtEndpoint] = useState("");
-
+    const [clientAddress, setClientAddress] = useState("");
     const [publicKey, setPublicKey] = useState("");
     const [privateKey, setPrivateKey] = useState("");
     const [wgConfig, setWgConfig] = useState("");
@@ -353,7 +354,12 @@ WantedBy=default.target`
 
     const form = useForm<CreateSiteFormValues>({
         resolver: zodResolver(createSiteFormSchema),
-        defaultValues: { name: "", copied: false, method: "newt" }
+        defaultValues: {
+            name: "",
+            copied: false,
+            method: "newt",
+            clientAddress: ""
+        }
     });
 
     async function onSubmit(data: CreateSiteFormValues) {
@@ -395,7 +401,8 @@ WantedBy=default.target`
                 subnet: siteDefaults.subnet,
                 exitNodeId: siteDefaults.exitNodeId,
                 secret: siteDefaults.newtSecret,
-                newtId: siteDefaults.newtId
+                newtId: siteDefaults.newtId,
+                address: clientAddress
             };
         }
 
@@ -465,10 +472,12 @@ WantedBy=default.target`
                         const newtId = data.newtId;
                         const newtSecret = data.newtSecret;
                         const newtEndpoint = data.endpoint;
+                        const clientAddress = data.clientAddress;
 
                         setNewtId(newtId);
                         setNewtSecret(newtSecret);
                         setNewtEndpoint(newtEndpoint);
+                        setClientAddress(clientAddress);
 
                         hydrateCommands(
                             newtId,
@@ -551,6 +560,42 @@ WantedBy=default.target`
                                                         <FormDescription>
                                                             This is the display
                                                             name for the site.
+                                                        </FormDescription>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="clientAddress"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>
+                                                            Client Address
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                autoComplete="off"
+                                                                value={
+                                                                    clientAddress
+                                                                }
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    setClientAddress(
+                                                                        e.target
+                                                                            .value
+                                                                    );
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        <FormDescription>
+                                                            Specify the IP
+                                                            address of the host.
                                                         </FormDescription>
                                                     </FormItem>
                                                 )}
@@ -687,7 +732,6 @@ WantedBy=default.target`
                                         </Form>
                                     </SettingsSectionBody>
                                 </SettingsSection>
-
                                 <SettingsSection>
                                     <SettingsSectionHeader>
                                         <SettingsSectionTitle>
@@ -855,6 +899,8 @@ WantedBy=default.target`
                         </Button>
                         <Button
                             type="button"
+                            loading={createLoading}
+                            disabled={createLoading}
                             onClick={() => {
                                 form.handleSubmit(onSubmit)();
                             }}
