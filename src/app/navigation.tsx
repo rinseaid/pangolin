@@ -6,7 +6,8 @@ import {
     Link as LinkIcon,
     Waypoints,
     Combine,
-    Fingerprint
+    Fingerprint,
+    Workflow
 } from "lucide-react";
 
 export const rootNavItems: SidebarNavItem[] = [
@@ -27,6 +28,11 @@ export const orgNavItems: SidebarNavItem[] = [
         title: "Resources",
         href: "/{orgId}/settings/resources",
         icon: <Waypoints className="h-4 w-4" />
+    },
+    {
+        title: "Clients",
+        href: "/{orgId}/settings/clients",
+        icon: <Workflow className="h-4 w-4" />
     },
     {
         title: "Access Control",

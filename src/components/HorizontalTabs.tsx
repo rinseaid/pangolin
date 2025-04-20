@@ -29,7 +29,8 @@ export function HorizontalTabs({
             .replace("{orgId}", params.orgId as string)
             .replace("{resourceId}", params.resourceId as string)
             .replace("{niceId}", params.niceId as string)
-            .replace("{userId}", params.userId as string);
+            .replace("{userId}", params.userId as string)
+            .replace("{clientId}", params.clientId as string);
     }
 
     return (

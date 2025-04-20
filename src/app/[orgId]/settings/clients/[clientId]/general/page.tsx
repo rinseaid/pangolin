@@ -40,11 +40,8 @@ type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
 
 export default function GeneralPage() {
     const { client, updateClient } = useClientContext();
-
     const api = createApiClient(useEnvContext());
-
     const [loading, setLoading] = useState(false);
-
     const router = useRouter();
 
     const form = useForm<GeneralFormValues>({
@@ -58,31 +55,31 @@ export default function GeneralPage() {
     async function onSubmit(data: GeneralFormValues) {
         setLoading(true);
 
-        await api
-            .post(`/client/${client?.clientId}`, {
+        try {
+            await api.post(`/client/${client?.clientId}`, {
                 name: data.name
-            })
-            .catch((e) => {
-                toast({
-                    variant: "destructive",
-                    title: "Failed to update client",
-                    description: formatAxiosError(
-                        e,
-                        "An error occurred while updating the client."
-                    )
-                });
             });
 
-        updateClient({ name: data.name });
+            updateClient({ name: data.name });
 
-        toast({
-            title: "Client updated",
-            description: "The client has been updated."
-        });
+            toast({
+                title: "Client updated",
+                description: "The client has been updated."
+            });
 
-        setLoading(false);
-
-        router.refresh();
+            router.refresh();
+        } catch (e) {
+            toast({
+                variant: "destructive",
+                title: "Failed to update client",
+                description: formatAxiosError(
+                    e,
+                    "An error occurred while updating the client."
+                )
+            });
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (

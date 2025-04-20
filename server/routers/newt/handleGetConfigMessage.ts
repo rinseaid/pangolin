@@ -3,7 +3,7 @@ import { MessageHandler } from "../ws";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import db from "@server/db";
-import { clients, clientSites, Newt, sites } from "@server/db/schema";
+import { clients, clientSites, Newt, sites } from "@server/db/schemas";
 import { eq } from "drizzle-orm";
 import { updatePeer } from "../olm/peers";
 

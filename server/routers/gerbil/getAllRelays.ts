@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { clients, exitNodes, newts, olms, Site, sites, clientSites } from "@server/db/schema";
+import { clients, exitNodes, newts, olms, Site, sites, clientSites } from "@server/db/schemas";
 import { db } from "@server/db";
 import { eq } from "drizzle-orm";
 import HttpCode from "@server/types/HttpCode";

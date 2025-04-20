@@ -7,7 +7,7 @@ import {
     Olm,
     olms,
     sites
-} from "@server/db/schema";
+} from "@server/db/schemas";
 import { eq, inArray } from "drizzle-orm";
 import { addPeer, deletePeer } from "../newt/peers";
 import logger from "@server/logger";

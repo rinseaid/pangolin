@@ -47,6 +47,7 @@ import {
 import { ScrollArea } from "@app/components/ui/scroll-area";
 import { Badge } from "@app/components/ui/badge";
 import { X } from "lucide-react";
+import { Tag, TagInput } from "@app/components/tags/tag-input";
 
 const createClientFormSchema = z.object({
     name: z
@@ -57,9 +58,16 @@ const createClientFormSchema = z.object({
         .max(30, {
             message: "Name must not be longer than 30 characters."
         }),
-    siteIds: z.array(z.number()).min(1, {
-        message: "Select at least one site."
-    }),
+    siteIds: z
+        .array(
+            z.object({
+                id: z.string(),
+                text: z.string()
+            })
+        )
+        .refine((val) => val.length > 0, {
+            message: "At least one site is required."
+        }),
     subnet: z.string().min(1, {
         message: "Subnet is required."
     })
@@ -89,7 +97,7 @@ export default function CreateClientForm({
     const api = createApiClient(useEnvContext());
     const { env } = useEnvContext();
 
-    const [sites, setSites] = useState<ListSitesResponse["sites"]>([]);
+    const [sites, setSites] = useState<Tag[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
     const [clientDefaults, setClientDefaults] =
@@ -98,6 +106,9 @@ export default function CreateClientForm({
     const [selectedSites, setSelectedSites] = useState<
         Array<{ id: number; name: string }>
     >([]);
+    const [activeSitesTagIndex, setActiveSitesTagIndex] = useState<
+        number | null
+    >(null);
 
     const handleCheckboxChange = (checked: boolean) => {
         setIsChecked(checked);
@@ -110,14 +121,6 @@ export default function CreateClientForm({
         resolver: zodResolver(createClientFormSchema),
         defaultValues
     });
-
-    useEffect(() => {
-        // Update form value when selectedSites changes
-        form.setValue(
-            "siteIds",
-            selectedSites.map((site) => site.id)
-        );
-    }, [selectedSites, form]);
 
     useEffect(() => {
         if (!open) return;
@@ -137,7 +140,12 @@ export default function CreateClientForm({
             const sites = res.data.data.sites.filter(
                 (s) => s.type === "newt" && s.subnet
             );
-            setSites(sites);
+            setSites(
+                sites.map((site) => ({
+                    id: site.siteId.toString(),
+                    text: site.name
+                }))
+            );
         };
 
         const fetchDefaults = async () => {
@@ -155,7 +163,7 @@ export default function CreateClientForm({
                         setClientDefaults(data);
                         const olmConfig = `olm --id ${data?.olmId} --secret ${data?.olmSecret} --endpoint ${env.app.dashboardUrl}`;
                         setOlmCommand(olmConfig);
-                        
+
                         // Set the subnet value from client defaults
                         if (data?.subnet) {
                             form.setValue("subnet", data.subnet);
@@ -166,19 +174,6 @@ export default function CreateClientForm({
         fetchSites();
         fetchDefaults();
     }, [open]);
-
-    const addSite = (siteId: number, siteName: string) => {
-        if (!selectedSites.some((site) => site.id === siteId)) {
-            setSelectedSites([
-                ...selectedSites,
-                { id: siteId, name: siteName }
-            ]);
-        }
-    };
-
-    const removeSite = (siteId: number) => {
-        setSelectedSites(selectedSites.filter((site) => site.id !== siteId));
-    };
 
     async function onSubmit(data: CreateClientFormValues) {
         setLoading?.(true);
@@ -197,7 +192,7 @@ export default function CreateClientForm({
 
         const payload = {
             name: data.name,
-            siteIds: data.siteIds,
+            siteIds: data.siteIds.map((site) => parseInt(site.id)),
             olmId: clientDefaults.olmId,
             secret: clientDefaults.olmSecret,
             subnet: data.subnet,
@@ -274,7 +269,8 @@ export default function CreateClientForm({
                                     />
                                 </FormControl>
                                 <FormDescription>
-                                    The address that this client will use for connectivity.
+                                    The address that this client will use for
+                                    connectivity.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -284,97 +280,28 @@ export default function CreateClientForm({
                     <FormField
                         control={form.control}
                         name="siteIds"
-                        render={() => (
+                        render={(field) => (
                             <FormItem className="flex flex-col">
                                 <FormLabel>Sites</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className={cn(
-                                                    "justify-between",
-                                                    selectedSites.length ===
-                                                        0 &&
-                                                        "text-muted-foreground"
-                                                )}
-                                            >
-                                                {selectedSites.length > 0
-                                                    ? `${selectedSites.length} site${selectedSites.length !== 1 ? "s" : ""} selected`
-                                                    : "Select sites"}
-                                                <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="p-0 w-[300px]">
-                                        <Command>
-                                            <CommandInput placeholder="Search sites..." />
-                                            <CommandList>
-                                                <CommandEmpty>
-                                                    No sites found.
-                                                </CommandEmpty>
-                                                <CommandGroup>
-                                                    <ScrollArea className="h-[200px]">
-                                                        {sites.map((site) => (
-                                                            <CommandItem
-                                                                value={`${site.siteId}:${site.name}:${site.niceId}`}
-                                                                key={
-                                                                    site.siteId
-                                                                }
-                                                                onSelect={() => {
-                                                                    addSite(
-                                                                        site.siteId,
-                                                                        site.name
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <CheckIcon
-                                                                    className={cn(
-                                                                        "mr-2 h-4 w-4",
-                                                                        selectedSites.some(
-                                                                            (
-                                                                                s
-                                                                            ) =>
-                                                                                s.id ===
-                                                                                site.siteId
-                                                                        )
-                                                                            ? "opacity-100"
-                                                                            : "opacity-0"
-                                                                    )}
-                                                                />
-                                                                {site.name}
-                                                            </CommandItem>
-                                                        ))}
-                                                    </ScrollArea>
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-
-                                {selectedSites.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {selectedSites.map((site) => (
-                                            <Badge
-                                                key={site.id}
-                                                variant="secondary"
-                                            >
-                                                {site.name}
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        removeSite(site.id)
-                                                    }
-                                                    className="ml-1 rounded-full outline-none focus:ring-2 focus:ring-offset-2"
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </button>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                )}
-
+                                <TagInput
+                                    {...field}
+                                    activeTagIndex={activeSitesTagIndex}
+                                    setActiveTagIndex={setActiveSitesTagIndex}
+                                    placeholder="Select sites"
+                                    size="sm"
+                                    tags={form.getValues().siteIds}
+                                    setTags={(newTags) => {
+                                        form.setValue(
+                                            "siteIds",
+                                            newTags as [Tag, ...Tag[]]
+                                        );
+                                    }}
+                                    enableAutocomplete={true}
+                                    autocompleteOptions={sites}
+                                    allowDuplicates={false}
+                                    restrictTagsToAutocompleteOptions={true}
+                                    sortTags={true}
+                                />
                                 <FormDescription>
                                     The client will have connectivity to the
                                     selected sites. The sites must be configured

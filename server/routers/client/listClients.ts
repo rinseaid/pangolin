@@ -6,7 +6,7 @@ import {
     sites,
     userClients,
     clientSites
-} from "@server/db/schema";
+} from "@server/db/schemas";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
 import response from "@server/lib/response";
@@ -53,6 +53,7 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
         })
         .from(clients)
         .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
+        .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
         .where(
             and(
                 inArray(clients.clientId, accessibleClientIds),
@@ -63,7 +64,7 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
 
 async function getSiteAssociations(clientIds: number[]) {
     if (clientIds.length === 0) return [];
-    
+
     return db
         .select({
             clientId: clientSites.clientId,
