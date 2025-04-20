@@ -3,18 +3,9 @@ import { MessageHandler } from "../ws";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
 import db from "@server/db";
-import {
-    clients,
-    clientSites,
-    Newt,
-    Site,
-    sites,
-    olms
-} from "@server/db/schema";
+import { clients, clientSites, Newt, sites } from "@server/db/schema";
 import { eq } from "drizzle-orm";
-import { getNextAvailableClientSubnet } from "@server/lib/ip";
-import config from "@server/lib/config";
-import { addPeer } from "../olm/peers";
+import { updatePeer } from "../olm/peers";
 
 const inputSchema = z.object({
     publicKey: z.string(),
@@ -27,7 +18,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
     const newt = client as Newt;
 
-    logger.debug(JSON.stringify(message.data));
+    const now = new Date().getTime() / 1000;
 
     logger.debug("Handling Newt get config message!");
 
@@ -61,6 +52,19 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
     if (!existingSite) {
         logger.warn("handleGetConfigMessage: Site not found");
+        return;
+    }
+// todo check if the public key has changed
+    // we need to wait for hole punch success
+    if (!existingSite.endpoint) {
+        logger.warn(`Site ${existingSite.siteId} has no endpoint, skipping`);
+        return;
+    }
+
+    if (existingSite.lastHolePunch && now - existingSite.lastHolePunch > 6) {
+        logger.warn(
+            `Site ${existingSite.siteId} last hole punch is too old, skipping`
+        );
         return;
     }
 
@@ -106,29 +110,30 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
                 return true;
             })
             .map(async (client) => {
-                const peerData = {
-                    publicKey: client.clients.pubKey!,
-                    allowedIps: [client.clients.subnet!],
-                    endpoint: client.clientSites.isRelayed
-                        ? ""
-                        : client.clients.endpoint! // if its relayed it should be localhost
-                };
-
                 // Add or update this peer on the olm if it is connected
                 try {
-                    await addPeer(client.clients.clientId, {
-                        ...peerData,
-                        siteId: siteId,
-                        serverIP: site.address,
-                        serverPort: site.listenPort
-                    });
+                    if (site.endpoint && site.publicKey) {
+                        await updatePeer(client.clients.clientId, {
+                            siteId: site.siteId,
+                            endpoint: site.endpoint,
+                            publicKey: site.publicKey,
+                            serverIP: site.address,
+                            serverPort: site.listenPort
+                        });
+                    }
                 } catch (error) {
                     logger.error(
                         `Failed to add/update peer ${client.clients.pubKey} to newt ${newt.newtId}: ${error}`
                     );
                 }
 
-                return peerData;
+                return {
+                    publicKey: client.clients.pubKey!,
+                    allowedIps: [client.clients.subnet!],
+                    endpoint: client.clientSites.isRelayed
+                        ? ""
+                        : client.clients.endpoint! // if its relayed it should be localhost
+                };
             })
     );
 

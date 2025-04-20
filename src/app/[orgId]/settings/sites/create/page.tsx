@@ -544,6 +544,42 @@ PersistentKeepalive = 5`;
                                                     </FormItem>
                                                 )}
                                             />
+                                            <FormField
+                                                control={form.control}
+                                                name="clientAddress"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>
+                                                            Client Address
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                autoComplete="off"
+                                                                value={
+                                                                    clientAddress
+                                                                }
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    setClientAddress(
+                                                                        e.target
+                                                                            .value
+                                                                    );
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                        <FormDescription>
+                                                            Specify the IP
+                                                            address of the host.
+                                                        </FormDescription>
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </form>
                                     </Form>
                                 </SettingsSectionForm>
@@ -662,50 +698,11 @@ PersistentKeepalive = 5`;
                                                         </FormItem>
                                                     )}
                                                 />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="clientAddress"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>
-                                                                Client Address
-                                                            </FormLabel>
-                                                            <FormControl>
-                                                                <Input
-                                                                    autoComplete="off"
-                                                                    value={
-                                                                        clientAddress
-                                                                    }
-                                                                    onChange={(
-                                                                        e
-                                                                    ) => {
-                                                                        setClientAddress(
-                                                                            e
-                                                                                .target
-                                                                                .value
-                                                                        );
-                                                                        field.onChange(
-                                                                            e
-                                                                                .target
-                                                                                .value
-                                                                        );
-                                                                    }}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            <FormDescription>
-                                                                Specify the IP
-                                                                address of the
-                                                                host.
-                                                            </FormDescription>
-                                                        </FormItem>
-                                                    )}
-                                                />
                                             </form>
                                         </Form>
                                     </SettingsSectionBody>
                                 </SettingsSection>
-                               <SettingsSection>
+                                <SettingsSection>
                                     <SettingsSectionHeader>
                                         <SettingsSectionTitle>
                                             Install Newt

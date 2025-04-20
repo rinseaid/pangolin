@@ -7,7 +7,6 @@ import logger from '@server/logger';
 export async function addPeer(clientId: number, peer: {
     siteId: number,
     publicKey: string;
-    allowedIps: string[];
     endpoint: string;
     serverIP: string | null;
     serverPort: number | null;
@@ -20,8 +19,8 @@ export async function addPeer(clientId: number, peer: {
     sendToClient(olm.olmId, {
         type: 'olm/wg/peer/add',    
         data: {
+            siteId: peer.siteId,
             publicKey: peer.publicKey,
-            allowedIps: peer.allowedIps,
             endpoint: peer.endpoint,
             serverIP: peer.serverIP,
             serverPort: peer.serverPort
@@ -47,11 +46,12 @@ export async function deletePeer(clientId: number, publicKey: string) {
     logger.info(`Deleted peer ${publicKey} from olm ${olm.olmId}`);
 }
 
-export async function updatePeer(clientId: number, publicKey: string, peer: {
-    allowedIps?: string[];
-    endpoint?: string;
-    serverIP?: string;
-    serverPort?: number;
+export async function updatePeer(clientId: number, peer: {
+    siteId: number,
+    publicKey: string;
+    endpoint: string;
+    serverIP: string | null;
+    serverPort: number | null;
 }) {
     const [olm] = await db.select().from(olms).where(eq(olms.clientId, clientId)).limit(1);
     if (!olm) {
@@ -59,12 +59,15 @@ export async function updatePeer(clientId: number, publicKey: string, peer: {
     }
 
     sendToClient(olm.olmId, {
-        type: 'olm/wg/peer/update',
+        type: 'olm/wg/peer/update',    
         data: {
-            publicKey,
-            ...peer
+            siteId: peer.siteId,
+            publicKey: peer.publicKey,
+            endpoint: peer.endpoint,
+            serverIP: peer.serverIP,
+            serverPort: peer.serverPort
         }
     });
 
-    logger.info(`Updated peer ${publicKey} on olm ${olm.olmId}`);
+    logger.info(`Added peer ${peer.publicKey} to olm ${olm.olmId}`);
 }

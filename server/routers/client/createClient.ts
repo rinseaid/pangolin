@@ -10,7 +10,8 @@ import {
     olms,
     clientSites,
     exitNodes,
-    orgs
+    orgs,
+    sites
 } from "@server/db/schema";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -115,13 +116,28 @@ export async function createClient(
         const updatedSubnet = `${subnet}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
 
         // make sure the subnet is unique
-        const subnetExists = await db
+        const subnetExistsClients = await db
             .select()
             .from(clients)
             .where(eq(clients.subnet, updatedSubnet))
             .limit(1);
 
-        if (subnetExists.length > 0) {
+        if (subnetExistsClients.length > 0) {
+            return next(
+                createHttpError(
+                    HttpCode.CONFLICT,
+                    `Subnet ${subnet} already exists`
+                )
+            );
+        }
+
+        const subnetExistsSites = await db
+            .select()
+            .from(sites)
+            .where(eq(sites.address, updatedSubnet))
+            .limit(1);
+
+        if (subnetExistsSites.length > 0) {
             return next(
                 createHttpError(
                     HttpCode.CONFLICT,

@@ -1,6 +1,6 @@
 import db from "@server/db";
 import { MessageHandler } from "../ws";
-import { clients, clientSites, Olm, olms, sites } from "@server/db/schema";
+import { clients, clientSites, Olm } from "@server/db/schema";
 import { eq } from "drizzle-orm";
 import { updatePeer } from "../newt/peers";
 import logger from "@server/logger";
@@ -41,6 +41,13 @@ export const handleOlmRelayMessage: MessageHandler = async (context) => {
     }
 
     const { siteId } = message.data;
+
+    await db
+        .update(clientSites)
+        .set({
+            isRelayed: true
+        })
+        .where(eq(clientSites.clientId, olm.clientId));
 
     // update the peer on the exit node
     await updatePeer(siteId, client.pubKey, {

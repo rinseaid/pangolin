@@ -128,14 +128,16 @@ export async function createSite(
                 );
             }
 
+            updatedAddress = `${address}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
+
             // make sure the subnet is unique
-            const addressExists = await db
+            const addressExistsSites = await db
                 .select()
                 .from(sites)
-                .where(eq(sites.address, address))
+                .where(eq(sites.address, updatedAddress))
                 .limit(1);
 
-            if (addressExists.length > 0) {
+            if (addressExistsSites.length > 0) {
                 return next(
                     createHttpError(
                         HttpCode.CONFLICT,
@@ -144,7 +146,19 @@ export async function createSite(
                 );
             }
 
-            updatedAddress = `${address}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
+            const addressExistsClients = await db
+                .select()
+                .from(sites)
+                .where(eq(sites.subnet, updatedAddress))
+                .limit(1);
+            if (addressExistsClients.length > 0) {
+                return next(
+                    createHttpError(
+                        HttpCode.CONFLICT,
+                        `Subnet ${subnet} already exists`
+                    )
+                );
+            }
         }
 
         const niceId = await getUniqueSiteName(orgId);
