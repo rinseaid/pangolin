@@ -11,6 +11,7 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { eq, and } from "drizzle-orm";
 import { fromError } from "zod-validation-error";
+import { OpenAPITags, registry } from "@server/openApi";
 
 const updateClientParamsSchema = z
     .object({
@@ -26,6 +27,24 @@ const updateClientSchema = z
     .strict();
 
 export type UpdateClientBody = z.infer<typeof updateClientSchema>;
+
+registry.registerPath({
+    method: "post",
+    path: "/client/{clientId}",
+    description: "Update a client by its client ID.",
+    tags: [OpenAPITags.Client],
+    request: {
+        params: updateClientParamsSchema,
+        body: {
+            content: {
+                "application/json": {
+                    schema: updateClientSchema
+                }
+            }
+        }
+    },
+    responses: {}
+});
 
 export async function updateClient(
     req: Request,

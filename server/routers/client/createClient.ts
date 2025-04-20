@@ -23,6 +23,7 @@ import moment from "moment";
 import { hashPassword } from "@server/auth/password";
 import { isValidCIDR, isValidIP } from "@server/lib/validators";
 import { isIpInCidr } from "@server/lib/ip";
+import { OpenAPITags, registry } from "@server/openApi";
 
 const createClientParamsSchema = z
     .object({
@@ -44,6 +45,24 @@ const createClientSchema = z
 export type CreateClientBody = z.infer<typeof createClientSchema>;
 
 export type CreateClientResponse = Client;
+
+registry.registerPath({
+    method: "put",
+    path: "/org/{orgId}/client",
+    description: "Create a new client.",
+    tags: [OpenAPITags.Client, OpenAPITags.Org],
+    request: {
+        params: createClientParamsSchema,
+        body: {
+            content: {
+                "application/json": {
+                    schema: createClientSchema
+                }
+            }
+        }
+    },
+    responses: {}
+});
 
 export async function createClient(
     req: Request,
@@ -90,10 +109,7 @@ export async function createClient(
             );
         }
 
-        const [org] = await db
-            .select()
-            .from(orgs)
-            .where(eq(orgs.orgId, orgId));
+        const [org] = await db.select().from(orgs).where(eq(orgs.orgId, orgId));
 
         if (!org) {
             return next(

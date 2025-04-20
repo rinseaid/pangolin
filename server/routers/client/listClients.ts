@@ -15,6 +15,7 @@ import { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
+import { OpenAPITags, registry } from "@server/openApi";
 
 const listClientsParamsSchema = z
     .object({
@@ -85,6 +86,18 @@ export type ListClientsResponse = {
     }> }>;
     pagination: { total: number; limit: number; offset: number };
 };
+
+registry.registerPath({
+    method: "get",
+    path: "/org/{orgId}/clients",
+    description: "List all clients for an organization.",
+    tags: [OpenAPITags.Client, OpenAPITags.Org],
+    request: {
+        query: listClientsSchema,
+        params: listClientsParamsSchema
+    },
+    responses: {}
+});
 
 export async function listClients(
     req: Request,

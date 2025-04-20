@@ -8,12 +8,24 @@ import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
+import { OpenAPITags, registry } from "@server/openApi";
 
 const deleteClientSchema = z
     .object({
         clientId: z.string().transform(Number).pipe(z.number().int().positive())
     })
     .strict();
+
+registry.registerPath({
+    method: "delete",
+    path: "/client/{clientId}",
+    description: "Delete a client by its client ID.",
+    tags: [OpenAPITags.Client],
+    request: {
+        params: deleteClientSchema
+    },
+    responses: {}
+});
 
 export async function deleteClient(
     req: Request,

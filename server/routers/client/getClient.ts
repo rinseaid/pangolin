@@ -9,27 +9,36 @@ import createHttpError from "http-errors";
 import logger from "@server/logger";
 import stoi from "@server/lib/stoi";
 import { fromError } from "zod-validation-error";
+import { OpenAPITags, registry } from "@server/openApi";
 
 const getClientSchema = z
     .object({
-        clientId: z
-            .string()
-            .transform(stoi)
-            .pipe(z.number().int().positive()),
+        clientId: z.string().transform(stoi).pipe(z.number().int().positive()),
         orgId: z.string().optional()
     })
     .strict();
 
 async function query(clientId: number) {
-        const [res] = await db
-            .select()
-            .from(clients)
-            .where(eq(clients.clientId, clientId))
-            .limit(1);
-        return res;
+    const [res] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.clientId, clientId))
+        .limit(1);
+    return res;
 }
 
 export type GetClientResponse = NonNullable<Awaited<ReturnType<typeof query>>>;
+
+registry.registerPath({
+    method: "get",
+    path: "/org/{orgId}/client/{clientId}",
+    description: "Get a client by its client ID.",
+    tags: [OpenAPITags.Client, OpenAPITags.Org],
+    request: {
+        params: getClientSchema
+    },
+    responses: {}
+});
 
 export async function getClient(
     req: Request,
@@ -55,7 +64,9 @@ export async function getClient(
         const client = await query(clientId);
 
         if (!client) {
-            return next(createHttpError(HttpCode.NOT_FOUND, "Client not found"));
+            return next(
+                createHttpError(HttpCode.NOT_FOUND, "Client not found")
+            );
         }
 
         return response<GetClientResponse>(res, {
