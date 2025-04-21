@@ -54,11 +54,15 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         logger.warn("handleGetConfigMessage: Site not found");
         return;
     }
-// todo check if the public key has changed
+    
     // we need to wait for hole punch success
     if (!existingSite.endpoint) {
         logger.warn(`Site ${existingSite.siteId} has no endpoint, skipping`);
         return;
+    }
+
+    if (existingSite.publicKey !== publicKey) {
+        // TODO: somehow we should make sure a recent hole punch has happened if this occurs (hole punch could be from the last restart if done quickly)
     }
 
     if (existingSite.lastHolePunch && now - existingSite.lastHolePunch > 6) {
