@@ -6,6 +6,8 @@ import createHttpError from "http-errors";
 import HttpCode from "@server/types/HttpCode";
 
 export enum ActionsEnum {
+    listOrgs = "listOrgs",
+    listUserOrgs = "listUserOrgs",
     createOrg = "createOrg",
     // deleteOrg = "deleteOrg",
     getOrg = "getOrg",
@@ -70,7 +72,17 @@ export enum ActionsEnum {
     listClients = "listClients",
     getClient = "getClient",
     listOrgDomains = "listOrgDomains",
-    createNewt = "createNewt"
+    createNewt = "createNewt",
+    createIdp = "createIdp",
+    updateIdp = "updateIdp",
+    deleteIdp = "deleteIdp",
+    listIdps = "listIdps",
+    getIdp = "getIdp",
+    createIdpOrg = "createIdpOrg",
+    deleteIdpOrg = "deleteIdpOrg",
+    listIdpOrgs = "listIdpOrgs",
+    updateIdpOrg = "updateIdpOrg",
+    checkOrgId = "checkOrgId"
 }
 
 export async function checkUserActionPermission(
