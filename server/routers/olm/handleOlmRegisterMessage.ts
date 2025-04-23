@@ -141,7 +141,7 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             );
             await addPeer(site.siteId, {
                 publicKey: publicKey,
-                allowedIps: [client.subnet],
+                allowedIps: [`${client.subnet.split('/')[0]}/32`], // we want to only allow from that client
                 endpoint: client.endpoint
             });
         } else {

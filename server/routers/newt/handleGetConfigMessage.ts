@@ -133,7 +133,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
                 return {
                     publicKey: client.clients.pubKey!,
-                    allowedIps: [client.clients.subnet!],
+                    allowedIps: [`${client.clients.subnet.split('/')[0]}/32`], // we want to only allow from that client
                     endpoint: client.clientSites.isRelayed
                         ? ""
                         : client.clients.endpoint! // if its relayed it should be localhost
