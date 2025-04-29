@@ -85,7 +85,12 @@ export const resources = sqliteTable("resources", {
     applyRules: integer("applyRules", { mode: "boolean" })
         .notNull()
         .default(false),
-    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true)
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    stickySession: integer("stickySession", { mode: "boolean" })
+        .notNull()
+        .default(false),
+    tlsServerName: text("tlsServerName"),
+    setHostHeader: text("setHostHeader")
 });
 
 export const targets = sqliteTable("targets", {
@@ -107,7 +112,7 @@ export const exitNodes = sqliteTable("exitNodes", {
     name: text("name").notNull(),
     address: text("address").notNull(), // this is the address of the wireguard interface in gerbil
     endpoint: text("endpoint").notNull(), // this is how to reach gerbil externally - gets put into the wireguard config
-    publicKey: text("pubicKey").notNull(),
+    publicKey: text("publicKey").notNull(),
     listenPort: integer("listenPort").notNull(),
     reachableAt: text("reachableAt") // this is the internal address of the gerbil http server for command control
 });
@@ -529,6 +534,57 @@ export const idpOidcConfig = sqliteTable("idpOidcConfig", {
     scopes: text("scopes").notNull()
 });
 
+export const licenseKey = sqliteTable("licenseKey", {
+    licenseKeyId: text("licenseKeyId").primaryKey().notNull(),
+    instanceId: text("instanceId").notNull(),
+    token: text("token").notNull()
+});
+
+export const hostMeta = sqliteTable("hostMeta", {
+    hostMetaId: text("hostMetaId").primaryKey().notNull(),
+    createdAt: integer("createdAt").notNull()
+});
+
+export const apiKeys = sqliteTable("apiKeys", {
+    apiKeyId: text("apiKeyId").primaryKey(),
+    name: text("name").notNull(),
+    apiKeyHash: text("apiKeyHash").notNull(),
+    lastChars: text("lastChars").notNull(),
+    createdAt: text("dateCreated").notNull(),
+    isRoot: integer("isRoot", { mode: "boolean" }).notNull().default(false)
+});
+
+export const apiKeyActions = sqliteTable("apiKeyActions", {
+    apiKeyId: text("apiKeyId")
+        .notNull()
+        .references(() => apiKeys.apiKeyId, { onDelete: "cascade" }),
+    actionId: text("actionId")
+        .notNull()
+        .references(() => actions.actionId, { onDelete: "cascade" })
+});
+
+export const apiKeyOrg = sqliteTable("apiKeyOrg", {
+    apiKeyId: text("apiKeyId")
+        .notNull()
+        .references(() => apiKeys.apiKeyId, { onDelete: "cascade" }),
+    orgId: text("orgId")
+        .references(() => orgs.orgId, {
+            onDelete: "cascade"
+        })
+        .notNull()
+});
+
+export const idpOrg = sqliteTable("idpOrg", {
+    idpId: integer("idpId")
+        .notNull()
+        .references(() => idp.idpId, { onDelete: "cascade" }),
+    orgId: text("orgId")
+        .notNull()
+        .references(() => orgs.orgId, { onDelete: "cascade" }),
+    roleMapping: text("roleMapping"),
+    orgMapping: text("orgMapping")
+});
+
 export type Org = InferSelectModel<typeof orgs>;
 export type User = InferSelectModel<typeof users>;
 export type Site = InferSelectModel<typeof sites>;
@@ -571,3 +627,6 @@ export type UserClient = InferSelectModel<typeof userClients>;
 export type Domain = InferSelectModel<typeof domains>;
 export type SupporterKey = InferSelectModel<typeof supporterKey>;
 export type Idp = InferSelectModel<typeof idp>;
+export type ApiKey = InferSelectModel<typeof apiKeys>;
+export type ApiKeyAction = InferSelectModel<typeof apiKeyActions>;
+export type ApiKeyOrg = InferSelectModel<typeof apiKeyOrg>;

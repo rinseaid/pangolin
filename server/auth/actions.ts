@@ -6,6 +6,7 @@ import createHttpError from "http-errors";
 import HttpCode from "@server/types/HttpCode";
 
 export enum ActionsEnum {
+    createOrgUser = "createOrgUser",
     listOrgs = "listOrgs",
     listUserOrgs = "listUserOrgs",
     createOrg = "createOrg",
@@ -82,7 +83,14 @@ export enum ActionsEnum {
     deleteIdpOrg = "deleteIdpOrg",
     listIdpOrgs = "listIdpOrgs",
     updateIdpOrg = "updateIdpOrg",
-    checkOrgId = "checkOrgId"
+    checkOrgId = "checkOrgId",
+    createApiKey = "createApiKey",
+    deleteApiKey = "deleteApiKey",
+    setApiKeyActions = "setApiKeyActions",
+    setApiKeyOrgs = "setApiKeyOrgs",
+    listApiKeyActions = "listApiKeyActions",
+    listApiKeys = "listApiKeys",
+    getApiKey = "getApiKey"
 }
 
 export async function checkUserActionPermission(

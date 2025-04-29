@@ -80,6 +80,9 @@ export default function StepperForm() {
     };
 
     const checkOrgIdAvailability = useCallback(async (value: string) => {
+        if (loading) {
+            return;
+        }
         try {
             const res = await api.get(`/org/checkId`, {
                 params: {

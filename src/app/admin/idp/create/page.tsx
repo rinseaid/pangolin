@@ -35,6 +35,8 @@ import { Alert, AlertDescription, AlertTitle } from "@app/components/ui/alert";
 import { InfoIcon, ExternalLink } from "lucide-react";
 import { StrategySelect } from "@app/components/StrategySelect";
 import { SwitchInput } from "@app/components/SwitchInput";
+import { Badge } from "@app/components/ui/badge";
+import { useLicenseStatusContext } from "@app/hooks/useLicenseStatusContext";
 
 const createIdpFormSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -73,6 +75,7 @@ export default function Page() {
     const api = createApiClient({ env });
     const router = useRouter();
     const [createLoading, setCreateLoading] = useState(false);
+    const { isUnlocked } = useLicenseStatusContext();
 
     const form = useForm<CreateIdpFormValues>({
         resolver: zodResolver(createIdpFormSchema),
@@ -87,7 +90,7 @@ export default function Page() {
             namePath: "name",
             emailPath: "email",
             scopes: "openid profile email",
-            autoProvision: true
+            autoProvision: false
         }
     });
 
@@ -182,24 +185,35 @@ export default function Page() {
                                         )}
                                     />
 
-                                    <SwitchInput
-                                        id="auto-provision-toggle"
-                                        label="Auto Provision Users"
-                                        defaultChecked={form.getValues(
-                                            "autoProvision"
+                                    <div className="flex items-start mb-0">
+                                        <SwitchInput
+                                            id="auto-provision-toggle"
+                                            label="Auto Provision Users"
+                                            defaultChecked={form.getValues(
+                                                "autoProvision"
+                                            )}
+                                            disabled={!isUnlocked()}
+                                            onCheckedChange={(checked) => {
+                                                form.setValue(
+                                                    "autoProvision",
+                                                    checked
+                                                );
+                                            }}
+                                        />
+                                        {!isUnlocked() && (
+                                            <Badge
+                                                variant="outlinePrimary"
+                                                className="ml-2"
+                                            >
+                                                Professional
+                                            </Badge>
                                         )}
-                                        onCheckedChange={(checked) => {
-                                            form.setValue(
-                                                "autoProvision",
-                                                checked
-                                            );
-                                        }}
-                                    />
+                                    </div>
                                     <span className="text-sm text-muted-foreground">
                                         When enabled, users will be
                                         automatically created in the system upon
-                                        first login using this identity
-                                        provider.
+                                        first login with the ability to map
+                                        users to roles and organizations.
                                     </span>
                                 </form>
                             </Form>

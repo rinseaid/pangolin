@@ -13,5 +13,6 @@ export enum OpenAPITags {
     Rule = "Rule",
     AccessToken = "Access Token",
     Idp = "Identity Provider",
-    Client = "Client"
+    Client = "Client",
+    ApiKey = "API Key"
 }

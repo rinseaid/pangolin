@@ -44,6 +44,7 @@ export default function IdpTable({ idps }: Props) {
                 title: "Success",
                 description: "Identity provider deleted successfully"
             });
+            setIsDeleteModalOpen(false);
             router.refresh();
         } catch (e) {
             toast({
@@ -150,22 +151,6 @@ export default function IdpTable({ idps }: Props) {
                 const type = row.original.type;
                 return (
                     <Badge variant="secondary">{getTypeDisplay(type)}</Badge>
-                );
-            }
-        },
-        {
-            accessorKey: "orgCount",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        onClick={() =>
-                            column.toggleSorting(column.getIsSorted() === "asc")
-                        }
-                    >
-                        Organization Policies
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
                 );
             }
         },

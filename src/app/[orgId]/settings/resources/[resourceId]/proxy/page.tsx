@@ -60,17 +60,28 @@ import {
     SettingsSectionTitle,
     SettingsSectionDescription,
     SettingsSectionBody,
-    SettingsSectionFooter
+    SettingsSectionFooter,
+    SettingsSectionForm
 } from "@app/components/Settings";
 import { SwitchInput } from "@app/components/SwitchInput";
 import { useRouter } from "next/navigation";
 import { isTargetValid } from "@server/lib/validators";
+import { tlsNameSchema } from "@server/lib/schemas";
+import { ChevronsUpDown } from "lucide-react";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger
+} from "@app/components/ui/collapsible";
 
 const addTargetSchema = z.object({
     ip: z.string().refine(isTargetValid),
     method: z.string().nullable(),
     port: z.coerce.number().int().positive()
-    // protocol: z.string(),
+});
+
+const targetsSettingsSchema = z.object({
+    stickySession: z.boolean()
 });
 
 type LocalTarget = Omit<
@@ -80,6 +91,47 @@ type LocalTarget = Omit<
     },
     "protocol"
 >;
+
+const proxySettingsSchema = z.object({
+    setHostHeader: z
+        .string()
+        .optional()
+        .refine(
+            (data) => {
+                if (data) {
+                    return tlsNameSchema.safeParse(data).success;
+                }
+                return true;
+            },
+            {
+                message:
+                    "Invalid custom Host Header value. Use domain name format, or save empty to unset custom Host Header."
+            }
+        )
+});
+
+const tlsSettingsSchema = z.object({
+    ssl: z.boolean(),
+    tlsServerName: z
+        .string()
+        .optional()
+        .refine(
+            (data) => {
+                if (data) {
+                    return tlsNameSchema.safeParse(data).success;
+                }
+                return true;
+            },
+            {
+                message:
+                    "Invalid TLS Server Name. Use domain name format, or save empty to remove the TLS Server Name."
+            }
+        )
+});
+
+type ProxySettingsValues = z.infer<typeof proxySettingsSchema>;
+type TlsSettingsValues = z.infer<typeof tlsSettingsSchema>;
+type TargetsSettingsValues = z.infer<typeof targetsSettingsSchema>;
 
 export default function ReverseProxyTargets(props: {
     params: Promise<{ resourceId: number }>;
@@ -93,11 +145,13 @@ export default function ReverseProxyTargets(props: {
     const [targets, setTargets] = useState<LocalTarget[]>([]);
     const [site, setSite] = useState<GetSiteResponse>();
     const [targetsToRemove, setTargetsToRemove] = useState<number[]>([]);
-    const [sslEnabled, setSslEnabled] = useState(resource.ssl);
 
-    const [loading, setLoading] = useState(false);
+    const [httpsTlsLoading, setHttpsTlsLoading] = useState(false);
+    const [targetsLoading, setTargetsLoading] = useState(false);
+    const [proxySettingsLoading, setProxySettingsLoading] = useState(false);
 
     const [pageLoading, setPageLoading] = useState(true);
+    const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const router = useRouter();
 
     const addTargetForm = useForm({
@@ -107,6 +161,28 @@ export default function ReverseProxyTargets(props: {
             method: resource.http ? "http" : null,
             port: "" as any as number
         } as z.infer<typeof addTargetSchema>
+    });
+
+    const tlsSettingsForm = useForm<TlsSettingsValues>({
+        resolver: zodResolver(tlsSettingsSchema),
+        defaultValues: {
+            ssl: resource.ssl,
+            tlsServerName: resource.tlsServerName || ""
+        }
+    });
+
+    const proxySettingsForm = useForm<ProxySettingsValues>({
+        resolver: zodResolver(proxySettingsSchema),
+        defaultValues: {
+            setHostHeader: resource.setHostHeader || ""
+        }
+    });
+
+    const targetsSettingsForm = useForm<TargetsSettingsValues>({
+        resolver: zodResolver(targetsSettingsSchema),
+        defaultValues: {
+            stickySession: resource.stickySession
+        }
     });
 
     useEffect(() => {
@@ -229,13 +305,12 @@ export default function ReverseProxyTargets(props: {
 
     async function saveTargets() {
         try {
-            setLoading(true);
+            setTargetsLoading(true);
 
             for (let target of targets) {
                 const data = {
                     ip: target.ip,
                     port: target.port,
-                    // protocol: target.protocol,
                     method: target.method,
                     enabled: target.enabled
                 };
@@ -248,27 +323,22 @@ export default function ReverseProxyTargets(props: {
                 } else if (target.updated) {
                     await api.post(`/target/${target.targetId}`, data);
                 }
-
-                setTargets([
-                    ...targets.map((t) => {
-                        let res = {
-                            ...t,
-                            new: false,
-                            updated: false
-                        };
-                        return res;
-                    })
-                ]);
             }
 
             for (const targetId of targetsToRemove) {
                 await api.delete(`/target/${targetId}`);
-                setTargets(targets.filter((t) => t.targetId !== targetId));
             }
+
+            // Save sticky session setting
+            const stickySessionData = targetsSettingsForm.getValues();
+            await api.post(`/resource/${params.resourceId}`, {
+                stickySession: stickySessionData.stickySession
+            });
+            updateResource({ stickySession: stickySessionData.stickySession });
 
             toast({
                 title: "Targets updated",
-                description: "Targets updated successfully"
+                description: "Targets and settings updated successfully"
             });
 
             setTargetsToRemove([]);
@@ -277,43 +347,75 @@ export default function ReverseProxyTargets(props: {
             console.error(err);
             toast({
                 variant: "destructive",
-                title: "Operation failed",
+                title: "Failed to update targets",
                 description: formatAxiosError(
                     err,
-                    "An error occurred during the save operation"
+                    "An error occurred while updating targets"
                 )
             });
+        } finally {
+            setTargetsLoading(false);
         }
-
-        setLoading(false);
     }
 
-    async function saveSsl(val: boolean) {
-        const res = await api
-            .post(`/resource/${params.resourceId}`, {
-                ssl: val
-            })
-            .catch((err) => {
-                console.error(err);
-                toast({
-                    variant: "destructive",
-                    title: "Failed to update SSL configuration",
-                    description: formatAxiosError(
-                        err,
-                        "An error occurred while updating the SSL configuration"
-                    )
-                });
+    async function saveTlsSettings(data: TlsSettingsValues) {
+        try {
+            setHttpsTlsLoading(true);
+            await api.post(`/resource/${params.resourceId}`, {
+                ssl: data.ssl,
+                tlsServerName: data.tlsServerName || undefined
             });
-
-        if (res && res.status === 200) {
-            setSslEnabled(val);
-            updateResource({ ssl: val });
-
+            updateResource({
+                ...resource,
+                ssl: data.ssl,
+                tlsServerName: data.tlsServerName || undefined
+            });
             toast({
-                title: "SSL Configuration",
-                description: "SSL configuration updated successfully"
+                title: "TLS settings updated",
+                description: "Your TLS settings have been updated successfully"
             });
-            router.refresh();
+        } catch (err) {
+            console.error(err);
+            toast({
+                variant: "destructive",
+                title: "Failed to update TLS settings",
+                description: formatAxiosError(
+                    err,
+                    "An error occurred while updating TLS settings"
+                )
+            });
+        } finally {
+            setHttpsTlsLoading(false);
+        }
+    }
+
+    async function saveProxySettings(data: ProxySettingsValues) {
+        try {
+            setProxySettingsLoading(true);
+            await api.post(`/resource/${params.resourceId}`, {
+                setHostHeader: data.setHostHeader || undefined
+            });
+            updateResource({
+                ...resource,
+                setHostHeader: data.setHostHeader || undefined
+            });
+            toast({
+                title: "Proxy settings updated",
+                description:
+                    "Your proxy settings have been updated successfully"
+            });
+        } catch (err) {
+            console.error(err);
+            toast({
+                variant: "destructive",
+                title: "Failed to update proxy settings",
+                description: formatAxiosError(
+                    err,
+                    "An error occurred while updating proxy settings"
+                )
+            });
+        } finally {
+            setProxySettingsLoading(false);
         }
     }
 
@@ -456,35 +558,159 @@ export default function ReverseProxyTargets(props: {
                 <SettingsSection>
                     <SettingsSectionHeader>
                         <SettingsSectionTitle>
-                            SSL Configuration
+                            HTTPS & TLS Settings
                         </SettingsSectionTitle>
                         <SettingsSectionDescription>
-                            Set up SSL to secure your connections with certificates
+                            Configure TLS settings for your resource
                         </SettingsSectionDescription>
                     </SettingsSectionHeader>
                     <SettingsSectionBody>
-                        <SwitchInput
-                            id="ssl-toggle"
-                            label="Enable SSL (https)"
-                            defaultChecked={resource.ssl}
-                            onCheckedChange={async (val) => {
-                                await saveSsl(val);
-                            }}
-                        />
+                        <SettingsSectionForm>
+                            <Form {...tlsSettingsForm}>
+                                <form
+                                    onSubmit={tlsSettingsForm.handleSubmit(
+                                        saveTlsSettings
+                                    )}
+                                    className="space-y-4"
+                                    id="tls-settings-form"
+                                >
+                                    <FormField
+                                        control={tlsSettingsForm.control}
+                                        name="ssl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <SwitchInput
+                                                        id="ssl-toggle"
+                                                        label="Enable SSL (https)"
+                                                        defaultChecked={
+                                                            field.value
+                                                        }
+                                                        onCheckedChange={(
+                                                            val
+                                                        ) => {
+                                                            field.onChange(val);
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Collapsible
+                                        open={isAdvancedOpen}
+                                        onOpenChange={setIsAdvancedOpen}
+                                        className="space-y-2"
+                                    >
+                                        <div className="flex items-center justify-between space-x-4">
+                                            <CollapsibleTrigger asChild>
+                                                <Button
+                                                    variant="text"
+                                                    size="sm"
+                                                    className="p-0 flex items-center justify-start gap-2 w-full"
+                                                >
+                                                    <h4 className="text-sm font-semibold">
+                                                        Advanced TLS Settings
+                                                    </h4>
+                                                    <div>
+                                                        <ChevronsUpDown className="h-4 w-4" />
+                                                        <span className="sr-only">
+                                                            Toggle
+                                                        </span>
+                                                    </div>
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                        </div>
+                                        <CollapsibleContent className="space-y-2">
+                                            <FormField
+                                                control={
+                                                    tlsSettingsForm.control
+                                                }
+                                                name="tlsServerName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>
+                                                            TLS Server Name
+                                                            (SNI)
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} />
+                                                        </FormControl>
+                                                        <FormDescription>
+                                                            The TLS Server Name
+                                                            to use for SNI.
+                                                            Leave empty to use
+                                                            the default.
+                                                        </FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </CollapsibleContent>
+                                    </Collapsible>
+                                </form>
+                            </Form>
+                        </SettingsSectionForm>
                     </SettingsSectionBody>
+                    <SettingsSectionFooter>
+                        <Button
+                            type="submit"
+                            loading={httpsTlsLoading}
+                            form="tls-settings-form"
+                        >
+                            Save HTTPS & TLS Settings
+                        </Button>
+                    </SettingsSectionFooter>
                 </SettingsSection>
             )}
-            {/* Targets Section */}
+
             <SettingsSection>
                 <SettingsSectionHeader>
                     <SettingsSectionTitle>
-                        Target Configuration
+                        Targets Configuration
                     </SettingsSectionTitle>
                     <SettingsSectionDescription>
                         Set up targets to route traffic to your services
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
                 <SettingsSectionBody>
+                    <SettingsSectionForm>
+                        <Form {...targetsSettingsForm}>
+                            <form
+                                onSubmit={targetsSettingsForm.handleSubmit(
+                                    saveTargets
+                                )}
+                                className="space-y-4"
+                                id="targets-settings-form"
+                            >
+                                {targets.length >= 2 && (
+                                    <FormField
+                                        control={targetsSettingsForm.control}
+                                        name="stickySession"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <SwitchInput
+                                                        id="sticky-toggle"
+                                                        label="Enable Sticky Sessions"
+                                                        description="Keep connections on the same backend target for their entire session."
+                                                        defaultChecked={
+                                                            field.value
+                                                        }
+                                                        onCheckedChange={(
+                                                            val
+                                                        ) => {
+                                                            field.onChange(val);
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+                            </form>
+                        </Form>
+                    </SettingsSectionForm>
+
                     <Form {...addTargetForm}>
                         <form
                             onSubmit={addTargetForm.handleSubmit(addTarget)}
@@ -629,13 +855,70 @@ export default function ReverseProxyTargets(props: {
                 <SettingsSectionFooter>
                     <Button
                         onClick={saveTargets}
-                        loading={loading}
-                        disabled={loading}
+                        loading={targetsLoading}
+                        disabled={targetsLoading}
+                        form="targets-settings-form"
                     >
                         Save Targets
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
+
+            {resource.http && (
+                <SettingsSection>
+                    <SettingsSectionHeader>
+                        <SettingsSectionTitle>
+                            Additional Proxy Settings
+                        </SettingsSectionTitle>
+                        <SettingsSectionDescription>
+                            Configure how your resource handles proxy settings
+                        </SettingsSectionDescription>
+                    </SettingsSectionHeader>
+                    <SettingsSectionBody>
+                        <SettingsSectionForm>
+                            <Form {...proxySettingsForm}>
+                                <form
+                                    onSubmit={proxySettingsForm.handleSubmit(
+                                        saveProxySettings
+                                    )}
+                                    className="space-y-4"
+                                    id="proxy-settings-form"
+                                >
+                                    <FormField
+                                        control={proxySettingsForm.control}
+                                        name="setHostHeader"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Custom Host Header
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    The Host header to set when
+                                                    proxying requests. Leave
+                                                    empty to use the default.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </form>
+                            </Form>
+                        </SettingsSectionForm>
+                    </SettingsSectionBody>
+                    <SettingsSectionFooter>
+                        <Button
+                            type="submit"
+                            loading={proxySettingsLoading}
+                            form="proxy-settings-form"
+                        >
+                            Save Proxy Settings
+                        </Button>
+                    </SettingsSectionFooter>
+                </SettingsSection>
+            )}
         </SettingsContainer>
     );
 }

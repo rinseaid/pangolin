@@ -12,6 +12,8 @@ import * as client from "./client";
 import * as supporterKey from "./supporterKey";
 import * as accessToken from "./accessToken";
 import * as idp from "./idp";
+import * as license from "./license";
+import * as apiKeys from "./apiKeys";
 import HttpCode from "@server/types/HttpCode";
 import {
     verifyAccessTokenAccess,
@@ -29,6 +31,8 @@ import {
     verifyUserIsServerAdmin,
     verifyIsLoggedInUser,
     verifyClientAccess,
+    verifyApiKeyAccess,
+    verifyValidLicense
 } from "@server/middlewares";
 import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
 import { ActionsEnum } from "@server/auth/actions";
@@ -498,7 +502,15 @@ authenticated.delete(
     user.adminRemoveUser
 );
 
+authenticated.put(
+    "/org/:orgId/user",
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.createOrgUser),
+    user.createOrgUser
+);
+
 authenticated.get("/org/:orgId/user/:userId", verifyOrgAccess, user.getOrgUser);
+
 authenticated.get(
     "/org/:orgId/users",
     verifyOrgAccess,
@@ -566,6 +578,155 @@ authenticated.delete("/idp/:idpId", verifyUserIsServerAdmin, idp.deleteIdp);
 authenticated.get("/idp", verifyUserIsServerAdmin, idp.listIdps);
 
 authenticated.get("/idp/:idpId", verifyUserIsServerAdmin, idp.getIdp);
+
+authenticated.put(
+    "/idp/:idpId/org/:orgId",
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    idp.createIdpOrgPolicy
+);
+
+authenticated.post(
+    "/idp/:idpId/org/:orgId",
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    idp.updateIdpOrgPolicy
+);
+
+authenticated.delete(
+    "/idp/:idpId/org/:orgId",
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    idp.deleteIdpOrgPolicy
+);
+
+authenticated.get(
+    "/idp/:idpId/org",
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    idp.listIdpOrgPolicies
+);
+
+authenticated.get("/idp", idp.listIdps); // anyone can see this; it's just a list of idp names and ids
+authenticated.get("/idp/:idpId", verifyUserIsServerAdmin, idp.getIdp);
+
+authenticated.post(
+    "/license/activate",
+    verifyUserIsServerAdmin,
+    license.activateLicense
+);
+
+authenticated.get(
+    "/license/keys",
+    verifyUserIsServerAdmin,
+    license.listLicenseKeys
+);
+
+authenticated.delete(
+    "/license/:licenseKey",
+    verifyUserIsServerAdmin,
+    license.deleteLicenseKey
+);
+
+authenticated.post(
+    "/license/recheck",
+    verifyUserIsServerAdmin,
+    license.recheckStatus
+);
+
+authenticated.get(
+    `/api-key/:apiKeyId`,
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    apiKeys.getApiKey
+);
+
+authenticated.put(
+    `/api-key`,
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    apiKeys.createRootApiKey
+);
+
+authenticated.delete(
+    `/api-key/:apiKeyId`,
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    apiKeys.deleteApiKey
+);
+
+authenticated.get(
+    `/api-keys`,
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    apiKeys.listRootApiKeys
+);
+
+authenticated.get(
+    `/api-key/:apiKeyId/actions`,
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    apiKeys.listApiKeyActions
+);
+
+authenticated.post(
+    `/api-key/:apiKeyId/actions`,
+    verifyValidLicense,
+    verifyUserIsServerAdmin,
+    apiKeys.setApiKeyActions
+);
+
+authenticated.get(
+    `/org/:orgId/api-keys`,
+    verifyValidLicense,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.listApiKeys),
+    apiKeys.listOrgApiKeys
+);
+
+authenticated.post(
+    `/org/:orgId/api-key/:apiKeyId/actions`,
+    verifyValidLicense,
+    verifyOrgAccess,
+    verifyApiKeyAccess,
+    verifyUserHasAction(ActionsEnum.setApiKeyActions),
+    apiKeys.setApiKeyActions
+);
+
+authenticated.get(
+    `/org/:orgId/api-key/:apiKeyId/actions`,
+    verifyValidLicense,
+    verifyOrgAccess,
+    verifyApiKeyAccess,
+    verifyUserHasAction(ActionsEnum.listApiKeyActions),
+    apiKeys.listApiKeyActions
+);
+
+authenticated.put(
+    `/org/:orgId/api-key`,
+    verifyValidLicense,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.createApiKey),
+    apiKeys.createOrgApiKey
+);
+
+authenticated.delete(
+    `/org/:orgId/api-key/:apiKeyId`,
+    verifyValidLicense,
+    verifyOrgAccess,
+    verifyApiKeyAccess,
+    verifyUserHasAction(ActionsEnum.deleteApiKey),
+    apiKeys.deleteOrgApiKey
+);
+
+authenticated.get(
+    `/org/:orgId/api-key/:apiKeyId`,
+    verifyValidLicense,
+    verifyOrgAccess,
+    verifyApiKeyAccess,
+    verifyUserHasAction(ActionsEnum.getApiKey),
+    apiKeys.getApiKey
+);
 
 // Auth routes
 export const authRouter = Router();

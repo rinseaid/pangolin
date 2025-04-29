@@ -21,10 +21,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import CreateResourceForm from "./CreateResourceForm";
 import { useState } from "react";
 import ConfirmDeleteDialog from "@app/components/ConfirmDeleteDialog";
-import { set } from "zod";
 import { formatAxiosError } from "@app/lib/api";
 import { toast } from "@app/hooks/useToast";
 import { createApiClient } from "@app/lib/api";
@@ -58,7 +56,6 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
 
     const api = createApiClient(useEnvContext());
 
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedResource, setSelectedResource] =
         useState<ResourceRow | null>();
@@ -242,7 +239,7 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
                                 <span>Not Protected</span>
                             </span>
                         ) : (
-                            <span>--</span>
+                            <span>-</span>
                         )}
                     </div>
                 );
@@ -282,11 +279,6 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
 
     return (
         <>
-            <CreateResourceForm
-                open={isCreateModalOpen}
-                setOpen={setIsCreateModalOpen}
-            />
-
             {selectedResource && (
                 <ConfirmDeleteDialog
                     open={isDeleteModalOpen}
@@ -328,7 +320,7 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
                 columns={columns}
                 data={resources}
                 createResource={() => {
-                    setIsCreateModalOpen(true);
+                    router.push(`/${orgId}/settings/resources/create`);
                 }}
             />
         </>

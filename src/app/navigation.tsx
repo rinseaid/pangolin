@@ -7,8 +7,18 @@ import {
     Waypoints,
     Combine,
     Fingerprint,
-    Workflow
+    Workflow,
+    KeyRound,
+    TicketCheck
 } from "lucide-react";
+
+export const orgLangingNavItems: SidebarNavItem[] = [
+    {
+        title: "Overview",
+        href: "/{orgId}",
+        icon: <Home className="h-4 w-4" />
+    }
+];
 
 export const rootNavItems: SidebarNavItem[] = [
     {
@@ -62,6 +72,12 @@ export const orgNavItems: SidebarNavItem[] = [
         icon: <LinkIcon className="h-4 w-4" />
     },
     {
+        title: "API Keys",
+        href: "/{orgId}/settings/api-keys",
+        icon: <KeyRound className="h-4 w-4" />,
+        showProfessional: true
+    },
+    {
         title: "Settings",
         href: "/{orgId}/settings/general",
         icon: <Settings className="h-4 w-4" />
@@ -75,8 +91,19 @@ export const adminNavItems: SidebarNavItem[] = [
         icon: <Users className="h-4 w-4" />
     },
     {
+        title: "API Keys",
+        href: "/admin/api-keys",
+        icon: <KeyRound className="h-4 w-4" />,
+        showProfessional: true
+    },
+    {
         title: "Identity Providers",
         href: "/admin/idp",
         icon: <Fingerprint className="h-4 w-4" />
+    },
+    {
+        title: "License",
+        href: "/admin/license",
+        icon: <TicketCheck className="h-4 w-4" />
     }
 ];
