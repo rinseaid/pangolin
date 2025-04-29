@@ -54,11 +54,15 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
         logger.warn("handleGetConfigMessage: Site not found");
         return;
     }
-// todo check if the public key has changed
+    
     // we need to wait for hole punch success
     if (!existingSite.endpoint) {
         logger.warn(`Site ${existingSite.siteId} has no endpoint, skipping`);
         return;
+    }
+
+    if (existingSite.publicKey !== publicKey) {
+        // TODO: somehow we should make sure a recent hole punch has happened if this occurs (hole punch could be from the last restart if done quickly)
     }
 
     if (existingSite.lastHolePunch && now - existingSite.lastHolePunch > 6) {
@@ -129,7 +133,7 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
 
                 return {
                     publicKey: client.clients.pubKey!,
-                    allowedIps: [client.clients.subnet!],
+                    allowedIps: [`${client.clients.subnet.split('/')[0]}/32`], // we want to only allow from that client
                     endpoint: client.clientSites.isRelayed
                         ? ""
                         : client.clients.endpoint! // if its relayed it should be localhost
