@@ -56,12 +56,16 @@ import { MinusCircle, PlusCircle } from "lucide-react";
 import ConfirmDeleteDialog from "@app/components/ConfirmDeleteDialog";
 import { SitePriceCalculator } from "./components/SitePriceCalculator";
 import Link from "next/link";
+import { Checkbox } from "@app/components/ui/checkbox";
 
 const formSchema = z.object({
     licenseKey: z
         .string()
         .nonempty({ message: "License key is required" })
-        .max(255)
+        .max(255),
+    agreeToTerms: z.boolean().refine((val) => val === true, {
+        message: "You must agree to the license terms"
+    })
 });
 
 function obfuscateLicenseKey(key: string): string {
@@ -95,7 +99,8 @@ export default function LicensePage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            licenseKey: ""
+            licenseKey: "",
+            agreeToTerms: false
         }
     });
 
@@ -116,7 +121,7 @@ export default function LicensePage() {
                 );
             const keys = response.data.data;
             setRows(keys);
-            const hostKey = keys.find((key) => key.type === "LICENSE");
+            const hostKey = keys.find((key) => key.type === "HOST");
             if (hostKey) {
                 setHostLicense(hostKey.licenseKey);
             } else {
@@ -265,6 +270,44 @@ export default function LicensePage() {
                                         </FormItem>
                                     )}
                                 />
+                                <FormField
+                                    control={form.control}
+                                    name="agreeToTerms"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel>
+                                                    By checking this box, you
+                                                    confirm that you have read
+                                                    and agree to the license
+                                                    terms corresponding to the
+                                                    tier associated with your
+                                                    license key.
+                                                    <br />
+                                                    <Link
+                                                        href="https://fossorial.io/license.html"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-primary hover:underline"
+                                                    >
+                                                        View Fossorial
+                                                        Commercial License &
+                                                        Subscription Terms
+                                                    </Link>
+                                                </FormLabel>
+                                                <FormMessage />
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
                             </form>
                         </Form>
                     </CredenzaBody>
@@ -305,8 +348,7 @@ export default function LicensePage() {
                             <p>
                                 <b>
                                     This will remove the license key and all
-                                    associated permissions. Any sites using this
-                                    license key will no longer be accessible.
+                                    associated permissions granted by it.
                                 </b>
                             </p>
                             <p>
@@ -343,7 +385,13 @@ export default function LicensePage() {
                                     <div className="space-y-2 text-green-500">
                                         <div className="text-2xl flex items-center gap-2">
                                             <Check />
-                                            Licensed
+                                            {licenseStatus?.tier ===
+                                            "PROFESSIONAL"
+                                                ? "Professional License"
+                                                : licenseStatus?.tier ===
+                                                    "ENTERPRISE"
+                                                  ? "Enterprise License"
+                                                  : "Licensed"}
                                         </div>
                                     </div>
                                 ) : (

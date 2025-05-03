@@ -103,7 +103,7 @@ export async function createSite(
 
         const { orgId } = parsedParams.data;
 
-        if (!req.userOrgRoleId) {
+        if (req.user && !req.userOrgRoleId) {
             return next(
                 createHttpError(HttpCode.FORBIDDEN, "User does not have a role")
             );
@@ -235,7 +235,7 @@ export async function createSite(
                 siteId: newSite.siteId
             });
 
-            if (req.userOrgRoleId != adminRole[0].roleId) {
+            if (req.user && req.userOrgRoleId != adminRole[0].roleId) {
                 // make sure the user can access the site
                 trx.insert(userSites).values({
                     userId: req.user?.userId!,

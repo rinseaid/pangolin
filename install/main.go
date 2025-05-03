@@ -64,15 +64,15 @@ func main() {
 	}
 
 	var config Config
-	config.DoCrowdsecInstall = false
-	config.Secret = generateRandomSecretKey()
-
+	
 	// check if there is already a config file
 	if _, err := os.Stat("config/config.yml"); err != nil {
 		config = collectUserInput(reader)
-
+		
 		loadVersions(&config)
-
+		config.DoCrowdsecInstall = false
+		config.Secret = generateRandomSecretKey()
+		
 		if err := createConfigFiles(config); err != nil {
 			fmt.Printf("Error creating config files: %v\n", err)
 			os.Exit(1)
@@ -202,7 +202,7 @@ func collectUserInput(reader *bufio.Reader) Config {
 	config.BaseDomain = readString(reader, "Enter your base domain (no subdomain e.g. example.com)", "")
 	config.DashboardDomain = readString(reader, "Enter the domain for the Pangolin dashboard", "pangolin."+config.BaseDomain)
 	config.LetsEncryptEmail = readString(reader, "Enter email for Let's Encrypt certificates", "")
-	config.InstallGerbil = readBool(reader, "Do you want to use Gerbil to allow tunned connections", true)
+	config.InstallGerbil = readBool(reader, "Do you want to use Gerbil to allow tunneled connections", true)
 
 	// Admin user configuration
 	fmt.Println("\n=== Admin User Configuration ===")
