@@ -30,10 +30,19 @@ import {
 import { formatAxiosError } from "@app/lib/api";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Tag, TagInput } from "@app/components/tags/tag-input";
+import { AxiosResponse } from "axios";
+import { ListSitesResponse } from "@server/routers/site";
 
 const GeneralFormSchema = z.object({
-    name: z.string().nonempty("Name is required")
+    name: z.string().nonempty("Name is required"),
+    siteIds: z.array(
+        z.object({
+            id: z.string(),
+            text: z.string()
+        })
+    )
 });
 
 type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
@@ -43,21 +52,68 @@ export default function GeneralPage() {
     const api = createApiClient(useEnvContext());
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const [sites, setSites] = useState<Tag[]>([]);
+    const [clientSites, setClientSites] = useState<Tag[]>([]);
+    const [activeSitesTagIndex, setActiveSitesTagIndex] = useState<number | null>(null);
 
     const form = useForm<GeneralFormValues>({
         resolver: zodResolver(GeneralFormSchema),
         defaultValues: {
-            name: client?.name
+            name: client?.name,
+            siteIds: []
         },
         mode: "onChange"
     });
+
+    // Fetch available sites and client's assigned sites
+    useEffect(() => {
+        const fetchSites = async () => {
+            try {
+                // Fetch all available sites
+                const res = await api.get<AxiosResponse<ListSitesResponse>>(
+                    `/org/${client?.orgId}/sites/`
+                );
+                
+                const availableSites = res.data.data.sites
+                    .filter((s) => s.type === "newt" && s.subnet)
+                    .map((site) => ({
+                        id: site.siteId.toString(),
+                        text: site.name
+                    }));
+                
+                setSites(availableSites);
+
+                // Filter sites to only include those assigned to the client
+                const assignedSites = availableSites.filter((site) =>
+                    client?.siteIds?.includes(parseInt(site.id))
+                );
+                setClientSites(assignedSites);
+                // Set the default values for the form
+                form.setValue("siteIds", assignedSites);
+            } catch (e) {
+                toast({
+                    variant: "destructive",
+                    title: "Failed to fetch sites",
+                    description: formatAxiosError(
+                        e,
+                        "An error occurred while fetching sites."
+                    )
+                });
+            }
+        };
+
+        if (client?.clientId) {
+            fetchSites();
+        }
+    }, [client?.clientId, client?.orgId, api, form]);
 
     async function onSubmit(data: GeneralFormValues) {
         setLoading(true);
 
         try {
             await api.post(`/client/${client?.clientId}`, {
-                name: data.name
+                name: data.name,
+                siteIds: data.siteIds.map(site => site.id)
             });
 
             updateClient({ name: data.name });
@@ -116,6 +172,41 @@ export default function GeneralPage() {
                                                 This is the display name of the
                                                 client.
                                             </FormDescription>
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="siteIds"
+                                    render={(field) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Sites</FormLabel>
+                                            <TagInput
+                                                {...field}
+                                                activeTagIndex={activeSitesTagIndex}
+                                                setActiveTagIndex={setActiveSitesTagIndex}
+                                                placeholder="Select sites"
+                                                size="sm"
+                                                tags={form.getValues().siteIds}
+                                                setTags={(newTags) => {
+                                                    form.setValue(
+                                                        "siteIds",
+                                                        newTags as [Tag, ...Tag[]]
+                                                    );
+                                                }}
+                                                enableAutocomplete={true}
+                                                autocompleteOptions={sites}
+                                                allowDuplicates={false}
+                                                restrictTagsToAutocompleteOptions={true}
+                                                sortTags={true}
+                                            />
+                                            <FormDescription>
+                                                The client will have connectivity to the
+                                                selected sites. The sites must be configured
+                                                to accept client connections.
+                                            </FormDescription>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />

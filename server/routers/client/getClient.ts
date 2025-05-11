@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "@server/db";
-import { clients } from "@server/db/schemas";
+import { clients, clientSites } from "@server/db/schemas";
 import { eq, and } from "drizzle-orm";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -19,12 +19,28 @@ const getClientSchema = z
     .strict();
 
 async function query(clientId: number) {
-    const [res] = await db
+    // Get the client
+    const [client] = await db
         .select()
         .from(clients)
         .where(eq(clients.clientId, clientId))
         .limit(1);
-    return res;
+    
+    if (!client) {
+        return null;
+    }
+    
+    // Get the siteIds associated with this client
+    const sites = await db
+        .select({ siteId: clientSites.siteId })
+        .from(clientSites)
+        .where(eq(clientSites.clientId, clientId));
+    
+    // Add the siteIds to the client object
+    return {
+        ...client,
+        siteIds: sites.map(site => site.siteId)
+    };
 }
 
 export type GetClientResponse = NonNullable<Awaited<ReturnType<typeof query>>>;
