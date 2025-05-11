@@ -320,8 +320,10 @@ export default function ReverseProxyTargets(props: {
                         AxiosResponse<CreateTargetResponse>
                     >(`/resource/${params.resourceId}/target`, data);
                     target.targetId = res.data.data.targetId;
+                    target.new = false;
                 } else if (target.updated) {
                     await api.post(`/target/${target.targetId}`, data);
+                    target.updated = false;
                 }
             }
 
@@ -363,12 +365,12 @@ export default function ReverseProxyTargets(props: {
             setHttpsTlsLoading(true);
             await api.post(`/resource/${params.resourceId}`, {
                 ssl: data.ssl,
-                tlsServerName: data.tlsServerName || undefined
+                tlsServerName: data.tlsServerName || null
             });
             updateResource({
                 ...resource,
                 ssl: data.ssl,
-                tlsServerName: data.tlsServerName || undefined
+                tlsServerName: data.tlsServerName || null
             });
             toast({
                 title: "TLS settings updated",
@@ -393,11 +395,11 @@ export default function ReverseProxyTargets(props: {
         try {
             setProxySettingsLoading(true);
             await api.post(`/resource/${params.resourceId}`, {
-                setHostHeader: data.setHostHeader || undefined
+                setHostHeader: data.setHostHeader || null
             });
             updateResource({
                 ...resource,
-                setHostHeader: data.setHostHeader || undefined
+                setHostHeader: data.setHostHeader || null
             });
             toast({
                 title: "Proxy settings updated",
@@ -796,6 +798,12 @@ export default function ReverseProxyTargets(props: {
                                     type="submit"
                                     variant="outlinePrimary"
                                     className="mt-6"
+                                    disabled={
+                                        !(
+                                            addTargetForm.getValues("ip") &&
+                                            addTargetForm.getValues("port")
+                                        )
+                                    }
                                 >
                                     Add Target
                                 </Button>

@@ -29,9 +29,12 @@ const configSchema = z.object({
             .optional()
             .pipe(z.string().url())
             .transform((url) => url.toLowerCase()),
-        log_level: z.enum(["debug", "info", "warn", "error"]),
-        save_logs: z.boolean(),
-        log_failed_attempts: z.boolean().optional()
+        log_level: z
+            .enum(["debug", "info", "warn", "error"])
+            .optional()
+            .default("info"),
+        save_logs: z.boolean().optional().default(false),
+        log_failed_attempts: z.boolean().optional().default(false)
     }),
     domains: z
         .record(
@@ -41,8 +44,8 @@ const configSchema = z.object({
                     .string()
                     .nonempty("base_domain must not be empty")
                     .transform((url) => url.toLowerCase()),
-                cert_resolver: z.string().optional(),
-                prefer_wildcard_cert: z.boolean().optional()
+                cert_resolver: z.string().optional().default("letsencrypt"),
+                prefer_wildcard_cert: z.boolean().optional().default(false)
             })
         )
         .refine(
@@ -62,19 +65,42 @@ const configSchema = z.object({
     server: z.object({
         integration_port: portSchema
             .optional()
+            .default(3003)
             .transform(stoi)
             .pipe(portSchema.optional()),
-        external_port: portSchema.optional().transform(stoi).pipe(portSchema),
-        internal_port: portSchema.optional().transform(stoi).pipe(portSchema),
-        next_port: portSchema.optional().transform(stoi).pipe(portSchema),
-        internal_hostname: z.string().transform((url) => url.toLowerCase()),
-        session_cookie_name: z.string(),
-        resource_access_token_param: z.string(),
-        resource_access_token_headers: z.object({
-            id: z.string(),
-            token: z.string()
-        }),
-        resource_session_request_param: z.string(),
+        external_port: portSchema
+            .optional()
+            .default(3000)
+            .transform(stoi)
+            .pipe(portSchema),
+        internal_port: portSchema
+            .optional()
+            .default(3001)
+            .transform(stoi)
+            .pipe(portSchema),
+        next_port: portSchema
+            .optional()
+            .default(3002)
+            .transform(stoi)
+            .pipe(portSchema),
+        internal_hostname: z
+            .string()
+            .optional()
+            .default("pangolin")
+            .transform((url) => url.toLowerCase()),
+        session_cookie_name: z.string().optional().default("p_session_token"),
+        resource_access_token_param: z.string().optional().default("p_token"),
+        resource_access_token_headers: z
+            .object({
+                id: z.string().optional().default("P-Access-Token-Id"),
+                token: z.string().optional().default("P-Access-Token")
+            })
+            .optional()
+            .default({}),
+        resource_session_request_param: z
+            .string()
+            .optional()
+            .default("resource_session_request_param"),
         dashboard_session_length_hours: z
             .number()
             .positive()
