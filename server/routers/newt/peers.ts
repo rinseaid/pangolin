@@ -37,6 +37,8 @@ export async function addPeer(
     });
 
     logger.info(`Added peer ${peer.publicKey} to newt ${newt.newtId}`);
+
+    return site;
 }
 
 export async function deletePeer(siteId: number, publicKey: string) {
@@ -67,6 +69,8 @@ export async function deletePeer(siteId: number, publicKey: string) {
     });
 
     logger.info(`Deleted peer ${publicKey} from newt ${newt.newtId}`);
+
+    return site;
 }
 
 export async function updatePeer(
@@ -105,4 +109,6 @@ export async function updatePeer(
     });
 
     logger.info(`Updated peer ${publicKey} on newt ${newt.newtId}`);
+
+    return site;
 }

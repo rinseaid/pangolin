@@ -1,10 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "@server/db";
-import {
-    clients,
-    clientSites
-} from "@server/db/schemas";
+import { clients, clientSites } from "@server/db/schemas";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
@@ -12,6 +9,14 @@ import logger from "@server/logger";
 import { eq, and } from "drizzle-orm";
 import { fromError } from "zod-validation-error";
 import { OpenAPITags, registry } from "@server/openApi";
+import {
+    addPeer as newtAddPeer,
+    deletePeer as newtDeletePeer
+} from "../newt/peers";
+import {
+    addPeer as olmAddPeer,
+    deletePeer as olmDeletePeer
+} from "../olm/peers";
 
 const updateClientParamsSchema = z
     .object({
@@ -22,7 +27,9 @@ const updateClientParamsSchema = z
 const updateClientSchema = z
     .object({
         name: z.string().min(1).max(255).optional(),
-        siteIds: z.array(z.string().transform(Number).pipe(z.number())).optional()
+        siteIds: z
+            .array(z.string().transform(Number).pipe(z.number()))
+            .optional()
     })
     .strict();
 
@@ -92,6 +99,81 @@ export async function updateClient(
             );
         }
 
+        if (siteIds) {
+            let sitesAdded = [];
+            let sitesRemoved = [];
+
+            // Fetch existing site associations
+            const existingSites = await db
+                .select({ siteId: clientSites.siteId })
+                .from(clientSites)
+                .where(eq(clientSites.clientId, clientId));
+
+            const existingSiteIds = existingSites.map((site) => site.siteId);
+
+            // Determine which sites were added and removed
+            sitesAdded = siteIds.filter(
+                (siteId) => !existingSiteIds.includes(siteId)
+            );
+            sitesRemoved = existingSiteIds.filter(
+                (siteId) => !siteIds.includes(siteId)
+            );
+
+            logger.info(
+                `Adding ${sitesAdded.length} new sites to client ${client.clientId}`
+            );
+            for (const siteId of sitesAdded) {
+                if (!client.subnet || !client.pubKey || !client.endpoint) {
+                    logger.debug("Client subnet, pubKey or endpoint is not set");
+                    continue;
+                }
+
+                const site = await newtAddPeer(siteId, {
+                    publicKey: client.pubKey,
+                    allowedIps: [`${client.subnet.split("/")[0]}/32`], // we want to only allow from that client
+                    endpoint: client.endpoint
+                });
+                if (!site) {
+                    logger.debug("Failed to add peer to newt - missing site");
+                    continue;
+                }
+
+                if (!site.endpoint || !site.publicKey) {
+                    logger.debug("Site endpoint or publicKey is not set");
+                    continue;
+                }
+                await olmAddPeer(client.clientId, {
+                    siteId: siteId,
+                    endpoint: site.endpoint,
+                    publicKey: site.publicKey,
+                    serverIP: site.address,
+                    serverPort: site.listenPort
+                });
+            }
+
+            logger.info(
+                `Removing ${sitesRemoved.length} sites from client ${client.clientId}`
+            );
+            for (const siteId of sitesRemoved) {
+                if (!client.pubKey) {
+                    logger.debug("Client pubKey is not set");
+                    continue;
+                }
+                const site = await newtDeletePeer(siteId, client.pubKey);
+                if (!site) {
+                    logger.debug(
+                        "Failed to delete peer from newt - missing site"
+                    );
+                    continue;
+                }
+                if (!site.endpoint || !site.publicKey) {
+                    logger.debug("Site endpoint or publicKey is not set");
+                    continue;
+                }
+                await olmDeletePeer(client.clientId, site.siteId, site.publicKey);
+            }
+        }
+
         await db.transaction(async (trx) => {
             // Update client name if provided
             if (name) {
@@ -111,7 +193,7 @@ export async function updateClient(
                 // Create new site associations
                 if (siteIds.length > 0) {
                     await trx.insert(clientSites).values(
-                        siteIds.map(siteId => ({
+                        siteIds.map((siteId) => ({
                             clientId,
                             siteId
                         }))

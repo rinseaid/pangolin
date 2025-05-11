@@ -1,5 +1,5 @@
 import db from "@server/db";
-import { clients, olms, newts } from "@server/db/schemas";
+import { clients, olms, newts, sites } from "@server/db/schemas";
 import { eq } from "drizzle-orm";
 import { sendToClient } from "../ws";
 import logger from "@server/logger";
@@ -37,7 +37,7 @@ export async function addPeer(
     logger.info(`Added peer ${peer.publicKey} to olm ${olm.olmId}`);
 }
 
-export async function deletePeer(clientId: number, publicKey: string) {
+export async function deletePeer(clientId: number, siteId: number, publicKey: string) {
     const [olm] = await db
         .select()
         .from(olms)
@@ -50,7 +50,8 @@ export async function deletePeer(clientId: number, publicKey: string) {
     sendToClient(olm.olmId, {
         type: "olm/wg/peer/remove",
         data: {
-            publicKey
+            publicKey,
+            siteId: siteId
         }
     });
 

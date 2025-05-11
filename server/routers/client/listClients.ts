@@ -54,7 +54,6 @@ function queryClients(orgId: string, accessibleClientIds: number[]) {
         })
         .from(clients)
         .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
-        .leftJoin(orgs, eq(clients.orgId, orgs.orgId))
         .where(
             and(
                 inArray(clients.clientId, accessibleClientIds),
