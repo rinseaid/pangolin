@@ -45,5 +45,5 @@ jobs:
           echo "App failed to start"
           exit 1
 
-      - name: Build Docker container
+      - name: Build Docker image
         run: make build
