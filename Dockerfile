@@ -1,10 +1,11 @@
-FROM node:20-alpine AS builder
+ARG NODE_VERSION=20-alpine
+FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /app
 
 # COPY package.json package-lock.json ./
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
@@ -14,7 +15,7 @@ RUN npx drizzle-kit generate --dialect sqlite --schema ./server/db/sqlite/schema
 
 RUN npm run build:sqlite
 
-FROM node:20-alpine AS runner
+FROM node:${NODE_VERSION} AS runner
 
 WORKDIR /app
 
@@ -23,7 +24,7 @@ RUN apk add --no-cache curl
 
 # COPY package.json package-lock.json ./
 COPY package*.json ./
-RUN npm install --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
