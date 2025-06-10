@@ -174,6 +174,37 @@ authenticated.delete(
     site.deleteSite
 );
 
+authenticated.get(
+    "/site/:siteId/docker/status",
+    verifySiteAccess,
+    verifyUserHasAction(ActionsEnum.getSite),
+    site.dockerStatus
+);
+authenticated.get(
+    "/site/:siteId/docker/online",
+    verifySiteAccess,
+    verifyUserHasAction(ActionsEnum.getSite),
+    site.dockerOnline
+);
+authenticated.post(
+    "/site/:siteId/docker/check",
+    verifySiteAccess,
+    verifyUserHasAction(ActionsEnum.getSite),
+    site.checkDockerSocket
+);
+authenticated.post(
+    "/site/:siteId/docker/trigger",
+    verifySiteAccess,
+    verifyUserHasAction(ActionsEnum.getSite),
+    site.triggerFetchContainers
+);
+authenticated.get(
+    "/site/:siteId/docker/containers",
+    verifySiteAccess,
+    verifyUserHasAction(ActionsEnum.getSite),
+    site.listContainers
+);
+
 authenticated.put(
     "/org/:orgId/site/:siteId/resource",
     verifyOrgAccess,

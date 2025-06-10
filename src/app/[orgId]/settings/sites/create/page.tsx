@@ -258,7 +258,7 @@ PersistentKeepalive = 5`;
       - NEWT_SECRET=${secret}`
                 ],
                 "Docker Run": [
-                    `docker run -it fosrl/newt --id ${id} --secret ${secret} --endpoint ${endpoint}`
+                    `docker run -dit fosrl/newt --id ${id} --secret ${secret} --endpoint ${endpoint}`
                 ]
             },
             podman: {
@@ -281,7 +281,7 @@ Restart=always
 WantedBy=default.target`
                 ],
                 "Podman Run": [
-                    `podman run -it docker.io/fosrl/newt --id ${id} --secret ${secret} --endpoint ${endpoint}`
+                    `podman run -dit docker.io/fosrl/newt --id ${id} --secret ${secret} --endpoint ${endpoint}`
                 ]
             }
         };

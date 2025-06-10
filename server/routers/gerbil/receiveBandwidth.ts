@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { DrizzleError, eq } from "drizzle-orm";
-import { sites, resources, targets, exitNodes } from "@server/db/schemas";
-import db from "@server/db";
+import { eq } from "drizzle-orm";
+import { sites, } from "@server/db";
+import { db } from "@server/db";
 import logger from "@server/logger";
 import createHttpError from "http-errors";
 import HttpCode from "@server/types/HttpCode";
@@ -29,7 +29,6 @@ export const receiveBandwidth = async (
             for (const peer of bandwidthData) {
                 const { publicKey, bytesIn, bytesOut } = peer;
 
-                // Find the site by public key
                 const [site] = await trx
                     .select()
                     .from(sites)
@@ -86,9 +85,3 @@ export const receiveBandwidth = async (
         );
     }
 };
-
-function calculateSubnet(index: number): string {
-    const baseIp = 10 << 24;
-    const subnetSize = 16;
-    return `${(baseIp | (index * subnetSize)).toString()}/28`;
-}

@@ -1,16 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "@server/db";
-import { roles, userSites, sites, roleSites, Site, orgs } from "@server/db/schemas";
+import { roles, userSites, sites, roleSites, Site, orgs } from "@server/db";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { eq, and } from "drizzle-orm";
-import { getUniqueSiteName } from "@server/db/names";
+import { getUniqueSiteName } from "../../db/names";
 import { addPeer } from "../gerbil/peers";
 import { fromError } from "zod-validation-error";
-import { newts } from "@server/db/schemas";
+import { newts } from "@server/db";
 import moment from "moment";
 import { OpenAPITags, registry } from "@server/openApi";
 import { hashPassword } from "@server/auth/password";
@@ -199,6 +199,7 @@ export async function createSite(
                         address: updatedAddress || null,
                         subnet,
                         type,
+                        dockerSocketEnabled: type == "newt",
                         ...(pubKey && type == "wireguard" && { pubKey })
                     })
                     .returning();
@@ -213,6 +214,7 @@ export async function createSite(
                         niceId,
                         address: updatedAddress || null,
                         type,
+                        dockerSocketEnabled: type == "newt",
                         subnet: "0.0.0.0/0"
                     })
                     .returning();
