@@ -1,16 +1,10 @@
 import { db } from "@server/db";
 import { MessageHandler } from "../ws";
-import {
-    exitNodes,
-    Newt,
-    resources,
-    sites,
-    Target,
-    targets
-} from "@server/db";
+import { exitNodes, Newt, resources, sites, Target, targets } from "@server/db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { addPeer, deletePeer } from "../gerbil/peers";
 import logger from "@server/logger";
+import { exit } from "process";
 
 export const handleNewtRegisterMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
@@ -30,7 +24,7 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
 
     const siteId = newt.siteId;
 
-    const { publicKey } = message.data;
+    const { publicKey, exitNodeId } = message.data;
     if (!publicKey) {
         logger.warn("Public key not provided");
         return;
@@ -47,18 +41,31 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
         return;
     }
 
-    await db
-        .update(sites)
-        .set({
-            pubKey: publicKey
-        })
-        .where(eq(sites.siteId, siteId))
-        .returning();
+    let exitNodeIdToQuery = site.exitNodeId;
+    if (exitNodeId && site.exitNodeId !== exitNodeId) { // This effectively moves the exit node to the new one
+        exitNodeIdToQuery = exitNodeId; // Use the provided exitNodeId if it differs from the site's exitNodeId
+        await db
+            .update(sites)
+            .set({
+                pubKey: publicKey,
+                exitNodeId: exitNodeId
+            })
+            .where(eq(sites.siteId, siteId))
+            .returning();
+    } else {
+        await db
+            .update(sites)
+            .set({
+                pubKey: publicKey
+            })
+            .where(eq(sites.siteId, siteId))
+            .returning();
+    }
 
     const [exitNode] = await db
         .select()
         .from(exitNodes)
-        .where(eq(exitNodes.exitNodeId, site.exitNodeId))
+        .where(eq(exitNodes.exitNodeId, exitNodeIdToQuery))
         .limit(1);
 
     if (site.pubKey && site.pubKey !== publicKey) {

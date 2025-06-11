@@ -3,7 +3,8 @@ import {
     handleReceiveBandwidthMessage,
     handleGetConfigMessage,
     handleDockerStatusMessage,
-    handleDockerContainersMessage
+    handleDockerContainersMessage,
+    handleNewtPingRequestMessage
 } from "./newt";
 import {
     handleOlmRegisterMessage,
@@ -21,7 +22,8 @@ export const messageHandlers: Record<string, MessageHandler> = {
     "olm/wg/relay": handleOlmRelayMessage,
     "olm/ping": handleOlmPingMessage,
     "newt/socket/status": handleDockerStatusMessage,
-    "newt/socket/containers": handleDockerContainersMessage
+    "newt/socket/containers": handleDockerContainersMessage,
+    "newt/ping/request": handleNewtPingRequestMessage,
 };
 
 startOfflineChecker(); // this is to handle the offline check for olms
