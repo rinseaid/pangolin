@@ -19,6 +19,7 @@ import UserProvider from "@app/providers/UserProvider";
 import { Layout } from "@app/components/Layout";
 import { SidebarNavItem, SidebarNavProps } from "@app/components/SidebarNav";
 import { orgNavItems } from "@app/app/navigation";
+import { getTranslations } from 'next-intl/server';
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,8 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
 
     const cookie = await authCookieHeader();
 
+    const t = await getTranslations();
+
     try {
         const getOrgUser = cache(() =>
             internal.get<AxiosResponse<GetOrgUserResponse>>(
@@ -89,7 +92,7 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
         const orgUser = await getOrgUser();
 
         if (!orgUser.data.data.isAdmin && !orgUser.data.data.isOwner) {
-            throw new Error("User is not an admin or owner");
+            throw new Error(t('userErrorNotAdminOrOwner'));
         }
     } catch {
         redirect(`/${params.orgId}`);

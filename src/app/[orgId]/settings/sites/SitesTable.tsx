@@ -27,6 +27,7 @@ import { formatAxiosError } from "@app/lib/api";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
 import CreateSiteFormModal from "./CreateSiteModal";
+import { useTranslations } from "next-intl";
 import { parseDataSize } from '@app/lib/dataSize';
 
 export type SiteRow = {
@@ -54,15 +55,16 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
     const [rows, setRows] = useState<SiteRow[]>(sites);
 
     const api = createApiClient(useEnvContext());
+    const t = useTranslations();
 
     const deleteSite = (siteId: number) => {
         api.delete(`/site/${siteId}`)
             .catch((e) => {
-                console.error("Error deleting site", e);
+                console.error(t('siteErrorDelete'), e);
                 toast({
                     variant: "destructive",
-                    title: "Error deleting site",
-                    description: formatAxiosError(e, "Error deleting site")
+                    title: t('siteErrorDelete'),
+                    description: formatAxiosError(e, t('siteErrorDelete'))
                 });
             })
             .then(() => {
@@ -96,7 +98,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                                 href={`/${siteRow.orgId}/settings/sites/${siteRow.nice}`}
                             >
                                 <DropdownMenuItem>
-                                    View settings
+                                    {t('viewSettings')}
                                 </DropdownMenuItem>
                             </Link>
                             <DropdownMenuItem
@@ -105,7 +107,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                                     setIsDeleteModalOpen(true);
                                 }}
                             >
-                                <span className="text-red-500">Delete</span>
+                                <span className="text-red-500">{t('delete')}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -122,7 +124,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Name
+                        {t('name')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -138,7 +140,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Online
+                        {t('online')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -153,14 +155,14 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                         return (
                             <span className="text-green-500 flex items-center space-x-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span>Online</span>
+                                <span>{t('online')}</span>
                             </span>
                         );
                     } else {
                         return (
                             <span className="text-neutral-500 flex items-center space-x-2">
                                 <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                                <span>Offline</span>
+                                <span>{t('offline')}</span>
                             </span>
                         );
                     }
@@ -179,7 +181,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Site
+                        {t('site')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -195,7 +197,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Data In
+                        {t('dataIn')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -213,7 +215,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Data Out
+                        {t('dataOut')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -231,7 +233,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        Connection Type
+                        {t('connectionType')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -258,7 +260,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                 if (originalRow.type === "local") {
                     return (
                         <div className="flex items-center space-x-2">
-                            <span>Local</span>
+                            <span>{t('local')}</span>
                         </div>
                     );
                 }
@@ -290,7 +292,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                             href={`/${siteRow.orgId}/settings/sites/${siteRow.nice}`}
                         >
                             <Button variant={"outlinePrimary"} className="ml-2">
-                                Edit
+                                {t('edit')}
                                 <ArrowRight className="ml-2 w-4 h-4" />
                             </Button>
                         </Link>
@@ -312,30 +314,22 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                     dialog={
                         <div className="space-y-4">
                             <p>
-                                Are you sure you want to remove the site{" "}
-                                <b>{selectedSite?.name || selectedSite?.id}</b>{" "}
-                                from the organization?
+                                {t('siteQuestionRemove', {selectedSite: selectedSite?.name || selectedSite?.id})}
+                            </p>
+
+                            <p>  
+                                {t('siteMessageRemove')}
                             </p>
 
                             <p>
-                                Once removed, the site will no longer be
-                                accessible.{" "}
-                                <b>
-                                    All resources and targets associated with
-                                    the site will also be removed.
-                                </b>
-                            </p>
-
-                            <p>
-                                To confirm, please type the name of the site
-                                below.
+                                {t('siteMessageConfirm')}
                             </p>
                         </div>
                     }
-                    buttonText="Confirm Delete Site"
+                    buttonText={t('siteConfirmDelete')}
                     onConfirm={async () => deleteSite(selectedSite!.id)}
                     string={selectedSite.name}
-                    title="Delete Site"
+                    title={t('siteDelete')}
                 />
             )}
 
