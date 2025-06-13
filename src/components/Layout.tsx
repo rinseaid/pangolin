@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SidebarNav } from "@app/components/SidebarNav";
 import { OrgSelector } from "@app/components/OrgSelector";
 import { cn } from "@app/lib/cn";
@@ -23,6 +23,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUserContext } from "@app/hooks/useUserContext";
 import { useLicenseStatusContext } from "@app/hooks/useLicenseStatusContext";
+import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -61,6 +63,32 @@ export function Layout({
     const { user } = useUserContext();
     const { isUnlocked } = useLicenseStatusContext();
 
+    const { theme } = useTheme();
+    const [path, setPath] = useState<string>(""); // Default logo path
+
+    useEffect(() => {
+        function getPath() {
+            let lightOrDark = theme;
+
+            if (theme === "system" || !theme) {
+                lightOrDark = window.matchMedia("(prefers-color-scheme: dark)")
+                    .matches
+                    ? "dark"
+                    : "light";
+            }
+
+            if (lightOrDark === "light") {
+                return "/logo/word_mark_black.png";
+            }
+
+            return "/logo/word_mark_white.png";
+        }
+
+        setPath(getPath());
+    }, [theme, env]);
+    
+    const t = useTranslations();
+
     return (
         <div className="flex flex-col h-screen overflow-hidden">
             {/* Full width header */}
@@ -84,11 +112,10 @@ export function Layout({
                                             className="w-64 p-0 flex flex-col h-full"
                                         >
                                             <SheetTitle className="sr-only">
-                                                Navigation Menu
+                                                {t('navbar')}
                                             </SheetTitle>
                                             <SheetDescription className="sr-only">
-                                                Main navigation menu for the
-                                                application
+                                                {t('navbarDescription')}
                                             </SheetDescription>
                                             <div className="flex-1 overflow-y-auto">
                                                 <div className="p-4">
@@ -114,7 +141,7 @@ export function Layout({
                                                                 }
                                                             >
                                                                 <Server className="h-4 w-4" />
-                                                                Server Admin
+                                                                {t('serverAdmin')}
                                                             </Link>
                                                         </div>
                                                     )}
@@ -139,12 +166,16 @@ export function Layout({
                                 href="/"
                                 className="flex items-center hidden md:block"
                             >
-                                <Image
-                                    src="/logo/pangolin_orange.svg"
-                                    alt="Pangolin Logo"
-                                    width={35}
-                                    height={35}
-                                />
+                                {path && (
+                                    <Image
+                                        src={path}
+                                        alt="Pangolin Logo"
+                                        width={110}
+                                        height={25}
+                                        priority={true}
+                                        quality={25}
+                                    />
+                                )}
                             </Link>
                             {showBreadcrumbs && (
                                 <div className="hidden md:block overflow-x-auto scrollbar-hide">
@@ -161,7 +192,7 @@ export function Layout({
                                         rel="noopener noreferrer"
                                         className="text-muted-foreground hover:text-foreground transition-colors"
                                     >
-                                        Documentation
+                                        {t('navbarDocsLink')}
                                     </Link>
                                 </div>
                                 <div>
@@ -193,7 +224,7 @@ export function Layout({
                                         className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md w-full"
                                     >
                                         <Server className="h-4 w-4" />
-                                        Server Admin
+                                        {t('serverAdmin')}
                                     </Link>
                                 </div>
                             )}
@@ -210,8 +241,8 @@ export function Layout({
                                         className="flex items-center justify-center gap-1"
                                     >
                                         {!isUnlocked()
-                                            ? "Community Edition"
-                                            : "Commercial Edition"}
+                                            ? t('communityEdition')
+                                            : t('commercialEdition')}
                                         <ExternalLink size={12} />
                                     </Link>
                                 </div>

@@ -6,9 +6,12 @@ import DashboardLoginForm from "./DashboardLoginForm";
 import { Mail } from "lucide-react";
 import { pullEnv } from "@app/lib/pullEnv";
 import { cleanRedirect } from "@app/lib/cleanRedirect";
-import db from "@server/db";
-import { idp } from "@server/db/schemas";
+import { idp } from "@server/db";
 import { LoginFormIDP } from "@app/components/LoginForm";
+import { priv } from "@app/lib/api";
+import { AxiosResponse } from "axios";
+import { ListIdpsResponse } from "@server/routers/idp";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +37,15 @@ export default async function Page(props: {
         redirectUrl = cleanRedirect(searchParams.redirect as string);
     }
 
-    const idps = await db.select().from(idp);
-    const loginIdps = idps.map((idp) => ({
+    const idpsRes = await cache(
+        async () => await priv.get<AxiosResponse<ListIdpsResponse>>("/idp")
+    )();
+    const loginIdps = idpsRes.data.data.idps.map((idp) => ({
         idpId: idp.idpId,
         name: idp.name
     })) as LoginFormIDP[];
+
+    const t = await getTranslations();
 
     return (
         <>
@@ -47,11 +54,10 @@ export default async function Page(props: {
                     <div className="flex flex-col items-center">
                         <Mail className="w-12 h-12 mb-4 text-primary" />
                         <h2 className="text-2xl font-bold mb-2 text-center">
-                            Looks like you've been invited!
+                            {t('inviteAlready')}
                         </h2>
                         <p className="text-center">
-                            To accept the invite, you must log in or create an
-                            account.
+                            {t('inviteAlreadyDescription')}
                         </p>
                     </div>
                 </div>
@@ -61,7 +67,7 @@ export default async function Page(props: {
 
             {(!signUpDisabled || isInvite) && (
                 <p className="text-center text-muted-foreground mt-4">
-                    Don't have an account?{" "}
+                    {t('authNoAccount')}{" "}
                     <Link
                         href={
                             !redirectUrl
@@ -70,7 +76,7 @@ export default async function Page(props: {
                         }
                         className="underline"
                     >
-                        Sign up
+                        {t('signup')}
                     </Link>
                 </p>
             )}

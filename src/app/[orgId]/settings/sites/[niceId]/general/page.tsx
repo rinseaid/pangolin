@@ -31,9 +31,13 @@ import { formatAxiosError } from "@app/lib/api";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
 import { useState } from "react";
+import { SwitchInput } from "@app/components/SwitchInput";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 const GeneralFormSchema = z.object({
-    name: z.string().nonempty("Name is required")
+    name: z.string().nonempty("Name is required"),
+    dockerSocketEnabled: z.boolean().optional()
 });
 
 type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
@@ -46,11 +50,13 @@ export default function GeneralPage() {
     const [loading, setLoading] = useState(false);
 
     const router = useRouter();
+    const t = useTranslations();
 
     const form = useForm<GeneralFormValues>({
         resolver: zodResolver(GeneralFormSchema),
         defaultValues: {
-            name: site?.name
+            name: site?.name,
+            dockerSocketEnabled: site?.dockerSocketEnabled ?? false
         },
         mode: "onChange"
     });
@@ -60,24 +66,28 @@ export default function GeneralPage() {
 
         await api
             .post(`/site/${site?.siteId}`, {
-                name: data.name
+                name: data.name,
+                dockerSocketEnabled: data.dockerSocketEnabled
             })
             .catch((e) => {
                 toast({
                     variant: "destructive",
-                    title: "Failed to update site",
+                    title: t("siteErrorUpdate"),
                     description: formatAxiosError(
                         e,
-                        "An error occurred while updating the site."
+                        t("siteErrorUpdateDescription")
                     )
                 });
             });
 
-        updateSite({ name: data.name });
+        updateSite({
+            name: data.name,
+            dockerSocketEnabled: data.dockerSocketEnabled
+        });
 
         toast({
-            title: "Site updated",
-            description: "The site has been updated."
+            title: t("siteUpdated"),
+            description: t("siteUpdatedDescription")
         });
 
         setLoading(false);
@@ -90,10 +100,10 @@ export default function GeneralPage() {
             <SettingsSection>
                 <SettingsSectionHeader>
                     <SettingsSectionTitle>
-                        General Settings
+                        {t("generalSettings")}
                     </SettingsSectionTitle>
                     <SettingsSectionDescription>
-                        Configure the general settings for this site
+                        {t("siteGeneralDescription")}
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
 
@@ -102,7 +112,7 @@ export default function GeneralPage() {
                         <Form {...form}>
                             <form
                                 onSubmit={form.handleSubmit(onSubmit)}
-                                className="space-y-4"
+                                className="space-y-6"
                                 id="general-settings-form"
                             >
                                 <FormField
@@ -110,18 +120,59 @@ export default function GeneralPage() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Name</FormLabel>
+                                            <FormLabel>{t("name")}</FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
                                             <FormMessage />
                                             <FormDescription>
-                                                This is the display name of the
-                                                site.
+                                                {t("siteNameDescription")}
                                             </FormDescription>
                                         </FormItem>
                                     )}
                                 />
+                                {site && site.type === "newt" && (
+                                    <FormField
+                                        control={form.control}
+                                        name="dockerSocketEnabled"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <SwitchInput
+                                                        id="docker-socket-enabled"
+                                                        label={t(
+                                                            "enableDockerSocket"
+                                                        )}
+                                                        defaultChecked={
+                                                            field.value
+                                                        }
+                                                        onCheckedChange={
+                                                            field.onChange
+                                                        }
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                                <FormDescription>
+                                                    {t(
+                                                        "enableDockerSocketDescription"
+                                                    )}{" "}
+                                                    <Link
+                                                        href="https://docs.fossorial.io/Newt/overview#docker-socket-integration"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-primary hover:underline inline-flex items-center"
+                                                    >
+                                                        <span>
+                                                            {t(
+                                                                "enableDockerSocketLink"
+                                                            )}
+                                                        </span>
+                                                    </Link>
+                                                </FormDescription>
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                             </form>
                         </Form>
                     </SettingsSectionForm>
@@ -134,7 +185,7 @@ export default function GeneralPage() {
                         loading={loading}
                         disabled={loading}
                     >
-                        Save General Settings
+                        {t("saveGeneralSettings")}
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>

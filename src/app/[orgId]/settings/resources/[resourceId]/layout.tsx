@@ -13,15 +13,8 @@ import { GetOrgResponse } from "@server/routers/org";
 import OrgProvider from "@app/providers/OrgProvider";
 import { cache } from "react";
 import ResourceInfoBox from "./ResourceInfoBox";
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator
-} from "@app/components/ui/breadcrumb";
-import Link from "next/link";
+import { GetSiteResponse } from "@server/routers/site";
+import { getTranslations } from 'next-intl/server';
 
 interface ResourceLayoutProps {
     children: React.ReactNode;
@@ -30,11 +23,13 @@ interface ResourceLayoutProps {
 
 export default async function ResourceLayout(props: ResourceLayoutProps) {
     const params = await props.params;
+    const t = await getTranslations();
 
     const { children } = props;
 
     let authInfo = null;
     let resource = null;
+    let site = null;
     try {
         const res = await internal.get<AxiosResponse<GetResourceResponse>>(
             `/resource/${params.resourceId}`,
@@ -47,6 +42,19 @@ export default async function ResourceLayout(props: ResourceLayoutProps) {
 
     if (!resource) {
         redirect(`/${params.orgId}/settings/resources`);
+    }
+
+    // Fetch site info
+    if (resource.siteId) {
+        try {
+            const res = await internal.get<AxiosResponse<GetSiteResponse>>(
+                `/site/${resource.siteId}`,
+                await authCookieHeader()
+            );
+            site = res.data.data;
+        } catch {
+            redirect(`/${params.orgId}/settings/resources`);
+        }
     }
 
     try {
@@ -82,22 +90,22 @@ export default async function ResourceLayout(props: ResourceLayoutProps) {
 
     const navItems = [
         {
-            title: "General",
+            title: t('general'),
             href: `/{orgId}/settings/resources/{resourceId}/general`
         },
         {
-            title: "Proxy",
+            title: t('proxy'),
             href: `/{orgId}/settings/resources/{resourceId}/proxy`
         }
     ];
 
     if (resource.http) {
         navItems.push({
-            title: "Authentication",
+            title: t('authentication'),
             href: `/{orgId}/settings/resources/{resourceId}/authentication`
         });
         navItems.push({
-            title: "Rules",
+            title: t('rules'),
             href: `/{orgId}/settings/resources/{resourceId}/rules`
         });
     }
@@ -105,12 +113,16 @@ export default async function ResourceLayout(props: ResourceLayoutProps) {
     return (
         <>
             <SettingsSectionTitle
-                title={`${resource?.name} Settings`}
-                description="Configure the settings on your resource"
+                title={t('resourceSetting', {resourceName: resource?.name})}
+                description={t('resourceSettingDescription')}
             />
 
             <OrgProvider org={org}>
-                <ResourceProvider resource={resource} authInfo={authInfo}>
+                <ResourceProvider
+                    site={site}
+                    resource={resource}
+                    authInfo={authInfo}
+                >
                     <div className="space-y-6">
                         <ResourceInfoBox />
                         <HorizontalTabs items={navItems}>
