@@ -14,7 +14,7 @@ class RedisManager {
     > = new Map();
 
     private constructor() {
-        this.isEnabled = config.getRawConfig().redis?.enabled || false;
+        this.isEnabled = config.getRawConfig().flags?.enable_redis || false;
         if (this.isEnabled) {
             this.initializeClients();
         }
