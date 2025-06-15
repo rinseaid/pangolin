@@ -68,6 +68,10 @@ export async function getConfig(
                 subEndpoint = await getUniqueExitNodeEndpointName();
             }
 
+            const exitNodeName =
+                config.getRawConfig().gerbil.exit_node_name ||
+                `Exit Node ${publicKey.slice(0, 8)}`;
+
             // create a new exit node
             exitNode = await db
                 .insert(exitNodes)
@@ -77,7 +81,7 @@ export async function getConfig(
                     address,
                     listenPort,
                     reachableAt,
-                    name: config.getRawConfig().gerbil.exit_node_name // defaults to "default"
+                    name: exitNodeName
                 })
                 .returning()
                 .execute();

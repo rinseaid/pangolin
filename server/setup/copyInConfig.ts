@@ -106,13 +106,19 @@ export async function copyInConfig() {
     });
 
     const exitNodeName = config.getRawConfig().gerbil.exit_node_name;
-
-    await db
-        .update(exitNodes)
-        .set({ endpoint })
-        .where(eq(exitNodes.name, exitNodeName));
-    await db
-        .update(exitNodes)
-        .set({ listenPort })
-        .where(eq(exitNodes.name, exitNodeName));
+    if (exitNodeName) {
+        await db
+            .update(exitNodes)
+            .set({ endpoint, listenPort })
+            .where(eq(exitNodes.name, exitNodeName));
+    } else {
+        await db
+            .update(exitNodes)
+            .set({ endpoint })
+            .where(ne(exitNodes.endpoint, endpoint));
+        await db
+            .update(exitNodes)
+            .set({ listenPort })
+            .where(ne(exitNodes.listenPort, listenPort));
+    }
 }
