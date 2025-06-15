@@ -10,6 +10,8 @@ import { validateNewtSessionToken } from "@server/auth/sessions/newt";
 import { validateOlmSessionToken } from "@server/auth/sessions/olm";
 import { messageHandlers } from "./messageHandlers";
 import logger from "@server/logger";
+import redisManager from "@server/db/redis";
+import { v4 as uuidv4 } from "uuid";
 
 // Custom interfaces
 interface WebSocketRequest extends IncomingMessage {
@@ -21,6 +23,7 @@ type ClientType = 'newt' | 'olm';
 interface AuthenticatedWebSocket extends WebSocket {
     client?: Newt | Olm;
     clientType?: ClientType;
+    connectionId?: string;
 }
 
 interface TokenPayload {
@@ -46,9 +49,19 @@ interface HandlerContext {
     senderWs: WebSocket;
     client: Newt | Olm | undefined;
     clientType: ClientType;
-    sendToClient: (clientId: string, message: WSMessage) => boolean;
-    broadcastToAllExcept: (message: WSMessage, excludeClientId?: string) => void;
+    sendToClient: (clientType: ClientType, clientId: string, message: WSMessage) => Promise<boolean>;
+    broadcastToAllExcept: (message: WSMessage, excludeClientType?: ClientType, excludeClientId?: string) => Promise<void>;
     connectedClients: Map<string, WebSocket[]>;
+}
+
+interface RedisMessage {
+    type: 'direct' | 'broadcast';
+    targetClientType?: ClientType;
+    targetClientId?: string;
+    excludeClientType?: ClientType;
+    excludeClientId?: string;
+    message: WSMessage;
+    fromNodeId: string;
 }
 
 export type MessageHandler = (context: HandlerContext) => Promise<HandlerResponse | void>;
@@ -56,34 +69,93 @@ export type MessageHandler = (context: HandlerContext) => Promise<HandlerRespons
 const router: Router = Router();
 const wss: WebSocketServer = new WebSocketServer({ noServer: true });
 
-// Client tracking map
-let connectedClients: Map<string, AuthenticatedWebSocket[]> = new Map();
+// Generate unique node ID for this instance
+const NODE_ID = uuidv4();
+const REDIS_CHANNEL = 'websocket_messages';
 
-// Helper functions for client management
-const addClient = (clientId: string, ws: AuthenticatedWebSocket, clientType: ClientType): void => {
-    const existingClients = connectedClients.get(clientId) || [];
-    existingClients.push(ws);
-    connectedClients.set(clientId, existingClients);
-    logger.info(`Client added to tracking - ${clientType.toUpperCase()} ID: ${clientId}, Total connections: ${existingClients.length}`);
+// Client tracking map (local to this node)
+let connectedClients: Map<string, AuthenticatedWebSocket[]> = new Map();
+// Helper to get map key
+const getClientMapKey = (clientType: ClientType, clientId: string) => `${clientType}:${clientId}`;
+
+// Redis keys (generalized)
+const getConnectionsKey = (clientType: ClientType, clientId: string) => `ws:connections:${clientType}:${clientId}`;
+const getNodeConnectionsKey = (nodeId: string, clientType: ClientType, clientId: string) => `ws:node:${nodeId}:${clientType}:${clientId}`;
+
+// Initialize Redis subscription for cross-node messaging
+const initializeRedisSubscription = async (): Promise<void> => {
+    if (!redisManager.isRedisEnabled()) return;
+
+    await redisManager.subscribe(REDIS_CHANNEL, async (channel: string, message: string) => {
+        try {
+            const redisMessage: RedisMessage = JSON.parse(message);
+
+            // Ignore messages from this node
+            if (redisMessage.fromNodeId === NODE_ID) return;
+
+            if (redisMessage.type === 'direct' && redisMessage.targetClientType && redisMessage.targetClientId) {
+                // Send to specific client on this node
+                await sendToClientLocal(redisMessage.targetClientType, redisMessage.targetClientId, redisMessage.message);
+            } else if (redisMessage.type === 'broadcast') {
+                // Broadcast to all clients on this node except excluded
+                await broadcastToAllExceptLocal(redisMessage.message, redisMessage.excludeClientType, redisMessage.excludeClientId);
+            }
+        } catch (error) {
+            logger.error('Error processing Redis message:', error);
+        }
+    });
 };
 
-const removeClient = (clientId: string, ws: AuthenticatedWebSocket, clientType: ClientType): void => {
-    const existingClients = connectedClients.get(clientId) || [];
+// Helper functions for client management
+const addClient = async (clientType: ClientType, clientId: string, ws: AuthenticatedWebSocket): Promise<void> => {
+    // Generate unique connection ID
+    const connectionId = uuidv4();
+    ws.connectionId = connectionId;
+
+    // Add to local tracking
+    const mapKey = getClientMapKey(clientType, clientId);
+    const existingClients = connectedClients.get(mapKey) || [];
+    existingClients.push(ws);
+    connectedClients.set(mapKey, existingClients);
+
+    // Add to Redis tracking if enabled
+    if (redisManager.isRedisEnabled()) {
+        await redisManager.sadd(getConnectionsKey(clientType, clientId), NODE_ID);
+        await redisManager.hset(getNodeConnectionsKey(NODE_ID, clientType, clientId), connectionId, Date.now().toString());
+    }
+
+    logger.info(`Client added to tracking - ${clientType.toUpperCase()} ID: ${clientId}, Connection ID: ${connectionId}, Total connections: ${existingClients.length}`);
+};
+
+const removeClient = async (clientType: ClientType, clientId: string, ws: AuthenticatedWebSocket): Promise<void> => {
+    const mapKey = getClientMapKey(clientType, clientId);
+    const existingClients = connectedClients.get(mapKey) || [];
     const updatedClients = existingClients.filter(client => client !== ws);
     if (updatedClients.length === 0) {
-        connectedClients.delete(clientId);
+        connectedClients.delete(mapKey);
+
+        if (redisManager.isRedisEnabled()) {
+            await redisManager.srem(getConnectionsKey(clientType, clientId), NODE_ID);
+            await redisManager.del(getNodeConnectionsKey(NODE_ID, clientType, clientId));
+        }
+
         logger.info(`All connections removed for ${clientType.toUpperCase()} ID: ${clientId}`);
     } else {
-        connectedClients.set(clientId, updatedClients);
+        connectedClients.set(mapKey, updatedClients);
+
+        if (redisManager.isRedisEnabled() && ws.connectionId) {
+            await redisManager.hdel(getNodeConnectionsKey(NODE_ID, clientType, clientId), ws.connectionId);
+        }
+
         logger.info(`Connection removed - ${clientType.toUpperCase()} ID: ${clientId}, Remaining connections: ${updatedClients.length}`);
     }
 };
 
-// Helper functions for sending messages
-const sendToClient = (clientId: string, message: WSMessage): boolean => {
-    const clients = connectedClients.get(clientId);
+// Local message sending (within this node)
+const sendToClientLocal = async (clientType: ClientType, clientId: string, message: WSMessage): Promise<boolean> => {
+    const mapKey = getClientMapKey(clientType, clientId);
+    const clients = connectedClients.get(mapKey);
     if (!clients || clients.length === 0) {
-        logger.info(`No active connections found for Client ID: ${clientId}`);
         return false;
     }
     const messageString = JSON.stringify(message);
@@ -95,9 +167,10 @@ const sendToClient = (clientId: string, message: WSMessage): boolean => {
     return true;
 };
 
-const broadcastToAllExcept = (message: WSMessage, excludeClientId?: string): void => {
-    connectedClients.forEach((clients, clientId) => {
-        if (clientId !== excludeClientId) {
+const broadcastToAllExceptLocal = async (message: WSMessage, excludeClientType?: ClientType, excludeClientId?: string): Promise<void> => {
+    connectedClients.forEach((clients, mapKey) => {
+        const [type, id] = mapKey.split(":");
+        if (!(excludeClientType && excludeClientId && type === excludeClientType && id === excludeClientId)) {
             clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify(message));
@@ -107,9 +180,72 @@ const broadcastToAllExcept = (message: WSMessage, excludeClientId?: string): voi
     });
 };
 
+// Cross-node message sending (via Redis)
+const sendToClient = async (clientType: ClientType, clientId: string, message: WSMessage): Promise<boolean> => {
+    // Try to send locally first
+    const localSent = await sendToClientLocal(clientType, clientId, message);
+
+    // If Redis is enabled, also send via Redis pub/sub to other nodes
+    if (redisManager.isRedisEnabled()) {
+        const redisMessage: RedisMessage = {
+            type: 'direct',
+            targetClientType: clientType,
+            targetClientId: clientId,
+            message,
+            fromNodeId: NODE_ID
+        };
+
+        await redisManager.publish(REDIS_CHANNEL, JSON.stringify(redisMessage));
+    }
+
+    return localSent;
+};
+
+const broadcastToAllExcept = async (message: WSMessage, excludeClientType?: ClientType, excludeClientId?: string): Promise<void> => {
+    // Broadcast locally
+    await broadcastToAllExceptLocal(message, excludeClientType, excludeClientId);
+
+    // If Redis is enabled, also broadcast via Redis pub/sub to other nodes
+    if (redisManager.isRedisEnabled()) {
+        const redisMessage: RedisMessage = {
+            type: 'broadcast',
+            excludeClientType,
+            excludeClientId,
+            message,
+            fromNodeId: NODE_ID
+        };
+
+        await redisManager.publish(REDIS_CHANNEL, JSON.stringify(redisMessage));
+    }
+};
+
+// Check if a client has active connections across all nodes
+const hasActiveConnections = async (clientType: ClientType, clientId: string): Promise<boolean> => {
+    if (!redisManager.isRedisEnabled()) {
+        const mapKey = getClientMapKey(clientType, clientId);
+        const clients = connectedClients.get(mapKey);
+        return !!(clients && clients.length > 0);
+    }
+
+    const activeNodes = await redisManager.smembers(getConnectionsKey(clientType, clientId));
+    return activeNodes.length > 0;
+};
+
+// Get all active nodes for a client
+const getActiveNodes = async (clientType: ClientType, clientId: string): Promise<string[]> => {
+    if (!redisManager.isRedisEnabled()) {
+        const mapKey = getClientMapKey(clientType, clientId);
+        const clients = connectedClients.get(mapKey);
+        return (clients && clients.length > 0) ? [NODE_ID] : [];
+    }
+
+    return await redisManager.smembers(getConnectionsKey(clientType, clientId));
+};
+
 // Token verification middleware
 const verifyToken = async (token: string, clientType: ClientType): Promise<TokenPayload | null> => {
-    try {
+
+try {
         if (clientType === 'newt') {
             const { session, newt } = await validateNewtSessionToken(token);
             if (!session || !newt) {
@@ -143,7 +279,7 @@ const verifyToken = async (token: string, clientType: ClientType): Promise<Token
     }
 };
 
-const setupConnection = (ws: AuthenticatedWebSocket, client: Newt | Olm, clientType: ClientType): void => {
+const setupConnection = async (ws: AuthenticatedWebSocket, client: Newt | Olm, clientType: ClientType): Promise<void> => {
     logger.info("Establishing websocket connection");
     if (!client) {
         logger.error("Connection attempt without client");
@@ -155,7 +291,7 @@ const setupConnection = (ws: AuthenticatedWebSocket, client: Newt | Olm, clientT
 
     // Add client to tracking
     const clientId = clientType === 'newt' ? (client as Newt).newtId : (client as Olm).olmId;
-    addClient(clientId, ws, clientType);
+    await addClient(clientType, clientId, ws);
 
     ws.on("message", async (data) => {
         try {
@@ -182,9 +318,13 @@ const setupConnection = (ws: AuthenticatedWebSocket, client: Newt | Olm, clientT
 
             if (response) {
                 if (response.broadcast) {
-                    broadcastToAllExcept(response.message, response.excludeSender ? clientId : undefined);
+                    await broadcastToAllExcept(
+                        response.message,
+                        response.excludeSender ? clientType : undefined,
+                        response.excludeSender ? clientId : undefined
+                    );
                 } else if (response.targetClientId) {
-                    sendToClient(response.targetClientId, response.message);
+                    await sendToClient(clientType, response.targetClientId, response.message);
                 } else {
                     ws.send(JSON.stringify(response.message));
                 }
@@ -202,7 +342,7 @@ const setupConnection = (ws: AuthenticatedWebSocket, client: Newt | Olm, clientT
     });
 
     ws.on("close", () => {
-        removeClient(clientId, ws, clientType);
+        removeClient(clientType, clientId, ws);
         logger.info(`Client disconnected - ${clientType.toUpperCase()} ID: ${clientId}`);
     });
 
@@ -256,10 +396,54 @@ const handleWSUpgrade = (server: HttpServer): void => {
     });
 };
 
+// Initialize Redis subscription when the module is loaded
+if (redisManager.isRedisEnabled()) {
+    initializeRedisSubscription().catch(error => {
+        logger.error('Failed to initialize Redis subscription:', error);
+    });
+    logger.info(`WebSocket handler initialized with Redis support - Node ID: ${NODE_ID}`);
+} else {
+    logger.info('WebSocket handler initialized in local mode (Redis disabled)');
+}
+
+// Cleanup function for graceful shutdown
+const cleanup = async (): Promise<void> => {
+    try {
+        // Close all WebSocket connections
+        connectedClients.forEach((clients) => {
+            clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.terminate();
+                }
+            });
+        });
+
+        // Clean up Redis tracking for this node
+        if (redisManager.isRedisEnabled()) {
+            const keys = await redisManager.getClient()?.keys(`ws:node:${NODE_ID}:*`) || [];
+            if (keys.length > 0) {
+                await Promise.all(keys.map(key => redisManager.del(key)));
+            }
+        }
+
+        logger.info('WebSocket cleanup completed');
+    } catch (error) {
+        logger.error('Error during WebSocket cleanup:', error);
+    }
+};
+
+// Handle process termination
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);
+
 export {
     router,
     handleWSUpgrade,
     sendToClient,
     broadcastToAllExcept,
-    connectedClients
+    connectedClients,
+    hasActiveConnections,
+    getActiveNodes,
+    NODE_ID,
+    cleanup
 };

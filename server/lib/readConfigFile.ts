@@ -131,6 +131,32 @@ export const configSchema = z.object({
                 .optional()
         })
         .optional(),
+    redis: z
+        .object({
+            enabled: z.boolean(),
+            host: z.string().optional(),
+            port: portSchema.optional(),
+            password: z.string().optional(),
+            db: z.number().int().nonnegative().optional().default(0),
+            tls: z
+                .object({
+                    rejectUnauthorized: z.boolean().optional().default(true)
+                })
+                .optional()
+        })
+        .refine(
+            (redis) => {
+                if (!redis.enabled) {
+                    return true;
+                }
+                return redis.host !== undefined && redis.port !== undefined;
+            },
+            {
+                message:
+                    "If Redis is enabled, connection details must be provided"
+            }
+        )
+        .optional(),
     traefik: z
         .object({
             http_entrypoint: z.string().optional().default("web"),
