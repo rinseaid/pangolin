@@ -6,7 +6,7 @@ import {
     sites,
     userClients,
     clientSites
-} from "@server/db/schemas";
+} from "@server/db";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
 import response from "@server/lib/response";

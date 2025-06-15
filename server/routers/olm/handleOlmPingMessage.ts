@@ -1,6 +1,6 @@
-import db from "@server/db";
+import { db } from "@server/db";
 import { MessageHandler } from "../ws";
-import { clients, Olm } from "@server/db/schemas";
+import { clients, Olm } from "@server/db";
 import { eq, lt, isNull } from "drizzle-orm";
 import logger from "@server/logger";
 

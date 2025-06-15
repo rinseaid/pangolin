@@ -1,4 +1,4 @@
-import db from "@server/db";
+import { db } from "@server/db";
 import { MessageHandler } from "../ws";
 import {
     clients,
@@ -7,7 +7,7 @@ import {
     Olm,
     olms,
     sites
-} from "@server/db/schemas";
+} from "@server/db";
 import { eq, inArray } from "drizzle-orm";
 import { addPeer, deletePeer } from "../newt/peers";
 import logger from "@server/logger";

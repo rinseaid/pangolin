@@ -1,5 +1,5 @@
-import db from "@server/db";
-import { clients, olms, newts, sites } from "@server/db/schemas";
+import { db } from "@server/db";
+import { clients, olms, newts, sites } from "@server/db";
 import { eq } from "drizzle-orm";
 import { sendToClient } from "../ws";
 import logger from "@server/logger";

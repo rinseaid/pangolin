@@ -1,6 +1,6 @@
-import db from "@server/db";
+import { db } from "@server/db";
 import { MessageHandler } from "../ws";
-import { clients, clientSites, Olm } from "@server/db/schemas";
+import { clients, clientSites, Olm } from "@server/db";
 import { eq } from "drizzle-orm";
 import { updatePeer } from "../newt/peers";
 import logger from "@server/logger";

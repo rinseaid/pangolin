@@ -1,5 +1,5 @@
-import db from "@server/db";
-import { clients, orgs, sites } from "@server/db/schemas";
+import { db } from "@server/db";
+import { clients, orgs, sites } from "@server/db";
 import { and, eq, isNotNull } from "drizzle-orm";
 import config from "@server/lib/config";
 

@@ -105,14 +105,14 @@ export async function copyInConfig() {
         }
     });
 
-    // TODO: eventually each exit node could have a different endpoint
+    const exitNodeName = config.getRawConfig().gerbil.exit_node_name;
+
     await db
         .update(exitNodes)
         .set({ endpoint })
-        .where(ne(exitNodes.endpoint, endpoint));
-    // TODO: eventually each exit node could have a different port
+        .where(eq(exitNodes.name, exitNodeName));
     await db
         .update(exitNodes)
         .set({ listenPort })
-        .where(ne(exitNodes.listenPort, listenPort));
+        .where(eq(exitNodes.name, exitNodeName));
 }
