@@ -74,6 +74,10 @@ function backupDb() {
 }
 
 export async function runMigrations() {
+    if (process.env.DISABLE_MIGRATIONS) {
+        console.log("Migrations are disabled. Skipping...");
+        return;
+    }
     try {
         const appVersion = APP_VERSION;
 
