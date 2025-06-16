@@ -19,16 +19,19 @@ export const handleNewtPingRequestMessage: MessageHandler = async (context) => {
         .select()
         .from(exitNodes);
 
-    let exitNodesPayload = exitNodesList.map((node) => ({
+    const exitNodesPayload = exitNodesList.map((node) => ({
         exitNodeId: node.exitNodeId,
+        exitNodeName: node.name,
         endpoint: node.endpoint,
-        weight: 0 // TODO: Implement weight calculation if needed depending on load
+        weight: 1 // TODO: Implement weight calculation if needed depending on load
+        // (MAX_CONNECTIONS - current_connections) / MAX_CONNECTIONS)
+        // higher = more desirable
     }));
 
     return {
         message: {
             type: "newt/ping/exitNodes",
-            data: { 
+            data: {
                 exitNodes: exitNodesPayload
             }
         },
