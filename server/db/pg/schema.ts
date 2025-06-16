@@ -17,7 +17,8 @@ export const domains = pgTable("domains", {
 
 export const orgs = pgTable("orgs", {
     orgId: varchar("orgId").primaryKey(),
-    name: varchar("name").notNull()
+    name: varchar("name").notNull(),
+    subnet: varchar("subnet").notNull()
 });
 
 export const orgDomains = pgTable("orgDomains", {
@@ -48,6 +49,11 @@ export const sites = pgTable("sites", {
     lastBandwidthUpdate: varchar("lastBandwidthUpdate"),
     type: varchar("type").notNull(), // "newt" or "wireguard"
     online: boolean("online").notNull().default(false),
+    address: varchar("address"),
+    endpoint: varchar("endpoint"),
+    publicKey: varchar("publicKey"),
+    lastHolePunch: bigint("lastHolePunch", { mode: "number" }),
+    listenPort: integer("listenPort"),
     dockerSocketEnabled: boolean("dockerSocketEnabled").notNull().default(true)
 });
 
@@ -491,6 +497,74 @@ export const idpOrg = pgTable("idpOrg", {
     orgMapping: varchar("orgMapping")
 });
 
+export const clients = pgTable("clients", {
+    clientId: serial("id").primaryKey(),
+    orgId: varchar("orgId")
+        .references(() => orgs.orgId, {
+            onDelete: "cascade"
+        })
+        .notNull(),
+    exitNodeId: integer("exitNode").references(() => exitNodes.exitNodeId, {
+        onDelete: "set null"
+    }),
+    name: varchar("name").notNull(),
+    pubKey: varchar("pubKey"),
+    subnet: varchar("subnet").notNull(),
+    megabytesIn: integer("bytesIn"),
+    megabytesOut: integer("bytesOut"),
+    lastBandwidthUpdate: varchar("lastBandwidthUpdate"),
+    lastPing: varchar("lastPing"),
+    type: varchar("type").notNull(), // "olm"
+    online: boolean("online").notNull().default(false),
+    endpoint: varchar("endpoint"),
+    lastHolePunch: integer("lastHolePunch")
+});
+
+export const clientSites = pgTable("clientSites", {
+    clientId: integer("clientId")
+        .notNull()
+        .references(() => clients.clientId, { onDelete: "cascade" }),
+    siteId: integer("siteId")
+        .notNull()
+        .references(() => sites.siteId, { onDelete: "cascade" }),
+    isRelayed: boolean("isRelayed").notNull().default(false)
+});
+
+export const olms = pgTable("olms", {
+    olmId: varchar("id").primaryKey(),
+    secretHash: varchar("secretHash").notNull(),
+    dateCreated: varchar("dateCreated").notNull(),
+    clientId: integer("clientId").references(() => clients.clientId, {
+        onDelete: "cascade"
+    })
+});
+
+export const olmSessions = pgTable("clientSession", {
+    sessionId: varchar("id").primaryKey(),
+    olmId: varchar("olmId")
+        .notNull()
+        .references(() => olms.olmId, { onDelete: "cascade" }),
+    expiresAt: integer("expiresAt").notNull()
+});
+
+export const userClients = pgTable("userClients", {
+    userId: varchar("userId")
+        .notNull()
+        .references(() => users.userId, { onDelete: "cascade" }),
+    clientId: integer("clientId")
+        .notNull()
+        .references(() => clients.clientId, { onDelete: "cascade" })
+});
+
+export const roleClients = pgTable("roleClients", {
+    roleId: integer("roleId")
+        .notNull()
+        .references(() => roles.roleId, { onDelete: "cascade" }),
+    clientId: integer("clientId")
+        .notNull()
+        .references(() => clients.clientId, { onDelete: "cascade" })
+});
+
 export type Org = InferSelectModel<typeof orgs>;
 export type User = InferSelectModel<typeof users>;
 export type Site = InferSelectModel<typeof sites>;
@@ -530,3 +604,9 @@ export type Idp = InferSelectModel<typeof idp>;
 export type ApiKey = InferSelectModel<typeof apiKeys>;
 export type ApiKeyAction = InferSelectModel<typeof apiKeyActions>;
 export type ApiKeyOrg = InferSelectModel<typeof apiKeyOrg>;
+export type Client = InferSelectModel<typeof clients>;
+export type ClientSite = InferSelectModel<typeof clientSites>;
+export type Olm = InferSelectModel<typeof olms>;
+export type OlmSession = InferSelectModel<typeof olmSessions>;
+export type UserClient = InferSelectModel<typeof userClients>;
+export type RoleClient = InferSelectModel<typeof roleClients>;
