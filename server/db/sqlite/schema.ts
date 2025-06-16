@@ -47,7 +47,7 @@ export const sites = sqliteTable("sites", {
     // exit node stuff that is how to connect to the site when it has a wg server
     address: text("address"), // this is the address of the wireguard interface in newt
     endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
-    publicKey: text("pubicKey"),
+    publicKey: text("pubicKey"), // TODO: Fix typo in publicKey
     lastHolePunch: integer("lastHolePunch"),
     listenPort: integer("listenPort"),
     dockerSocketEnabled: integer("dockerSocketEnabled", { mode: "boolean" })
