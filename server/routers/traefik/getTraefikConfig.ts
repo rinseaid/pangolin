@@ -227,6 +227,7 @@ export async function traefikConfigProvider(
                     ],
                     service: serviceName,
                     rule: `Host(\`${fullDomain}\`)`,
+                    priority: 100,
                     ...(resource.ssl ? { tls } : {})
                 };
 
@@ -237,7 +238,8 @@ export async function traefikConfigProvider(
                         ],
                         middlewares: [redirectHttpsMiddlewareName],
                         service: serviceName,
-                        rule: `Host(\`${fullDomain}\`)`
+                        rule: `Host(\`${fullDomain}\`)`,
+                        priority: 100
                     };
                 }
 
