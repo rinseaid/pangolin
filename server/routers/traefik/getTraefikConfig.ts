@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import { db } from "@server/db";
+import { db, exitNodes } from "@server/db";
 import { and, eq, inArray } from "drizzle-orm";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
 import config from "@server/lib/config";
 import { orgs, resources, sites, Target, targets } from "@server/db";
-import { sql } from "drizzle-orm";
+
+let currentExitNodeName: string;
 
 export async function traefikConfigProvider(
     _: Request,
@@ -15,6 +16,24 @@ export async function traefikConfigProvider(
         // Get all resources with related data
         const allResources = await db.transaction(async (tx) => {
             // First query to get resources with site and org info
+            // Get the current exit node name from config
+            if (config.getRawConfig().gerbil.exit_node_name) {
+                currentExitNodeName =
+                    config.getRawConfig().gerbil.exit_node_name!;
+            } else {
+                const [exitNode] = await tx
+                    .select({
+                        name: exitNodes.name
+                    })
+                    .from(exitNodes);
+                if (!exitNode) {
+                    logger.error("No exit node found in the database");
+                    return [];
+                }
+                currentExitNodeName = exitNode.name;
+            }
+
+            // Get the site(s) on this exit node
             const resourcesWithRelations = await tx
                 .select({
                     // Resource fields
@@ -47,7 +66,8 @@ export async function traefikConfigProvider(
                 })
                 .from(resources)
                 .innerJoin(sites, eq(sites.siteId, resources.siteId))
-                .innerJoin(orgs, eq(resources.orgId, orgs.orgId));
+                .innerJoin(orgs, eq(resources.orgId, orgs.orgId))
+                .where(eq(sites.name, currentExitNodeName));
 
             // Get all resource IDs from the first query
             const resourceIds = resourcesWithRelations.map((r) => r.resourceId);
@@ -192,25 +212,21 @@ export async function traefikConfigProvider(
 
                 const configDomain = config.getDomain(resource.domainId);
 
-                if (!configDomain) {
-                    logger.error(
-                        `Failed to get domain from config for resource ${resource.resourceId}`
-                    );
-                    continue;
+                let tls = {};
+                if (configDomain) {
+                    tls = {
+                        certResolver: configDomain.cert_resolver,
+                        ...(configDomain.prefer_wildcard_cert
+                            ? {
+                                  domains: [
+                                      {
+                                          main: wildCard
+                                      }
+                                  ]
+                              }
+                            : {})
+                    };
                 }
-
-                const tls = {
-                    certResolver: configDomain.cert_resolver,
-                    ...(configDomain.prefer_wildcard_cert
-                        ? {
-                              domains: [
-                                  {
-                                      main: wildCard
-                                  }
-                              ]
-                          }
-                        : {})
-                };
 
                 const additionalMiddlewares =
                     config.getRawConfig().traefik.additional_middlewares || [];
@@ -311,7 +327,9 @@ export async function traefikConfigProvider(
                         // if defined in the static config and here. if not set, self-signed certs won't work
                         insecureSkipVerify: true
                     };
-                    config_output.http.services![serviceName].loadBalancer.serversTransport = transportName;
+                    config_output.http.services![
+                        serviceName
+                    ].loadBalancer.serversTransport = transportName;
                 }
 
                 // Add the host header middleware
@@ -319,16 +337,16 @@ export async function traefikConfigProvider(
                     if (!config_output.http.middlewares) {
                         config_output.http.middlewares = {};
                     }
-                    config_output.http.middlewares[hostHeaderMiddlewareName] =
-                        {
-                            headers: {
-                                customRequestHeaders: {
-                                    Host: resource.setHostHeader
-                                }
+                    config_output.http.middlewares[hostHeaderMiddlewareName] = {
+                        headers: {
+                            customRequestHeaders: {
+                                Host: resource.setHostHeader
                             }
-                        };
+                        }
+                    };
                     if (!config_output.http.routers![routerName].middlewares) {
-                        config_output.http.routers![routerName].middlewares = [];
+                        config_output.http.routers![routerName].middlewares =
+                            [];
                     }
                     config_output.http.routers![routerName].middlewares = [
                         ...config_output.http.routers![routerName].middlewares,
