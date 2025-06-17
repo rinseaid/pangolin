@@ -4,7 +4,11 @@ import { exitNodes, Newt, resources, sites, Target, targets } from "@server/db";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { addPeer, deletePeer } from "../gerbil/peers";
 import logger from "@server/logger";
-import { exit } from "process";
+import config from "@server/lib/config";
+import {
+    findNextAvailableCidr,
+    getNextAvailableClientSubnet
+} from "@server/lib/ip";
 
 export const handleNewtRegisterMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
@@ -30,25 +34,62 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
         return;
     }
 
-    const [site] = await db
+    const [oldSite] = await db
         .select()
         .from(sites)
         .where(eq(sites.siteId, siteId))
         .limit(1);
 
-    if (!site || !site.exitNodeId) {
+    if (!oldSite || !oldSite.exitNodeId) {
         logger.warn("Site not found or does not have exit node");
         return;
     }
 
-    let exitNodeIdToQuery = site.exitNodeId;
-    if (exitNodeId && site.exitNodeId !== exitNodeId) { // This effectively moves the exit node to the new one
+    let siteSubnet = oldSite.subnet;
+    let exitNodeIdToQuery = oldSite.exitNodeId;
+    if (exitNodeId && oldSite.exitNodeId !== exitNodeId) {
+        // This effectively moves the exit node to the new one
         exitNodeIdToQuery = exitNodeId; // Use the provided exitNodeId if it differs from the site's exitNodeId
+
+        const sitesQuery = await db
+            .select({
+                subnet: sites.subnet
+            })
+            .from(sites)
+            .where(eq(sites.exitNodeId, exitNodeId));
+
+        const [exitNode] = await db
+            .select()
+            .from(exitNodes)
+            .where(eq(exitNodes.exitNodeId, exitNodeIdToQuery))
+            .limit(1);
+
+        const blockSize = config.getRawConfig().gerbil.site_block_size;
+        const subnets = sitesQuery.map((site) => site.subnet);
+        subnets.push(
+            exitNode.address.replace(
+                /\/\d+$/,
+                `/${blockSize}`
+            )
+        );
+        const newSubnet = findNextAvailableCidr(
+            subnets,
+            blockSize,
+            exitNode.address
+        );
+        if (!newSubnet) {
+            logger.error("No available subnets found for the new exit node");
+            return;
+        }
+
+        siteSubnet = newSubnet;
+
         await db
             .update(sites)
             .set({
                 pubKey: publicKey,
-                exitNodeId: exitNodeId
+                exitNodeId: exitNodeId,
+                subnet: newSubnet
             })
             .where(eq(sites.siteId, siteId))
             .returning();
@@ -68,20 +109,20 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
         .where(eq(exitNodes.exitNodeId, exitNodeIdToQuery))
         .limit(1);
 
-    if (site.pubKey && site.pubKey !== publicKey) {
+    if (oldSite.pubKey && oldSite.pubKey !== publicKey) {
         logger.info("Public key mismatch. Deleting old peer...");
-        await deletePeer(site.exitNodeId, site.pubKey);
+        await deletePeer(oldSite.exitNodeId, oldSite.pubKey);
     }
 
-    if (!site.subnet) {
+    if (!siteSubnet) {
         logger.warn("Site has no subnet");
         return;
     }
 
     // add the peer to the exit node
-    await addPeer(site.exitNodeId, {
+    await addPeer(exitNodeIdToQuery, {
         publicKey: publicKey,
-        allowedIps: [site.subnet]
+        allowedIps: [siteSubnet]
     });
 
     // Improved version
@@ -170,7 +211,7 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
                 endpoint: `${exitNode.endpoint}:${exitNode.listenPort}`,
                 publicKey: exitNode.publicKey,
                 serverIP: exitNode.address.split("/")[0],
-                tunnelIP: site.subnet.split("/")[0],
+                tunnelIP: siteSubnet.split("/")[0],
                 targets: {
                     udp: udpTargets,
                     tcp: tcpTargets
