@@ -40,20 +40,7 @@ export const configSchema = z
                     prefer_wildcard_cert: z.boolean().optional().default(false)
                 })
             )
-            .refine(
-                (domains) => {
-                    const keys = Object.keys(domains);
-
-                    if (keys.length === 0) {
-                        return false;
-                    }
-
-                    return true;
-                },
-                {
-                    message: "At least one domain must be defined"
-                }
-            ),
+            .optional(),
         server: z.object({
             integration_port: portSchema
                 .optional()
@@ -253,6 +240,7 @@ export const configSchema = z
                 enable_redis: z.boolean().optional(),
                 disable_local_sites: z.boolean().optional(),
                 disable_basic_wireguard_sites: z.boolean().optional(),
+                disable_config_managed_domains: z.boolean().optional()
             })
             .optional()
     })
@@ -266,6 +254,21 @@ export const configSchema = z
         {
             message:
                 "If Redis is enabled, configuration details must be provided"
+        }
+    )
+    .refine(
+        (data) => {
+            const keys = Object.keys(data.domains || {});
+            if (data.flags?.disable_config_managed_domains) {
+                return true;
+            }
+            if (keys.length === 0) {
+                return false;
+            }
+            return true;
+        },
+        {
+            message: "At least one domain must be defined"
         }
     );
 

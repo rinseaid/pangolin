@@ -8,8 +8,31 @@ export async function copyInConfig() {
     const endpoint = config.getRawConfig().gerbil.base_endpoint;
     const listenPort = config.getRawConfig().gerbil.start_port;
 
+    if (!config.getRawConfig().flags?.disable_config_managed_domains) {
+        await copyInDomains();
+    }
+
+    const exitNodeName = config.getRawConfig().gerbil.exit_node_name;
+    if (exitNodeName) {
+        await db
+            .update(exitNodes)
+            .set({ endpoint, listenPort })
+            .where(eq(exitNodes.name, exitNodeName));
+    } else {
+        await db
+            .update(exitNodes)
+            .set({ endpoint })
+            .where(ne(exitNodes.endpoint, endpoint));
+        await db
+            .update(exitNodes)
+            .set({ listenPort })
+            .where(ne(exitNodes.listenPort, listenPort));
+    }
+}
+
+async function copyInDomains() {
     await db.transaction(async (trx) => {
-        const rawDomains = config.getRawConfig().domains;
+        const rawDomains = config.getRawConfig().domains!; // always defined if disable flag is not set
 
         const configDomains = Object.entries(rawDomains).map(
             ([key, value]) => ({
@@ -104,21 +127,4 @@ export async function copyInConfig() {
                 .where(eq(resources.resourceId, resource.resourceId));
         }
     });
-
-    const exitNodeName = config.getRawConfig().gerbil.exit_node_name;
-    if (exitNodeName) {
-        await db
-            .update(exitNodes)
-            .set({ endpoint, listenPort })
-            .where(eq(exitNodes.name, exitNodeName));
-    } else {
-        await db
-            .update(exitNodes)
-            .set({ endpoint })
-            .where(ne(exitNodes.endpoint, endpoint));
-        await db
-            .update(exitNodes)
-            .set({ listenPort })
-            .where(ne(exitNodes.listenPort, listenPort));
-    }
 }
