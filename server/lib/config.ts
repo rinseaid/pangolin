@@ -61,6 +61,14 @@ export class Config {
             ? "true"
             : "false";
         process.env.DASHBOARD_URL = parsedConfig.app.dashboard_url;
+        process.env.FLAGS_DISABLE_LOCAL_SITES = parsedConfig.flags
+            ?.disable_local_sites
+            ? "true"
+            : "false";
+        process.env.FLAGS_DISABLE_BASIC_WIREGUARD_SITES = parsedConfig.flags
+            ?.disable_basic_wireguard_sites
+            ? "true"
+            : "false";
 
         license.setServerSecret(parsedConfig.server.secret);
 

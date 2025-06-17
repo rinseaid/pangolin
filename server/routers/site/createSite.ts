@@ -16,6 +16,7 @@ import { OpenAPITags, registry } from "@server/openApi";
 import { hashPassword } from "@server/auth/password";
 import { isValidIP } from "@server/lib/validators";
 import { isIpInCidr } from "@server/lib/ip";
+import config from "@server/lib/config";
 
 const createSiteParamsSchema = z
     .object({
@@ -40,7 +41,15 @@ const createSiteSchema = z
         address: z.string().optional(),
         type: z.enum(["newt", "wireguard", "local"])
     })
-    .strict();
+    .strict()
+    .refine((data) => {
+        if (data.type === "local") {
+            return !config.getRawConfig().flags?.disable_local_sites;
+        } else if (data.type === "wireguard") {
+            return !config.getRawConfig().flags?.disable_basic_wireguard_sites;
+        }
+        return true;
+    });
 
 export type CreateSiteBody = z.infer<typeof createSiteSchema>;
 

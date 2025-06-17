@@ -138,17 +138,17 @@ export default function Page() {
             description: t('siteNewtTunnelDescription'),
             disabled: true
         },
-        {
-            id: "wireguard",
+        ...(env.flags.disableBasicWireguardSites ? [] : [{
+            id: "wireguard" as SiteType,
             title: t('siteWg'),
             description: t('siteWgDescription'),
             disabled: true
-        },
-        {
-            id: "local",
+        }]),
+        ...(env.flags.disableLocalSites ? [] : [{
+            id: "local" as SiteType,
             title: t('local'),
             description: t('siteLocalDescription')
-        }
+        }])
     ]);
 
     const [loadingPage, setLoadingPage] = useState(true);
