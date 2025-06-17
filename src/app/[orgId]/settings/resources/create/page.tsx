@@ -122,7 +122,7 @@ export default function Page() {
             title: t("resourceHTTP"),
             description: t("resourceHTTPDescription")
         },
-        ...(env.flags.allowRawResources
+        ...(!env.flags.allowRawResources
             ? []
             : [
                   {
