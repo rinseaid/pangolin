@@ -119,15 +119,18 @@ export default function Page() {
     const resourceTypes: ReadonlyArray<ResourceTypeOption> = [
         {
             id: "http",
-            title: t('resourceHTTP'),
-            description: t('resourceHTTPDescription')
+            title: t("resourceHTTP"),
+            description: t("resourceHTTPDescription")
         },
-        {
-            id: "raw",
-            title: t('resourceRaw'),
-            description: t('resourceRawDescription'),
-            disabled: !env.flags.allowRawResources
-        }
+        ...(env.flags.allowRawResources
+            ? []
+            : [
+                  {
+                      id: "raw" as ResourceType,
+                      title: t("resourceRaw"),
+                      description: t("resourceRawDescription")
+                  }
+              ])
     ];
 
     const baseForm = useForm<BaseResourceFormValues>({
@@ -199,10 +202,10 @@ export default function Page() {
                 .catch((e) => {
                     toast({
                         variant: "destructive",
-                        title: t('resourceErrorCreate'),
+                        title: t("resourceErrorCreate"),
                         description: formatAxiosError(
                             e,
-                            t('resourceErrorCreateDescription')
+                            t("resourceErrorCreateDescription")
                         )
                     });
                 });
@@ -219,11 +222,11 @@ export default function Page() {
                 }
             }
         } catch (e) {
-            console.error(t('resourceErrorCreateMessage'), e);
+            console.error(t("resourceErrorCreateMessage"), e);
             toast({
                 variant: "destructive",
-                title: t('resourceErrorCreate'),
-                description:t('resourceErrorCreateMessageDescription')
+                title: t("resourceErrorCreate"),
+                description: t("resourceErrorCreateMessageDescription")
             });
         }
 
@@ -242,10 +245,10 @@ export default function Page() {
                     .catch((e) => {
                         toast({
                             variant: "destructive",
-                            title: t('sitesErrorFetch'),
+                            title: t("sitesErrorFetch"),
                             description: formatAxiosError(
                                 e,
-                                t('sitesErrorFetchDescription')
+                                t("sitesErrorFetchDescription")
                             )
                         });
                     });
@@ -270,10 +273,10 @@ export default function Page() {
                     .catch((e) => {
                         toast({
                             variant: "destructive",
-                            title: t('domainsErrorFetch'),
+                            title: t("domainsErrorFetch"),
                             description: formatAxiosError(
                                 e,
-                                t('domainsErrorFetchDescription')
+                                t("domainsErrorFetchDescription")
                             )
                         });
                     });
@@ -300,8 +303,8 @@ export default function Page() {
         <>
             <div className="flex justify-between">
                 <HeaderTitle
-                    title={t('resourceCreate')}
-                    description={t('resourceCreateDescription')}
+                    title={t("resourceCreate")}
+                    description={t("resourceCreateDescription")}
                 />
                 <Button
                     variant="outline"
@@ -309,7 +312,7 @@ export default function Page() {
                         router.push(`/${orgId}/settings/resources`);
                     }}
                 >
-                    {t('resourceSeeAll')}
+                    {t("resourceSeeAll")}
                 </Button>
             </div>
 
@@ -320,7 +323,7 @@ export default function Page() {
                             <SettingsSection>
                                 <SettingsSectionHeader>
                                     <SettingsSectionTitle>
-                                        {t('resourceInfo')}
+                                        {t("resourceInfo")}
                                     </SettingsSectionTitle>
                                 </SettingsSectionHeader>
                                 <SettingsSectionBody>
@@ -336,7 +339,7 @@ export default function Page() {
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>
-                                                                {t('name')}
+                                                                {t("name")}
                                                             </FormLabel>
                                                             <FormControl>
                                                                 <Input
@@ -345,7 +348,9 @@ export default function Page() {
                                                             </FormControl>
                                                             <FormMessage />
                                                             <FormDescription>
-                                                                {t('resourceNameDescription')}
+                                                                {t(
+                                                                    "resourceNameDescription"
+                                                                )}
                                                             </FormDescription>
                                                         </FormItem>
                                                     )}
@@ -357,7 +362,7 @@ export default function Page() {
                                                     render={({ field }) => (
                                                         <FormItem className="flex flex-col">
                                                             <FormLabel>
-                                                                {t('site')}
+                                                                {t("site")}
                                                             </FormLabel>
                                                             <Popover>
                                                                 <PopoverTrigger
@@ -382,17 +387,25 @@ export default function Page() {
                                                                                           field.value
                                                                                   )
                                                                                       ?.name
-                                                                                : t('siteSelect')}
+                                                                                : t(
+                                                                                      "siteSelect"
+                                                                                  )}
                                                                             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                                         </Button>
                                                                     </FormControl>
                                                                 </PopoverTrigger>
                                                                 <PopoverContent className="p-0">
                                                                     <Command>
-                                                                        <CommandInput placeholder={t('siteSearch')} />
+                                                                        <CommandInput
+                                                                            placeholder={t(
+                                                                                "siteSearch"
+                                                                            )}
+                                                                        />
                                                                         <CommandList>
                                                                             <CommandEmpty>
-                                                                                {t('siteNotFound')}
+                                                                                {t(
+                                                                                    "siteNotFound"
+                                                                                )}
                                                                             </CommandEmpty>
                                                                             <CommandGroup>
                                                                                 {sites.map(
@@ -433,7 +446,9 @@ export default function Page() {
                                                             </Popover>
                                                             <FormMessage />
                                                             <FormDescription>
-                                                                {t('siteSelectionDescription')}
+                                                                {t(
+                                                                    "siteSelectionDescription"
+                                                                )}
                                                             </FormDescription>
                                                         </FormItem>
                                                     )}
@@ -447,10 +462,10 @@ export default function Page() {
                             <SettingsSection>
                                 <SettingsSectionHeader>
                                     <SettingsSectionTitle>
-                                        {t('resourceType')}
+                                        {t("resourceType")}
                                     </SettingsSectionTitle>
                                     <SettingsSectionDescription>
-                                        {t('resourceTypeDescription')}
+                                        {t("resourceTypeDescription")}
                                     </SettingsSectionDescription>
                                 </SettingsSectionHeader>
                                 <SettingsSectionBody>
@@ -472,10 +487,12 @@ export default function Page() {
                                 <SettingsSection>
                                     <SettingsSectionHeader>
                                         <SettingsSectionTitle>
-                                            {t('resourceHTTPSSettings')}
+                                            {t("resourceHTTPSSettings")}
                                         </SettingsSectionTitle>
                                         <SettingsSectionDescription>
-                                            {t('resourceHTTPSSettingsDescription')}
+                                            {t(
+                                                "resourceHTTPSSettingsDescription"
+                                            )}
                                         </SettingsSectionDescription>
                                     </SettingsSectionHeader>
                                     <SettingsSectionBody>
@@ -497,7 +514,9 @@ export default function Page() {
                                                             }) => (
                                                                 <FormItem>
                                                                     <FormLabel>
-                                                                        {t('domainType')}
+                                                                        {t(
+                                                                            "domainType"
+                                                                        )}
                                                                     </FormLabel>
                                                                     <Select
                                                                         value={
@@ -521,10 +540,14 @@ export default function Page() {
                                                                         </FormControl>
                                                                         <SelectContent>
                                                                             <SelectItem value="subdomain">
-                                                                                {t('subdomain')}
+                                                                                {t(
+                                                                                    "subdomain"
+                                                                                )}
                                                                             </SelectItem>
                                                                             <SelectItem value="basedomain">
-                                                                                {t('baseDomain')}
+                                                                                {t(
+                                                                                    "baseDomain"
+                                                                                )}
                                                                             </SelectItem>
                                                                         </SelectContent>
                                                                     </Select>
@@ -539,7 +562,7 @@ export default function Page() {
                                                     ) && (
                                                         <FormItem>
                                                             <FormLabel>
-                                                                {t('subdomain')}
+                                                                {t("subdomain")}
                                                             </FormLabel>
                                                             <div className="flex space-x-0">
                                                                 <div className="w-1/2">
@@ -618,7 +641,9 @@ export default function Page() {
                                                                 </div>
                                                             </div>
                                                             <FormDescription>
-                                                                {t('subdomnainDescription')}
+                                                                {t(
+                                                                    "subdomnainDescription"
+                                                                )}
                                                             </FormDescription>
                                                         </FormItem>
                                                     )}
@@ -636,7 +661,9 @@ export default function Page() {
                                                             }) => (
                                                                 <FormItem>
                                                                     <FormLabel>
-                                                                        {t('baseDomain')}
+                                                                        {t(
+                                                                            "baseDomain"
+                                                                        )}
                                                                     </FormLabel>
                                                                     <Select
                                                                         onValueChange={
@@ -683,14 +710,16 @@ export default function Page() {
                                         </SettingsSectionForm>
                                     </SettingsSectionBody>
                                 </SettingsSection>
-                            ) : env.flags.allowRawResources ? (
+                            ) : (
                                 <SettingsSection>
                                     <SettingsSectionHeader>
                                         <SettingsSectionTitle>
-                                            {t('resourceRawSettings')}
+                                            {t("resourceRawSettings")}
                                         </SettingsSectionTitle>
                                         <SettingsSectionDescription>
-                                            {t('resourceRawSettingsDescription')}
+                                            {t(
+                                                "resourceRawSettingsDescription"
+                                            )}
                                         </SettingsSectionDescription>
                                     </SettingsSectionHeader>
                                     <SettingsSectionBody>
@@ -708,7 +737,9 @@ export default function Page() {
                                                         render={({ field }) => (
                                                             <FormItem>
                                                                 <FormLabel>
-                                                                    {t('protocol')}
+                                                                    {t(
+                                                                        "protocol"
+                                                                    )}
                                                                 </FormLabel>
                                                                 <Select
                                                                     onValueChange={
@@ -718,7 +749,11 @@ export default function Page() {
                                                                 >
                                                                     <FormControl>
                                                                         <SelectTrigger>
-                                                                            <SelectValue placeholder={t('protocolSelect')} />
+                                                                            <SelectValue
+                                                                                placeholder={t(
+                                                                                    "protocolSelect"
+                                                                                )}
+                                                                            />
                                                                         </SelectTrigger>
                                                                     </FormControl>
                                                                     <SelectContent>
@@ -743,7 +778,9 @@ export default function Page() {
                                                         render={({ field }) => (
                                                             <FormItem>
                                                                 <FormLabel>
-                                                                    {t('resourcePortNumber')}
+                                                                    {t(
+                                                                        "resourcePortNumber"
+                                                                    )}
                                                                 </FormLabel>
                                                                 <FormControl>
                                                                     <Input
@@ -771,7 +808,9 @@ export default function Page() {
                                                                 </FormControl>
                                                                 <FormMessage />
                                                                 <FormDescription>
-                                                                    {t('resourcePortNumberDescription')}
+                                                                    {t(
+                                                                        "resourcePortNumberDescription"
+                                                                    )}
                                                                 </FormDescription>
                                                             </FormItem>
                                                         )}
@@ -781,23 +820,26 @@ export default function Page() {
                                         </SettingsSectionForm>
                                     </SettingsSectionBody>
                                 </SettingsSection>
-                            ) : null}
+                            )}
 
                             <div className="flex justify-end space-x-2 mt-8">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() =>
-                                        router.push(`/${orgId}/settings/resources`)
+                                        router.push(
+                                            `/${orgId}/settings/resources`
+                                        )
                                     }
                                 >
-                                    {t('cancel')}
+                                    {t("cancel")}
                                 </Button>
                                 <Button
                                     type="button"
                                     onClick={async () => {
                                         const isHttp = baseForm.watch("http");
-                                        const baseValid = await baseForm.trigger();
+                                        const baseValid =
+                                            await baseForm.trigger();
                                         const settingsValid = isHttp
                                             ? await httpForm.trigger()
                                             : await tcpUdpForm.trigger();
@@ -808,7 +850,7 @@ export default function Page() {
                                     }}
                                     loading={createLoading}
                                 >
-                                    {t('resourceCreate')}
+                                    {t("resourceCreate")}
                                 </Button>
                             </div>
                         </SettingsContainer>
@@ -817,17 +859,17 @@ export default function Page() {
                             <SettingsSection>
                                 <SettingsSectionHeader>
                                     <SettingsSectionTitle>
-                                        {t('resourceConfig')}
+                                        {t("resourceConfig")}
                                     </SettingsSectionTitle>
                                     <SettingsSectionDescription>
-                                        {t('resourceConfigDescription')}
+                                        {t("resourceConfigDescription")}
                                     </SettingsSectionDescription>
                                 </SettingsSectionHeader>
                                 <SettingsSectionBody>
                                     <div className="space-y-6">
                                         <div className="space-y-4">
                                             <h3 className="text-lg font-semibold">
-                                                {t('resourceAddEntrypoints')}
+                                                {t("resourceAddEntrypoints")}
                                             </h3>
                                             <CopyTextBox
                                                 text={`entryPoints:
@@ -839,7 +881,7 @@ export default function Page() {
 
                                         <div className="space-y-4">
                                             <h3 className="text-lg font-semibold">
-                                                {t('resourceExposePorts')}
+                                                {t("resourceExposePorts")}
                                             </h3>
                                             <CopyTextBox
                                                 text={`ports:
@@ -854,9 +896,7 @@ export default function Page() {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                         >
-                                            <span>
-                                                {t('resourceLearnRaw')}
-                                            </span>
+                                            <span>{t("resourceLearnRaw")}</span>
                                             <SquareArrowOutUpRight size={14} />
                                         </Link>
                                     </div>
@@ -868,10 +908,12 @@ export default function Page() {
                                     type="button"
                                     variant="outline"
                                     onClick={() =>
-                                        router.push(`/${orgId}/settings/resources`)
+                                        router.push(
+                                            `/${orgId}/settings/resources`
+                                        )
                                     }
                                 >
-                                    {t('resourceBack')}
+                                    {t("resourceBack")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -881,7 +923,7 @@ export default function Page() {
                                         )
                                     }
                                 >
-                                    {t('resourceGoTo')}
+                                    {t("resourceGoTo")}
                                 </Button>
                             </div>
                         </SettingsContainer>
