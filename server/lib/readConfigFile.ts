@@ -162,7 +162,6 @@ export const configSchema = z
         gerbil: z
             .object({
                 exit_node_name: z.string().optional(),
-                max_connections: z.number().positive().gt(0).optional(),
                 start_port: portSchema
                     .optional()
                     .default(51820)

@@ -25,8 +25,8 @@ export const handleNewtPingRequestMessage: MessageHandler = async (context) => {
             // higher = more desirable
 
             let weight = 1;
-            const maxConnections = config.getRawConfig().gerbil.max_connections;
-            if (maxConnections !== undefined) {
+            const maxConnections = node.maxConnections;
+            if (maxConnections !== null && maxConnections !== undefined) {
                 const [currentConnections] = await db
                     .select({
                         count: count()
