@@ -166,6 +166,14 @@ export async function createResource(
                 { siteId, orgId }
             );
         } else {
+            if (!config.getRawConfig().flags?.allow_raw_resources) {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "Raw resources are not allowed"
+                    )
+                );
+            }
             return await createRawResource(
                 { req, res, next },
                 { siteId, orgId }

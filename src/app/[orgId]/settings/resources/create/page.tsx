@@ -683,7 +683,7 @@ export default function Page() {
                                         </SettingsSectionForm>
                                     </SettingsSectionBody>
                                 </SettingsSection>
-                            ) : (
+                            ) : env.flags.allowRawResources ? (
                                 <SettingsSection>
                                     <SettingsSectionHeader>
                                         <SettingsSectionTitle>
@@ -781,7 +781,7 @@ export default function Page() {
                                         </SettingsSectionForm>
                                     </SettingsSectionBody>
                                 </SettingsSection>
-                            )}
+                            ) : null}
 
                             <div className="flex justify-end space-x-2 mt-8">
                                 <Button
