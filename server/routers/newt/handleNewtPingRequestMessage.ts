@@ -19,10 +19,21 @@ export const handleNewtPingRequestMessage: MessageHandler = async (context) => {
     // TODO: pick which nodes to send and ping better than just all of them
     const exitNodesList = await db.select().from(exitNodes);
 
+    let lastExitNodeId = null;
+    if (newt.siteId) {
+        const [lastExitNode] = await db
+            .select()
+            .from(sites)
+            .where(eq(sites.siteId, newt.siteId))
+            .limit(1);
+        lastExitNodeId = lastExitNode?.exitNodeId || null;
+    }
+
     const exitNodesPayload = await Promise.all(
         exitNodesList.map(async (node) => {
             // (MAX_CONNECTIONS - current_connections) / MAX_CONNECTIONS)
             // higher = more desirable
+            // like saying, this node has x% of its capacity left
 
             let weight = 1;
             const maxConnections = node.maxConnections;
@@ -48,7 +59,8 @@ export const handleNewtPingRequestMessage: MessageHandler = async (context) => {
                 exitNodeId: node.exitNodeId,
                 exitNodeName: node.name,
                 endpoint: node.endpoint,
-                weight
+                weight,
+                wasPreviouslyConnected: node.exitNodeId === lastExitNodeId
             };
         })
     );
