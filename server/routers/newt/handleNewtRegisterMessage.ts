@@ -10,6 +10,16 @@ import {
     getNextAvailableClientSubnet
 } from "@server/lib/ip";
 
+export type ExitNodePingResult = {
+  exitNodeId: number;
+  latencyMs: number;
+  weight: number;
+  error?: string;
+  exitNodeName: string;
+  endpoint: string;
+  wasPreviouslyConnected: boolean;
+};
+
 export const handleNewtRegisterMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
     const newt = client as Newt;
@@ -28,10 +38,25 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
 
     const siteId = newt.siteId;
 
-    const { publicKey, exitNodeId } = message.data;
+    const { publicKey, pingResults, backwardsCompatible } = message.data;
     if (!publicKey) {
         logger.warn("Public key not provided");
         return;
+    }
+
+    if (backwardsCompatible) {
+        logger.debug("Backwards compatible mode detecting - not sending connect message and waiting for ping response.");
+        return;
+    }
+
+    let exitNodeId: number | undefined;
+    if (pingResults) {
+        const bestPingResult = selectBestExitNode(pingResults as ExitNodePingResult[]); 
+        if (!bestPingResult) {
+            logger.warn("No suitable exit node found based on ping results");
+            return;
+        }
+        exitNodeId = bestPingResult.exitNodeId;
     }
 
     const [oldSite] = await db
@@ -222,3 +247,71 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
         excludeSender: false // Include sender in broadcast
     };
 };
+
+function selectBestExitNode(pingResults: ExitNodePingResult[]): ExitNodePingResult | null {
+    // Configuration constants - can be tweaked as needed
+    const LATENCY_PENALTY_EXPONENT = 1.5;  // make latency matter more
+    const LAST_NODE_SCORE_BOOST = 1.10;    // 10% preference for the last used node
+    const SCORE_TOLERANCE_PERCENT = 5.0;   // allow last node if within 5% of best score
+
+    let bestNode = null;
+    let bestScore = -1e12;
+    let bestLatency = 1e12;
+    const candidateNodes = [];
+
+    // Calculate scores for each valid node
+    for (const result of pingResults) {
+        // Skip nodes with errors or invalid weight
+        if (result.error || result.weight <= 0) {
+            continue;
+        }
+
+        const latencyMs = result.latencyMs;
+        let score = result.weight / Math.pow(latencyMs, LATENCY_PENALTY_EXPONENT);
+
+        // Apply boost if this was the previously connected node
+        if (result.wasPreviouslyConnected === true) {
+            score *= LAST_NODE_SCORE_BOOST;
+        }
+
+        logger.info(`Exit node ${result.exitNodeName} with score: ${score.toFixed(2)} (latency: ${latencyMs}ms, weight: ${result.weight.toFixed(2)})`);
+
+        candidateNodes.push({
+            node: result,
+            score: score,
+            latency: latencyMs
+        });
+
+        // Track the best scoring node
+        if (score > bestScore) {
+            bestScore = score;
+            bestLatency = latencyMs;
+            bestNode = result;
+        } else if (score === bestScore && latencyMs < bestLatency) {
+            bestLatency = latencyMs;
+            bestNode = result;
+        }
+    }
+
+    // Check if the previously connected node is close enough in score to stick with it
+    for (const candidate of candidateNodes) {
+        if (candidate.node.wasPreviouslyConnected) {
+            const scoreDifference = bestScore - candidate.score;
+            const tolerance = bestScore * (SCORE_TOLERANCE_PERCENT / 100.0);
+            
+            if (scoreDifference <= tolerance) {
+                logger.info(`Sticking with last used exit node: ${candidate.node.exitNodeName} (${candidate.node.endpoint}), score close enough to best`);
+                bestNode = candidate.node;
+            }
+            break;
+        }
+    }
+
+    if (bestNode === null) {
+        logger.error("No suitable exit node found");
+        return null;
+    }
+
+    logger.info(`Selected exit node: ${bestNode.exitNodeName} (${bestNode.endpoint})`);
+    return bestNode;
+}

@@ -148,6 +148,7 @@ export const newts = sqliteTable("newt", {
     newtId: text("id").primaryKey(),
     secretHash: text("secretHash").notNull(),
     dateCreated: text("dateCreated").notNull(),
+    version: text("version"),
     siteId: integer("siteId").references(() => sites.siteId, {
         onDelete: "cascade"
     })

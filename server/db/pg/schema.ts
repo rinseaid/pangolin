@@ -138,6 +138,7 @@ export const newts = pgTable("newt", {
     newtId: varchar("id").primaryKey(),
     secretHash: varchar("secretHash").notNull(),
     dateCreated: varchar("dateCreated").notNull(),
+    version: varchar("version"),
     siteId: integer("siteId").references(() => sites.siteId, {
         onDelete: "cascade"
     })
