@@ -3,20 +3,27 @@ import createHttpError from "http-errors";
 import { NextFunction, Request, Response } from "express";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
+import config from "@server/lib/config";
+import { RedisStore } from "rate-limit-redis";
+import redisManager from "@server/db/redis";
+import { Command as RedisCommand } from "ioredis";
 
 export function rateLimitMiddleware({
     windowMin,
     max,
     type,
-    skipCondition,
+    skipCondition
 }: {
     windowMin: number;
     max: number;
     type: "IP_ONLY" | "IP_AND_PATH";
     skipCondition?: (req: Request, res: Response) => boolean;
 }) {
+    const enableRedis = config.getRawConfig().flags?.enable_redis;
+
+    let opts;
     if (type === "IP_AND_PATH") {
-        return rateLimit({
+        opts = {
             windowMs: windowMin * 60 * 1000,
             max,
             skip: skipCondition,
@@ -26,24 +33,37 @@ export function rateLimitMiddleware({
             handler: (req: Request, res: Response, next: NextFunction) => {
                 const message = `Rate limit exceeded. You can make ${max} requests every ${windowMin} minute(s).`;
                 logger.warn(
-                    `Rate limit exceeded for IP ${req.ip} on path ${req.path}`,
+                    `Rate limit exceeded for IP ${req.ip} on path ${req.path}`
                 );
                 return next(
-                    createHttpError(HttpCode.TOO_MANY_REQUESTS, message),
+                    createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
                 );
-            },
+            }
+        } as any;
+    } else {
+        opts = {
+            windowMs: windowMin * 60 * 1000,
+            max,
+            skip: skipCondition,
+            handler: (req: Request, res: Response, next: NextFunction) => {
+                const message = `Rate limit exceeded. You can make ${max} requests every ${windowMin} minute(s).`;
+                logger.warn(`Rate limit exceeded for IP ${req.ip}`);
+                return next(
+                    createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
+                );
+            }
+        };
+    }
+
+    if (enableRedis) {
+        const client = redisManager.client!;
+        opts.store = new RedisStore({
+            sendCommand: async (command: string, ...args: string[]) =>
+                (await client.call(command, args)) as any
         });
     }
-    return rateLimit({
-        windowMs: windowMin * 60 * 1000,
-        max,
-        skip: skipCondition,
-        handler: (req: Request, res: Response, next: NextFunction) => {
-            const message = `Rate limit exceeded. You can make ${max} requests every ${windowMin} minute(s).`;
-            logger.warn(`Rate limit exceeded for IP ${req.ip}`);
-            return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        },
-    });
+
+    return rateLimit(opts);
 }
 
 export default rateLimitMiddleware;

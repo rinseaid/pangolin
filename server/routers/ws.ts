@@ -398,7 +398,7 @@ if (redisManager.isRedisEnabled()) {
     });
     logger.info(`WebSocket handler initialized with Redis support - Node ID: ${NODE_ID}`);
 } else {
-    logger.info('WebSocket handler initialized in local mode (Redis disabled)');
+    logger.debug('WebSocket handler initialized in local mode (Redis disabled)');
 }
 
 // Cleanup function for graceful shutdown

@@ -4,7 +4,7 @@ import config from "@server/lib/config";
 
 class RedisManager {
     private static instance: RedisManager;
-    private client: Redis | null = null;
+    public client: Redis | null = null;
     private subscriber: Redis | null = null;
     private publisher: Redis | null = null;
     private isEnabled: boolean = false;

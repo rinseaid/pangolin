@@ -21,13 +21,13 @@ export const startOfflineChecker = (): void => {
     offlineCheckerInterval = setInterval(async () => {
         try {
             const twoMinutesAgo = new Date(Date.now() - OFFLINE_THRESHOLD_MS);
-            
+
             // Find clients that haven't pinged in the last 2 minutes and mark them as offline
             await db
                 .update(clients)
                 .set({ online: false })
                 .where(
-                    eq(clients.online, true) && 
+                    eq(clients.online, true) &&
                     (lt(clients.lastPing, twoMinutesAgo.toISOString()) || isNull(clients.lastPing))
                 );
 
