@@ -1,4 +1,4 @@
-import { db } from "@server/db";
+import { db, newts } from "@server/db";
 import { MessageHandler } from "../ws";
 import { exitNodes, Newt, resources, sites, Target, targets } from "@server/db";
 import { eq, and, sql, inArray } from "drizzle-orm";
@@ -38,7 +38,7 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
 
     const siteId = newt.siteId;
 
-    const { publicKey, pingResults, backwardsCompatible } = message.data;
+    const { publicKey, pingResults, newtVersion, backwardsCompatible } = message.data;
     if (!publicKey) {
         logger.warn("Public key not provided");
         return;
@@ -57,6 +57,16 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
             return;
         }
         exitNodeId = bestPingResult.exitNodeId;
+    }
+
+    if (newtVersion) {
+        // update the newt version in the database
+        await db
+            .update(newts)
+            .set({
+                version: newtVersion as string,
+            })
+            .where(eq(newts.newtId, newt.newtId))
     }
 
     const [oldSite] = await db
