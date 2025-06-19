@@ -95,6 +95,9 @@ export class Config {
     }
 
     public getDomain(domainId: string) {
+        if (!this.rawConfig.domains || !this.rawConfig.domains[domainId]) {
+            return null;
+        }
         return this.rawConfig.domains[domainId];
     }
 

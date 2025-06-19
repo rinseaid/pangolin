@@ -6,7 +6,7 @@ import HttpCode from "@server/types/HttpCode";
 import config from "@server/lib/config";
 import { orgs, resources, sites, Target, targets } from "@server/db";
 
-let currentExitNodeName: string;
+let currentExitNodeId: number;
 
 export async function traefikConfigProvider(
     _: Request,
@@ -17,20 +17,38 @@ export async function traefikConfigProvider(
         const allResources = await db.transaction(async (tx) => {
             // First query to get resources with site and org info
             // Get the current exit node name from config
-            if (config.getRawConfig().gerbil.exit_node_name) {
-                currentExitNodeName =
-                    config.getRawConfig().gerbil.exit_node_name!;
-            } else {
-                const [exitNode] = await tx
-                    .select({
-                        name: exitNodes.name
-                    })
-                    .from(exitNodes);
-                if (!exitNode) {
-                    logger.error("No exit node found in the database");
-                    return [];
+            if (!currentExitNodeId) {
+                if (config.getRawConfig().gerbil.exit_node_name) {
+                    const exitNodeName =
+                        config.getRawConfig().gerbil.exit_node_name!;
+                    const [exitNode] = await tx
+                        .select({
+                            exitNodeId: exitNodes.exitNodeId
+                        })
+                        .from(exitNodes)
+                        .where(eq(exitNodes.name, exitNodeName));
+                    if (!exitNode) {
+                        logger.error(
+                            `Exit node with name ${exitNodeName} not found in the database`
+                        );
+                        return [];
+                    }
+                    currentExitNodeId = exitNode.exitNodeId;
+                } else {
+                    const [exitNode] = await tx
+                        .select({
+                            exitNodeId: exitNodes.exitNodeId
+                        })
+                        .from(exitNodes)
+                        .limit(1);
+
+                    if (!exitNode) {
+                        logger.error("No exit node found in the database");
+                        return [];
+                    }
+
+                    currentExitNodeId = exitNode.exitNodeId;
                 }
-                currentExitNodeName = exitNode.name;
             }
 
             // Get the site(s) on this exit node
@@ -53,7 +71,8 @@ export async function traefikConfigProvider(
                     site: {
                         siteId: sites.siteId,
                         type: sites.type,
-                        subnet: sites.subnet
+                        subnet: sites.subnet,
+                        exitNodeId: sites.exitNodeId,
                     },
                     // Org fields
                     org: {
@@ -67,7 +86,7 @@ export async function traefikConfigProvider(
                 .from(resources)
                 .innerJoin(sites, eq(sites.siteId, resources.siteId))
                 .innerJoin(orgs, eq(resources.orgId, orgs.orgId))
-                .where(eq(sites.name, currentExitNodeName));
+                .where(eq(sites.exitNodeId, currentExitNodeId));
 
             // Get all resource IDs from the first query
             const resourceIds = resourcesWithRelations.map((r) => r.resourceId);
@@ -353,7 +372,6 @@ export async function traefikConfigProvider(
                         hostHeaderMiddlewareName
                     ];
                 }
-
             } else {
                 // Non-HTTP (TCP/UDP) configuration
                 const protocol = resource.protocol.toLowerCase();
