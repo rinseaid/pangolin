@@ -29,14 +29,15 @@ class RedisManager {
 
     private getRedisConfig(): RedisOptions {
         const redisConfig = config.getRawConfig().redis!;
-        const opts: RedisOptions =  {
+        const opts: RedisOptions = {
             host: redisConfig.host!,
             port: redisConfig.port!,
             password: redisConfig.password,
             db: redisConfig.db,
             tls: {
-                rejectUnauthorized: false
-            },
+                rejectUnauthorized:
+                    redisConfig.tls?.reject_unauthorized || false
+            }
         };
         return opts;
     }

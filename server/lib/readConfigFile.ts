@@ -106,7 +106,7 @@ export const configSchema = z
                     credentials: z.boolean().optional()
                 })
                 .optional(),
-            trust_proxy: z.boolean().optional().default(true),
+            trust_proxy: z.number().int().gte(0).optional().default(1),
             secret: z
                 .string()
                 .optional()
@@ -133,7 +133,7 @@ export const configSchema = z
                 db: z.number().int().nonnegative().optional().default(0),
                 tls: z
                     .object({
-                        rejectUnauthorized: z.boolean().optional().default(true)
+                        reject_unauthorized: z.boolean().optional().default(true)
                     })
                     .optional()
             })
