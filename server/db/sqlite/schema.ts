@@ -6,7 +6,8 @@ export const domains = sqliteTable("domains", {
     baseDomain: text("baseDomain").notNull(),
     configManaged: integer("configManaged", { mode: "boolean" })
         .notNull()
-        .default(false)
+        .default(false),
+    type: text("type").notNull(), // "ns", "cname", "a"
 });
 
 export const orgs = sqliteTable("orgs", {

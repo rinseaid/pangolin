@@ -12,7 +12,8 @@ import { InferSelectModel } from "drizzle-orm";
 export const domains = pgTable("domains", {
     domainId: varchar("domainId").primaryKey(),
     baseDomain: varchar("baseDomain").notNull(),
-    configManaged: boolean("configManaged").notNull().default(false)
+    configManaged: boolean("configManaged").notNull().default(false),
+    type: varchar("type").notNull(), // "ns", "cname", "a"
 });
 
 export const orgs = pgTable("orgs", {
