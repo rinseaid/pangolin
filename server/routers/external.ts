@@ -32,7 +32,7 @@ import {
     verifyIsLoggedInUser,
     verifyClientAccess,
     verifyApiKeyAccess,
-    rateLimitStore,
+    createStore,
 } from "@server/middlewares";
 import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
 import { ActionsEnum } from "@server/auth/actions";
@@ -784,7 +784,7 @@ authRouter.post(
             const message = `You can only request an email verification code ${3} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         },
-        store: rateLimitStore
+        store: createStore()
     }),
     auth.requestEmailVerificationCode
 );
@@ -805,7 +805,7 @@ authRouter.post(
             const message = `You can only request a password reset ${3} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         },
-        store: rateLimitStore
+        store: createStore()
     }),
     auth.requestPasswordReset
 );
@@ -825,7 +825,7 @@ authRouter.post(
             const message = `You can only request an email OTP ${10} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         },
-        store: rateLimitStore
+        store: createStore()
     }),
     resource.authWithWhitelist
 );

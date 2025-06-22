@@ -7,13 +7,16 @@ import config from "@server/lib/config";
 import { RedisStore } from "rate-limit-redis";
 import redisManager from "@server/db/redis";
 
-export let rateLimitStore: Store = new MemoryStore();
-if (config.getRawConfig().flags?.enable_redis) {
-    const client = redisManager.client!;
-    rateLimitStore = new RedisStore({
-        sendCommand: async (command: string, ...args: string[]) =>
-            (await client.call(command, args)) as any
-    });
+export function createStore(): Store {
+    let rateLimitStore: Store = new MemoryStore();
+    if (config.getRawConfig().flags?.enable_redis) {
+        const client = redisManager.client!;
+        rateLimitStore = new RedisStore({
+            sendCommand: async (command: string, ...args: string[]) =>
+                (await client.call(command, args)) as any
+        });
+    }
+    return rateLimitStore;
 }
 
 export function rateLimitMiddleware({
@@ -44,7 +47,7 @@ export function rateLimitMiddleware({
                     createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
                 );
             },
-            store: rateLimitStore
+            store: createStore()
         });
     } else {
         return rateLimit({
@@ -57,7 +60,8 @@ export function rateLimitMiddleware({
                 return next(
                     createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
                 );
-            }
+            },
+            store: createStore()
         });
     }
 }
