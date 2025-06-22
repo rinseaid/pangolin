@@ -69,7 +69,7 @@ async function copyInDomains() {
             } else {
                 await trx
                     .insert(domains)
-                    .values({ domainId, baseDomain, configManaged: true })
+                    .values({ domainId, baseDomain, configManaged: true, type: "a" })
                     .execute();
             }
         }
