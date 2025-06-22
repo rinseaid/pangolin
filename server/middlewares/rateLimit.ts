@@ -1,4 +1,4 @@
-import { rateLimit } from "express-rate-limit";
+import { MemoryStore, rateLimit, Store } from "express-rate-limit";
 import createHttpError from "http-errors";
 import { NextFunction, Request, Response } from "express";
 import logger from "@server/logger";
@@ -6,7 +6,15 @@ import HttpCode from "@server/types/HttpCode";
 import config from "@server/lib/config";
 import { RedisStore } from "rate-limit-redis";
 import redisManager from "@server/db/redis";
-import { Command as RedisCommand } from "ioredis";
+
+export let rateLimitStore: Store = new MemoryStore();
+if (config.getRawConfig().flags?.enable_redis) {
+    const client = redisManager.client!;
+    rateLimitStore = new RedisStore({
+        sendCommand: async (command: string, ...args: string[]) =>
+            (await client.call(command, args)) as any
+    });
+}
 
 export function rateLimitMiddleware({
     windowMin,
@@ -19,11 +27,8 @@ export function rateLimitMiddleware({
     type: "IP_ONLY" | "IP_AND_PATH";
     skipCondition?: (req: Request, res: Response) => boolean;
 }) {
-    const enableRedis = config.getRawConfig().flags?.enable_redis;
-
-    let opts;
     if (type === "IP_AND_PATH") {
-        opts = {
+        return rateLimit({
             windowMs: windowMin * 60 * 1000,
             max,
             skip: skipCondition,
@@ -38,10 +43,11 @@ export function rateLimitMiddleware({
                 return next(
                     createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
                 );
-            }
-        } as any;
+            },
+            store: rateLimitStore
+        });
     } else {
-        opts = {
+        return rateLimit({
             windowMs: windowMin * 60 * 1000,
             max,
             skip: skipCondition,
@@ -52,18 +58,8 @@ export function rateLimitMiddleware({
                     createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
                 );
             }
-        };
-    }
-
-    if (enableRedis) {
-        const client = redisManager.client!;
-        opts.store = new RedisStore({
-            sendCommand: async (command: string, ...args: string[]) =>
-                (await client.call(command, args)) as any
         });
     }
-
-    return rateLimit(opts);
 }
 
 export default rateLimitMiddleware;
