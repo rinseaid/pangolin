@@ -3,7 +3,7 @@ import { MessageHandler } from "../ws";
 import { exitNodes, Newt } from "@server/db";
 import logger from "@server/logger";
 import config from "@server/lib/config";
-import { ne, eq, and, count } from "drizzle-orm";
+import { ne, eq, or, and, count } from "drizzle-orm";
 
 export const handleNewtPingRequestMessage: MessageHandler = async (context) => {
     const { message, client, sendToClient } = context;
@@ -17,10 +17,11 @@ export const handleNewtPingRequestMessage: MessageHandler = async (context) => {
     }
 
     // TODO: pick which nodes to send and ping better than just all of them
-    const exitNodesList = await db
+    let exitNodesList = await db
         .select()
-        .from(exitNodes)
-        .where(ne(exitNodes.maxConnections, 0));
+        .from(exitNodes);
+
+    exitNodesList = exitNodesList.filter((node) => node.maxConnections !== 0);
 
     let lastExitNodeId = null;
     if (newt.siteId) {
