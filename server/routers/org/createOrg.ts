@@ -180,7 +180,7 @@ export async function createOrg(
 
             // Get all actions and create role actions
             const actionIds = await trx.select().from(actions).execute();
-            
+
             if (actionIds.length > 0) {
                 await trx
                     .insert(roleActions)
@@ -193,12 +193,14 @@ export async function createOrg(
                     );
             }
 
-            await trx.insert(orgDomains).values(
-                allDomains.map((domain) => ({
-                    orgId: newOrg[0].orgId,
-                    domainId: domain.domainId
-                }))
-            );
+            if (allDomains.length) {
+                await trx.insert(orgDomains).values(
+                    allDomains.map((domain) => ({
+                        orgId: newOrg[0].orgId,
+                        domainId: domain.domainId
+                    }))
+                );
+            }
 
             if (req.user) {
                 await trx.insert(userOrgs).values({

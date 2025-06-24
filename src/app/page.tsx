@@ -12,6 +12,7 @@ import { cleanRedirect } from "@app/lib/cleanRedirect";
 import { Layout } from "@app/components/Layout";
 import { rootNavItems } from "./navigation";
 import { InitialSetupCompleteResponse } from "@server/routers/auth";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,25 @@ export default async function Page(props: {
     if (!orgs.length) {
         if (!env.flags.disableUserCreateOrg || user.serverAdmin) {
             redirect("/setup");
+        }
+    }
+
+    // Check for pangolin-last-org cookie and redirect if valid
+    const allCookies = await cookies();
+    const lastOrgCookie = allCookies.get("pangolin-last-org")?.value;
+
+    if (lastOrgCookie && orgs.length > 0) {
+        // Check if the last org from cookie exists in user's organizations
+        const lastOrgExists = orgs.some(org => org.orgId === lastOrgCookie);
+        if (lastOrgExists) {
+            redirect(`/${lastOrgCookie}`);
+        } else {
+            const ownedOrg = orgs.find(org => org.isOwner);
+            if (ownedOrg) {
+                redirect(`/${ownedOrg.orgId}`);
+            } else {
+                redirect("/setup");
+            }
         }
     }
 
