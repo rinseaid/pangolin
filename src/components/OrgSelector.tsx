@@ -46,12 +46,12 @@ export function OrgSelector({ orgId, orgs }: OrgSelectorProps) {
                     aria-expanded={open}
                     className="w-full h-12 px-3 py-4 bg-neutral hover:bg-neutral"
                 >
-                    <div className="flex items-center justify-between w-full">
-                        <div className="flex flex-col items-start">
+                    <div className="flex items-center justify-between w-full min-w-0">
+                        <div className="flex flex-col items-start min-w-0 flex-1">
                             <span className="font-bold text-sm">
                                 {t('org')}
                             </span>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-muted-foreground truncate w-full">
                                 {orgId
                                     ? orgs?.find(
                                           (org) =>
@@ -61,11 +61,11 @@ export function OrgSelector({ orgId, orgs }: OrgSelectorProps) {
                                     : t('noneSelected')}
                             </span>
                         </div>
-                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
                     </div>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[180px] p-0">
+            <PopoverContent className="w-[280px] p-0">
                 <Command>
                     <CommandInput placeholder={t('searchProgress')} />
                     <CommandEmpty>
