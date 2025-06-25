@@ -143,15 +143,21 @@ export async function signup(
 
             if (diff < 2) {
                 // If the user was created less than 2 hours ago, we don't want to create a new user
-                return response<SignUpResponse>(res, {
-                    data: {
-                        emailVerificationRequired: true
-                    },
-                    success: true,
-                    error: false,
-                    message: `A user with that email address already exists. We sent an email to ${email} with a verification code.`,
-                    status: HttpCode.OK
-                });
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "A user with that email address already exists"
+                    )
+                );
+                // return response<SignUpResponse>(res, {
+                //     data: {
+                //         emailVerificationRequired: true
+                //     },
+                //     success: true,
+                //     error: false,
+                //     message: `A user with that email address already exists. We sent an email to ${email} with a verification code.`,
+                //     status: HttpCode.OK
+                // });
             } else {
                 // If the user was created more than 2 hours ago, we want to delete the old user and create a new one
                 await db.delete(users).where(eq(users.userId, user.userId));
