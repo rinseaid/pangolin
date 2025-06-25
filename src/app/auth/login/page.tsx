@@ -20,7 +20,7 @@ export default async function Page(props: {
 }) {
     const searchParams = await props.searchParams;
     const getUser = cache(verifySession);
-    const user = await getUser();
+    const user = await getUser({ skipCheckVerifyEmail: true });
 
     const isInvite = searchParams?.redirect?.includes("/invite");
 
