@@ -17,10 +17,6 @@ export class Config {
     isDev: boolean = process.env.ENVIRONMENT !== "prod";
 
     constructor() {
-        this.load();
-    }
-
-    public load() {
         const environment = readConfigFile();
 
         const {
@@ -99,11 +95,16 @@ export class Config {
             ? "true"
             : "false";
 
-        license.setServerSecret(parsedConfig.server.secret);
-
-        this.checkKeyStatus();
-
         this.rawConfig = parsedConfig;
+    }
+
+    public async initServer() {
+        if (!this.rawConfig) {
+            throw new Error("Config not loaded. Call load() first.");
+        }
+        license.setServerSecret(this.rawConfig.server.secret);
+
+        await this.checkKeyStatus();
     }
 
     private async checkKeyStatus() {
