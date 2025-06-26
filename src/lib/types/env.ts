@@ -24,5 +24,6 @@ export type Env = {
         allowBaseDomainResources: boolean;
         disableLocalSites: boolean;
         disableBasicWireguardSites: boolean;
+        enableClients: boolean;
     };
 };

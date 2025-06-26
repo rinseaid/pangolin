@@ -225,7 +225,8 @@ export const configSchema = z
                 enable_redis: z.boolean().optional(),
                 disable_local_sites: z.boolean().optional(),
                 disable_basic_wireguard_sites: z.boolean().optional(),
-                disable_config_managed_domains: z.boolean().optional()
+                disable_config_managed_domains: z.boolean().optional(),
+                enable_clients: z.boolean().optional()
             })
             .optional()
     })

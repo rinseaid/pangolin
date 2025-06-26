@@ -19,7 +19,8 @@ import UserProvider from "@app/providers/UserProvider";
 import { Layout } from "@app/components/Layout";
 import { SidebarNavItem, SidebarNavProps } from "@app/components/SidebarNav";
 import { orgNavItems } from "@app/app/navigation";
-import { getTranslations } from 'next-intl/server';
+import { getTranslations } from "next-intl/server";
+import { pullEnv } from "@app/lib/pullEnv";
 
 export const dynamic = "force-dynamic";
 
@@ -27,39 +28,6 @@ export const metadata: Metadata = {
     title: `Settings - Pangolin`,
     description: ""
 };
-
-const topNavItems = [
-    {
-        title: "Sites",
-        href: "/{orgId}/settings/sites",
-        icon: <Combine className="h-4 w-4" />
-    },
-    {
-        title: "Resources",
-        href: "/{orgId}/settings/resources",
-        icon: <Waypoints className="h-4 w-4" />
-    },
-    {
-        title: "Clients",
-        href: "/{orgId}/settings/clients",
-        icon: <Workflow className="h-4 w-4" />
-    },
-    {
-        title: "Users & Roles",
-        href: "/{orgId}/settings/access",
-        icon: <Users className="h-4 w-4" />
-    },
-    {
-        title: "Shareable Links",
-        href: "/{orgId}/settings/share-links",
-        icon: <LinkIcon className="h-4 w-4" />
-    },
-    {
-        title: "General",
-        href: "/{orgId}/settings/general",
-        icon: <Settings className="h-4 w-4" />
-    }
-];
 
 interface SettingsLayoutProps {
     children: React.ReactNode;
@@ -73,6 +41,8 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
 
     const getUser = cache(verifySession);
     const user = await getUser();
+
+    const env = pullEnv();
 
     if (!user) {
         redirect(`/`);
@@ -92,7 +62,7 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
         const orgUser = await getOrgUser();
 
         if (!orgUser.data.data.isAdmin && !orgUser.data.data.isOwner) {
-            throw new Error(t('userErrorNotAdminOrOwner'));
+            throw new Error(t("userErrorNotAdminOrOwner"));
         }
     } catch {
         redirect(`/${params.orgId}`);
@@ -111,6 +81,21 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
             orgs = res.data.data.orgs;
         }
     } catch (e) {}
+
+    if (env.flags.enableClients) {
+        const existing = orgNavItems.find(
+            (item) => item.title === "sidebarClients"
+        );
+        if (!existing) {
+            const clientsNavItem = {
+                title: "sidebarClients",
+                href: "/{orgId}/settings/clients",
+                icon: <Workflow className="h-4 w-4" />
+            };
+
+            orgNavItems.splice(1, 0, clientsNavItem);
+        }
+    }
 
     return (
         <UserProvider user={user}>

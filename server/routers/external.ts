@@ -41,6 +41,7 @@ import { createNewt, getNewtToken } from "./newt";
 import { getOlmToken } from "./olm";
 import rateLimit from "express-rate-limit";
 import createHttpError from "http-errors";
+import { verifyClientsEnabled } from "@server/middlewares/verifyClientsEnabled";
 
 // Root routes
 export const unauthenticated = Router();
@@ -116,6 +117,7 @@ authenticated.get(
 
 authenticated.get(
     "/org/:orgId/pick-client-defaults",
+    verifyClientsEnabled,
     verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.createClient),
     client.pickClientDefaults
@@ -123,6 +125,7 @@ authenticated.get(
 
 authenticated.get(
     "/org/:orgId/clients",
+    verifyClientsEnabled,
     verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.listClients),
     client.listClients
@@ -130,6 +133,7 @@ authenticated.get(
 
 authenticated.get(
     "/org/:orgId/client/:clientId",
+    verifyClientsEnabled,
     verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.getClient),
     client.getClient
@@ -137,6 +141,7 @@ authenticated.get(
 
 authenticated.put(
     "/org/:orgId/client",
+    verifyClientsEnabled,
     verifyOrgAccess,
     verifyUserHasAction(ActionsEnum.createClient),
     client.createClient
@@ -144,6 +149,7 @@ authenticated.put(
 
 authenticated.delete(
     "/client/:clientId",
+    verifyClientsEnabled,
     verifyClientAccess,
     verifyUserHasAction(ActionsEnum.deleteClient),
     client.deleteClient
@@ -151,6 +157,7 @@ authenticated.delete(
 
 authenticated.post(
     "/client/:clientId",
+    verifyClientsEnabled,
     verifyClientAccess, // this will check if the user has access to the client
     verifyUserHasAction(ActionsEnum.updateClient), // this will check if the user has permission to update the client
     client.updateClient

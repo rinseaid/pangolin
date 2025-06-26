@@ -95,6 +95,10 @@ export class Config {
             ? "true"
             : "false";
 
+        process.env.FLAGS_ENABLE_CLIENTS = parsedConfig.flags?.disable_clients
+            ? "true"
+            : "false";
+
         this.rawConfig = parsedConfig;
     }
 

@@ -45,7 +45,9 @@ export function pullEnv(): Env {
             disableBasicWireguardSites:
                 process.env.FLAGS_DISABLE_BASIC_WIREGUARD_SITES === "true"
                     ? true
-                    : false
+                    : false,
+            enableClients:
+                process.env.FLAGS_ENABLE_CLIENTS === "true" ? true : false
         }
     };
 }
