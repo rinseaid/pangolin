@@ -776,6 +776,8 @@
     "orgPoliciesAdd": "Add Organization Policy",
     "orgRequired": "Organization is required",
     "error": "Error",
+    "refreshError": "Failed to refresh data",
+    "refresh": "Refresh",
     "success": "Success",
     "orgPolicyAddedDescription": "Policy added successfully",
     "orgPolicyUpdatedDescription": "Policy updated successfully",

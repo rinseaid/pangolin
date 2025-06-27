@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AxiosResponse } from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CreateSiteForm from "./CreateSiteForm";
 import ConfirmDeleteDialog from "@app/components/ConfirmDeleteDialog";
 import { toast } from "@app/hooks/useToast";
@@ -53,9 +53,30 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState<SiteRow | null>(null);
     const [rows, setRows] = useState<SiteRow[]>(sites);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const api = createApiClient(useEnvContext());
     const t = useTranslations();
+
+    // Update local state when props change (e.g., after refresh)
+    useEffect(() => {
+        setRows(sites);
+    }, [sites]);
+
+    const refreshData = async () => {
+        setIsRefreshing(true);
+        try {
+            router.refresh();
+        } catch (error) {
+            toast({
+                title: t("error"),
+                description: t("refreshError"),
+                variant: "destructive"
+            });
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     const deleteSite = (siteId: number) => {
         api.delete(`/site/${siteId}`)
@@ -339,6 +360,8 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                 createSite={() =>
                     router.push(`/${orgId}/settings/sites/create`)
                 }
+                onRefresh={refreshData}
+                isRefreshing={isRefreshing}
             />
         </>
     );
