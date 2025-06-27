@@ -201,10 +201,18 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                         onClick={() =>
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
+                        className="hidden md:flex whitespace-nowrap"
                     >
                         {t('site')}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
+                );
+            },
+            cell: ({ row }) => {
+                return (
+                    <div className="hidden md:block whitespace-nowrap">
+                        {row.original.nice}
+                    </div>
                 );
             }
         },
