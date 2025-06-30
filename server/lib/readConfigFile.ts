@@ -112,7 +112,7 @@ export const configSchema = z.object({
                 credentials: z.boolean().optional()
             })
             .optional(),
-        trust_proxy: z.boolean().optional().default(true),
+        trust_proxy: z.number().int().gte(0).optional().default(1),
         secret: z
             .string()
             .optional()
@@ -121,9 +121,16 @@ export const configSchema = z.object({
     }),
     postgres: z
         .object({
-            connection_string: z.string().optional()
+            connection_string: z.string(),
+            replicas: z
+                .array(
+                    z.object({
+                        connection_string: z.string()
+                    })
+                )
+                .optional()
         })
-        .default({}),
+        .optional(),
     traefik: z
         .object({
             http_entrypoint: z.string().optional().default("web"),
@@ -190,21 +197,6 @@ export const configSchema = z.object({
             no_reply: z.string().email().optional()
         })
         .optional(),
-    users: z.object({
-        server_admin: z.object({
-            email: z
-                .string()
-                .email()
-                .optional()
-                .transform(getEnvOrYaml("USERS_SERVERADMIN_EMAIL"))
-                .pipe(z.string().email())
-                .transform((v) => v.toLowerCase()),
-            password: passwordSchema
-                .optional()
-                .transform(getEnvOrYaml("USERS_SERVERADMIN_PASSWORD"))
-                .pipe(passwordSchema)
-        })
-    }),
     flags: z
         .object({
             require_email_verification: z.boolean().optional(),
@@ -241,24 +233,11 @@ export function readConfigFile() {
         environment = loadConfig(configFilePath2);
     }
 
-    if (process.env.APP_BASE_DOMAIN) {
-        console.log(
-            "You're using deprecated environment variables. Transition to the configuration file. https://docs.fossorial.io/"
-        );
-    }
-
     if (!environment) {
         throw new Error(
             "No configuration file found. Please create one. https://docs.fossorial.io/"
         );
     }
 
-    const parsedConfig = configSchema.safeParse(environment);
-
-    if (!parsedConfig.success) {
-        const errors = fromError(parsedConfig.error);
-        throw new Error(`Invalid configuration file: ${errors}`);
-    }
-
-    return parsedConfig.data;
+    return environment;
 }

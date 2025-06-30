@@ -5,6 +5,7 @@ import { SupporterKey, supporterKey } from "@server/db";
 import { eq } from "drizzle-orm";
 import { license } from "@server/license/license";
 import { configSchema, readConfigFile } from "./readConfigFile";
+import { fromError } from "zod-validation-error";
 
 export class Config {
     private rawConfig!: z.infer<typeof configSchema>;
@@ -20,7 +21,35 @@ export class Config {
     }
 
     public load() {
-        const parsedConfig = readConfigFile();
+        const environment = readConfigFile();
+
+        const {
+            data: parsedConfig,
+            success,
+            error
+        } = configSchema.safeParse(environment);
+
+        if (!success) {
+            const errors = fromError(error);
+            throw new Error(`Invalid configuration file: ${errors}`);
+        }
+
+        if (process.env.APP_BASE_DOMAIN) {
+            console.log(
+                "WARNING: You're using deprecated environment variables. Transition to the configuration file. https://docs.fossorial.io/"
+            );
+        }
+
+        if (
+            // @ts-ignore
+            parsedConfig.users ||
+            process.env.USERS_SERVERADMIN_EMAIL ||
+            process.env.USERS_SERVERADMIN_PASSWORD
+        ) {
+            console.log(
+                "WARNING: Your admin credentials are still in the config file or environment variables. This method of setting admin credentials is no longer supported. It is recommended to remove them."
+            );
+        }
 
         process.env.APP_VERSION = APP_VERSION;
 

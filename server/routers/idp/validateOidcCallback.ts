@@ -172,10 +172,10 @@ export async function validateOidcCallback(
         const claims = arctic.decodeIdToken(idToken);
         logger.debug("ID token claims", { claims });
 
-        const userIdentifier = jmespath.search(
+        let userIdentifier = jmespath.search(
             claims,
             existingIdp.idpOidcConfig.identifierPath
-        );
+        ) as string | null;
 
         if (!userIdentifier) {
             return next(
@@ -185,6 +185,8 @@ export async function validateOidcCallback(
                 )
             );
         }
+
+        userIdentifier = userIdentifier.toLowerCase();
 
         logger.debug("User identifier", { userIdentifier });
 
@@ -208,6 +210,10 @@ export async function validateOidcCallback(
 
         logger.debug("User email", { email });
         logger.debug("User name", { name });
+
+        if (email) {
+            email = email.toLowerCase();
+        }
 
         const [existingUser] = await db
             .select()
