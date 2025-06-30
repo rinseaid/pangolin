@@ -206,6 +206,7 @@
     "orgGeneralSettings": "Organization Settings",
     "orgGeneralSettingsDescription": "Manage your organization details and configuration",
     "saveGeneralSettings": "Save General Settings",
+    "saveSettings": "Save Settings",
     "orgDangerZone": "Danger Zone",
     "orgDangerZoneDescription": "Once you delete this org, there is no going back. Please be certain.",
     "orgDelete": "Delete Organization",

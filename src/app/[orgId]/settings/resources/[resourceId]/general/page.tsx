@@ -102,6 +102,7 @@ export default function GeneralForm() {
 
     const GeneralFormSchema = z
         .object({
+            enabled: z.boolean(),
             subdomain: z.string().optional(),
             name: z.string().min(1).max(255),
             proxyPort: z.number().optional(),
@@ -144,6 +145,7 @@ export default function GeneralForm() {
     const form = useForm<GeneralFormValues>({
         resolver: zodResolver(GeneralFormSchema),
         defaultValues: {
+            enabled: resource.enabled,
             name: resource.name,
             subdomain: resource.subdomain ? resource.subdomain : undefined,
             proxyPort: resource.proxyPort ? resource.proxyPort : undefined,
@@ -209,6 +211,7 @@ export default function GeneralForm() {
             .post<AxiosResponse<UpdateResourceResponse>>(
                 `resource/${resource?.resourceId}`,
                 {
+                    enabled: data.enabled,
                     name: data.name,
                     subdomain: data.http ? data.subdomain : undefined,
                     proxyPort: data.proxyPort,
@@ -236,6 +239,7 @@ export default function GeneralForm() {
             const resource = res.data.data;
 
             updateResource({
+                enabled: data.enabled,
                 name: data.name,
                 subdomain: data.subdomain,
                 proxyPort: data.proxyPort,
@@ -282,54 +286,9 @@ export default function GeneralForm() {
         setTransferLoading(false);
     }
 
-    async function toggleResourceEnabled(val: boolean) {
-        const res = await api
-            .post<AxiosResponse<UpdateResourceResponse>>(
-                `resource/${resource.resourceId}`,
-                {
-                    enabled: val
-                }
-            )
-            .catch((e) => {
-                toast({
-                    variant: "destructive",
-                    title: t("resourceErrorToggle"),
-                    description: formatAxiosError(
-                        e,
-                        t("resourceErrorToggleDescription")
-                    )
-                });
-            });
-
-        updateResource({
-            enabled: val
-        });
-    }
-
     return (
         !loadingPage && (
             <SettingsContainer>
-                <SettingsSection>
-                    <SettingsSectionHeader>
-                        <SettingsSectionTitle>
-                            {t("resourceVisibilityTitle")}
-                        </SettingsSectionTitle>
-                        <SettingsSectionDescription>
-                            {t("resourceVisibilityTitleDescription")}
-                        </SettingsSectionDescription>
-                    </SettingsSectionHeader>
-                    <SettingsSectionBody>
-                        <SwitchInput
-                            id="enable-resource"
-                            label={t("resourceEnable")}
-                            defaultChecked={resource.enabled}
-                            onCheckedChange={async (val) => {
-                                await toggleResourceEnabled(val);
-                            }}
-                        />
-                    </SettingsSectionBody>
-                </SettingsSection>
-
                 <SettingsSection>
                     <SettingsSectionHeader>
                         <SettingsSectionTitle>
@@ -348,6 +307,33 @@ export default function GeneralForm() {
                                     className="grid grid-cols-1 md:grid-cols-2 gap-4"
                                     id="general-settings-form"
                                 >
+                                    <FormField
+                                        control={form.control}
+                                        name="enabled"
+                                        render={({ field }) => (
+                                            <FormItem className="col-span-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <FormControl>
+                                                        <SwitchInput
+                                                            id="enable-resource"
+                                                            defaultChecked={resource.enabled}
+                                                            onCheckedChange={(val) => form.setValue("enabled", val)}
+                                                        />
+                                                    </FormControl>
+                                                    <div className="space-y-1">
+                                                        <FormLabel className="text-base">
+                                                            {t("resourceEnable")}
+                                                        </FormLabel>
+                                                        <FormDescription>
+                                                            {t("resourceVisibilityTitleDescription")}
+                                                        </FormDescription>
+                                                    </div>
+                                                </div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
                                     <FormField
                                         control={form.control}
                                         name="name"
@@ -612,7 +598,7 @@ export default function GeneralForm() {
                             disabled={saveLoading}
                             form="general-settings-form"
                         >
-                            {t("saveGeneralSettings")}
+                            {t("saveSettings")}
                         </Button>
                     </SettingsSectionFooter>
                 </SettingsSection>

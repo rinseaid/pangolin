@@ -147,6 +147,14 @@ export default function Page() {
         }
     }, [userType, env.email.emailEnabled, internalForm, externalForm]);
 
+    const userTypes: UserTypeOption[] = [
+        {
+            id: "internal",
+            title: t("userTypeInternal"),
+            description: t("userTypeInternalDescription")
+        }
+    ];
+
     useEffect(() => {
         if (!userType) {
             return;
@@ -193,6 +201,14 @@ export default function Page() {
             if (res?.status === 200) {
                 setIdps(res.data.data.idps);
                 setDataLoaded(true);
+
+                if (res.data.data.idps.length) {
+                    userTypes.push({
+                        id: "oidc",
+                        title: t("userTypeExternal"),
+                        description: t("userTypeExternalDescription")
+                    });
+                }
             }
         }
 
@@ -288,19 +304,6 @@ export default function Page() {
         setLoading(false);
     }
 
-    const userTypes: ReadonlyArray<UserTypeOption> = [
-        {
-            id: "internal",
-            title: t("userTypeInternal"),
-            description: t("userTypeInternalDescription")
-        },
-        {
-            id: "oidc",
-            title: t("userTypeExternal"),
-            description: t("userTypeExternalDescription")
-        }
-    ];
-
     return (
         <>
             <div className="flex justify-between">
@@ -320,7 +323,7 @@ export default function Page() {
 
             <div>
                 <SettingsContainer>
-                    {!inviteLink && (
+                    {!inviteLink && userTypes.length > 1 ? (
                         <SettingsSection>
                             <SettingsSectionHeader>
                                 <SettingsSectionTitle>
@@ -347,7 +350,7 @@ export default function Page() {
                                 />
                             </SettingsSectionBody>
                         </SettingsSection>
-                    )}
+                    ) : null}
 
                     {userType === "internal" && dataLoaded && (
                         <>
@@ -496,7 +499,9 @@ export default function Page() {
                                                         <div className="flex items-center space-x-2">
                                                             <Checkbox
                                                                 id="send-email"
-                                                                checked={sendEmail}
+                                                                checked={
+                                                                    sendEmail
+                                                                }
                                                                 onCheckedChange={(
                                                                     e
                                                                 ) =>
@@ -528,7 +533,9 @@ export default function Page() {
                                         </SettingsSectionTitle>
                                         <SettingsSectionDescription>
                                             {sendEmail
-                                                ? t("inviteEmailSentDescription")
+                                                ? t(
+                                                      "inviteEmailSentDescription"
+                                                  )
                                                 : t("inviteSentDescription")}
                                         </SettingsSectionDescription>
                                     </SettingsSectionHeader>
@@ -778,7 +785,14 @@ export default function Page() {
                             form={inviteLink ? undefined : "create-user-form"}
                             loading={loading}
                             disabled={loading}
-                            onClick={inviteLink ? () => router.push(`/${orgId}/settings/access/users`) : undefined}
+                            onClick={
+                                inviteLink
+                                    ? () =>
+                                          router.push(
+                                              `/${orgId}/settings/access/users`
+                                          )
+                                    : undefined
+                            }
                         >
                             {inviteLink ? t("done") : t("accessUserCreate")}
                         </Button>
