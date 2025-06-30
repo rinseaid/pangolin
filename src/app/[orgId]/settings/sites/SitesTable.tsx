@@ -29,6 +29,8 @@ import { useEnvContext } from "@app/hooks/useEnvContext";
 import CreateSiteFormModal from "./CreateSiteModal";
 import { useTranslations } from "next-intl";
 import { parseDataSize } from "@app/lib/dataSize";
+import { Badge } from "@app/components/ui/badge";
+import { InfoPopup } from "@app/components/ui/info-popup";
 
 export type SiteRow = {
     id: number;
@@ -38,6 +40,8 @@ export type SiteRow = {
     mbOut: string;
     orgId: string;
     type: "newt" | "wireguard";
+    newtVersion?: string;
+    newtUpdateAvailable?: boolean;
     online: boolean;
     address?: string;
 };
@@ -238,8 +242,22 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
 
                 if (originalRow.type === "newt") {
                     return (
-                        <div className="flex items-center space-x-2">
-                            <span>Newt</span>
+                        <div className="flex items-center space-x-1">
+                            <Badge variant="secondary">
+                                <div className="flex items-center space-x-2">
+                                    <span>Newt</span>
+                                    {originalRow.newtVersion && (
+                                        <span className="text-xs text-gray-500">
+                                            v{originalRow.newtVersion}
+                                        </span>
+                                    )}
+                                </div>
+                            </Badge>
+                            {originalRow.newtUpdateAvailable && (
+                                <InfoPopup
+                                    info={t("newtUpdateAvailableInfo")}
+                                />
+                            )}
                         </div>
                     );
                 }

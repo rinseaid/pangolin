@@ -1145,5 +1145,7 @@
     "settingsErrorUpdate": "Failed to update settings",
     "settingsErrorUpdateDescription": "An error occurred while updating settings",
     "sidebarCollapse": "Collapse",
-    "sidebarExpand": "Expand"
+    "sidebarExpand": "Expand",
+    "newtUpdateAvailable": "Update Available",
+    "newtUpdateAvailableInfo": "A new version of Newt is available. Please update to the latest version for the best experience."
 }

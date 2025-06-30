@@ -49,7 +49,9 @@ export default async function SitesPage(props: SitesPageProps) {
             mbOut: formatSize(site.megabytesOut || 0, site.type),
             orgId: params.orgId,
             type: site.type as any,
-            online: site.online
+            online: site.online,
+            newtVersion: site.newtVersion || undefined,
+            newtUpdateAvailable: site.newtUpdateAvailable || false,
         };
     });
 
