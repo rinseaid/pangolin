@@ -41,7 +41,7 @@ import { createNewt, getNewtToken } from "./newt";
 import { getOlmToken } from "./olm";
 import rateLimit from "express-rate-limit";
 import createHttpError from "http-errors";
-import { verifyClientsEnabled } from "@server/middlewares/verifyClientsEnabled";
+import { verifyClientsEnabled } from "@server/middlewares/verifyClintsEnabled";
 
 // Root routes
 export const unauthenticated = Router();

@@ -18,9 +18,9 @@ import { GetOrgUserResponse } from "@server/routers/user";
 import UserProvider from "@app/providers/UserProvider";
 import { Layout } from "@app/components/Layout";
 import { SidebarNavItem, SidebarNavProps } from "@app/components/SidebarNav";
-import { orgNavItems } from "@app/app/navigation";
 import { getTranslations } from "next-intl/server";
 import { pullEnv } from "@app/lib/pullEnv";
+import { orgNavSections } from "@app/app/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -82,24 +82,9 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
         }
     } catch (e) {}
 
-    if (env.flags.enableClients) {
-        const existing = orgNavItems.find(
-            (item) => item.title === "sidebarClients"
-        );
-        if (!existing) {
-            const clientsNavItem = {
-                title: "sidebarClients",
-                href: "/{orgId}/settings/clients",
-                icon: <Workflow className="h-4 w-4" />
-            };
-
-            orgNavItems.splice(1, 0, clientsNavItem);
-        }
-    }
-
     return (
         <UserProvider user={user}>
-            <Layout orgId={params.orgId} orgs={orgs} navItems={orgNavItems}>
+            <Layout orgId={params.orgId} orgs={orgs} navItems={orgNavSections}>
                 {children}
             </Layout>
         </UserProvider>

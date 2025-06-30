@@ -55,14 +55,6 @@ import {
 import { toast } from "@app/hooks/useToast";
 import { AxiosResponse } from "axios";
 import { useParams, useRouter } from "next/navigation";
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator
-} from "@app/components/ui/breadcrumb";
-import Link from "next/link";
 import { QRCodeCanvas } from "qrcode.react";
 
 import { useTranslations } from "next-intl";
@@ -117,7 +109,8 @@ export default function Page() {
         .refine(
             (data) => {
                 if (data.method !== "local") {
-                    return data.copied;
+                    // return data.copied;
+                    return true;
                 }
                 return true;
             },
@@ -622,26 +615,28 @@ WantedBy=default.target`
                             </SettingsSectionBody>
                         </SettingsSection>
 
-                        <SettingsSection>
-                            <SettingsSectionHeader>
-                                <SettingsSectionTitle>
-                                    {t('tunnelType')}
-                                </SettingsSectionTitle>
-                                <SettingsSectionDescription>
-                                    {t('siteTunnelDescription')}
-                                </SettingsSectionDescription>
-                            </SettingsSectionHeader>
-                            <SettingsSectionBody>
-                                <StrategySelect
-                                    options={tunnelTypes}
-                                    defaultValue={form.getValues("method")}
-                                    onChange={(value) => {
-                                        form.setValue("method", value);
-                                    }}
-                                    cols={3}
-                                />
-                            </SettingsSectionBody>
-                        </SettingsSection>
+                        {tunnelTypes.length > 1 && (
+                            <SettingsSection>
+                                <SettingsSectionHeader>
+                                    <SettingsSectionTitle>
+                                        {t('tunnelType')}
+                                    </SettingsSectionTitle>
+                                    <SettingsSectionDescription>
+                                        {t('siteTunnelDescription')}
+                                    </SettingsSectionDescription>
+                                </SettingsSectionHeader>
+                                <SettingsSectionBody>
+                                    <StrategySelect
+                                        options={tunnelTypes}
+                                        defaultValue={form.getValues("method")}
+                                        onChange={(value) => {
+                                            form.setValue("method", value);
+                                        }}
+                                        cols={3}
+                                    />
+                                </SettingsSectionBody>
+                            </SettingsSection>
+                        )}
 
                         {form.watch("method") === "newt" && (
                             <>
@@ -700,46 +695,46 @@ WantedBy=default.target`
                                             </AlertDescription>
                                         </Alert>
 
-                                        <Form {...form}>
-                                            <form
-                                                className="space-y-4"
-                                                id="create-site-form"
-                                            >
-                                                <FormField
-                                                    control={form.control}
-                                                    name="copied"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <div className="flex items-center space-x-2">
-                                                                <Checkbox
-                                                                    id="terms"
-                                                                    defaultChecked={
-                                                                        form.getValues(
-                                                                            "copied"
-                                                                        ) as boolean
-                                                                    }
-                                                                    onCheckedChange={(
-                                                                        e
-                                                                    ) => {
-                                                                        form.setValue(
-                                                                            "copied",
-                                                                            e as boolean
-                                                                        );
-                                                                    }}
-                                                                />
-                                                                <label
-                                                                    htmlFor="terms"
-                                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                                >
-                                                                    {t('siteConfirmCopy')}
-                                                                </label>
-                                                            </div>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </form>
-                                        </Form>
+                                        {/* <Form {...form}> */}
+                                        {/*     <form */}
+                                        {/*         className="space-y-4" */}
+                                        {/*         id="create-site-form" */}
+                                        {/*     > */}
+                                        {/*         <FormField */}
+                                        {/*             control={form.control} */}
+                                        {/*             name="copied" */}
+                                        {/*             render={({ field }) => ( */}
+                                        {/*                 <FormItem> */}
+                                        {/*                     <div className="flex items-center space-x-2"> */}
+                                        {/*                         <Checkbox */}
+                                        {/*                             id="terms" */}
+                                        {/*                             defaultChecked={ */}
+                                        {/*                                 form.getValues( */}
+                                        {/*                                     "copied" */}
+                                        {/*                                 ) as boolean */}
+                                        {/*                             } */}
+                                        {/*                             onCheckedChange={( */}
+                                        {/*                                 e */}
+                                        {/*                             ) => { */}
+                                        {/*                                 form.setValue( */}
+                                        {/*                                     "copied", */}
+                                        {/*                                     e as boolean */}
+                                        {/*                                 ); */}
+                                        {/*                             }} */}
+                                        {/*                         /> */}
+                                        {/*                         <label */}
+                                        {/*                             htmlFor="terms" */}
+                                        {/*                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" */}
+                                        {/*                         > */}
+                                        {/*                             {t('siteConfirmCopy')} */}
+                                        {/*                         </label> */}
+                                        {/*                     </div> */}
+                                        {/*                     <FormMessage /> */}
+                                        {/*                 </FormItem> */}
+                                        {/*             )} */}
+                                        {/*         /> */}
+                                        {/*     </form> */}
+                                        {/* </Form> */}
                                     </SettingsSectionBody>
                                 </SettingsSection>
                                 <SettingsSection>

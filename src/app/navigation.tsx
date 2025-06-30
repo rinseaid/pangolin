@@ -9,94 +9,97 @@ import {
     Fingerprint,
     Workflow,
     KeyRound,
-    TicketCheck
+    TicketCheck,
+    User
 } from "lucide-react";
 
-export const orgLangingNavItems: SidebarNavItem[] = [
-    {
-        title: "sidebarOverview",
-        href: "/{orgId}",
-        icon: <Home className="h-4 w-4" />
-    }
-];
+export type SidebarNavSection = {
+    heading: string;
+    items: SidebarNavItem[];
+};
 
-export const rootNavItems: SidebarNavItem[] = [
+export const orgNavSections: SidebarNavSection[] = [
     {
-        title: "sidebarHome",
-        href: "/",
-        icon: <Home className="h-4 w-4" />
-    }
-];
-
-export const orgNavItems: SidebarNavItem[] = [
-    {
-        title: "sidebarSites",
-        href: "/{orgId}/settings/sites",
-        icon: <Combine className="h-4 w-4" />
-    },
-    {
-        title: "sidebarResources",
-        href: "/{orgId}/settings/resources",
-        icon: <Waypoints className="h-4 w-4" />
-    },
-    {
-        title: "sidebarAccessControl",
-        href: "/{orgId}/settings/access",
-        icon: <Users className="h-4 w-4" />,
-        autoExpand: true,
-        children: [
+        heading: "General",
+        items: [
             {
-                title: "sidebarUsers",
-                href: "/{orgId}/settings/access/users",
-                children: [
-                    {
-                        title: "sidebarInvitations",
-                        href: "/{orgId}/settings/access/invitations"
-                    }
-                ]
+                title: "sidebarSites",
+                href: "/{orgId}/settings/sites",
+                icon: <Combine className="h-4 w-4" />
             },
             {
-                title: "sidebarRoles",
-                href: "/{orgId}/settings/access/roles"
+                title: "sidebarResources",
+                href: "/{orgId}/settings/resources",
+                icon: <Waypoints className="h-4 w-4" />
             }
         ]
     },
     {
-        title: "sidebarShareableLinks",
-        href: "/{orgId}/settings/share-links",
-        icon: <LinkIcon className="h-4 w-4" />
+        heading: "Access Control",
+        items: [
+            {
+                title: "sidebarUsers",
+                href: "/{orgId}/settings/access/users",
+                icon: <User className="h-4 w-4" />
+            },
+            {
+                title: "sidebarRoles",
+                href: "/{orgId}/settings/access/roles",
+                icon: <Users className="h-4 w-4" />
+            },
+            {
+                title: "sidebarInvitations",
+                href: "/{orgId}/settings/access/invitations",
+                icon: <TicketCheck className="h-4 w-4" />
+            },
+            {
+                title: "sidebarShareableLinks",
+                href: "/{orgId}/settings/share-links",
+                icon: <LinkIcon className="h-4 w-4" />
+            }
+        ]
     },
     {
-        title: "sidebarApiKeys",
-        href: "/{orgId}/settings/api-keys",
-        icon: <KeyRound className="h-4 w-4" />
-    },
-    {
-        title: "sidebarSettings",
-        href: "/{orgId}/settings/general",
-        icon: <Settings className="h-4 w-4" />
+        heading: "Organization",
+        items: [
+            {
+                title: "sidebarApiKeys",
+                href: "/{orgId}/settings/api-keys",
+                icon: <KeyRound className="h-4 w-4" />
+            },
+            {
+                title: "sidebarSettings",
+                href: "/{orgId}/settings/general",
+                icon: <Settings className="h-4 w-4" />
+            }
+        ]
     }
 ];
 
-export const adminNavItems: SidebarNavItem[] = [
+export const adminNavSections: SidebarNavSection[] = [
     {
-        title: "sidebarAllUsers",
-        href: "/admin/users",
-        icon: <Users className="h-4 w-4" />
-    },
-    {
-        title: "sidebarApiKeys",
-        href: "/admin/api-keys",
-        icon: <KeyRound className="h-4 w-4" />
-    },
-    {
-        title: "sidebarIdentityProviders",
-        href: "/admin/idp",
-        icon: <Fingerprint className="h-4 w-4" />
-    },
-    {
-        title: "sidebarLicense",
-        href: "/admin/license",
-        icon: <TicketCheck className="h-4 w-4" />
+        heading: "Admin",
+        items: [
+            {
+                title: "sidebarAllUsers",
+                href: "/admin/users",
+                icon: <Users className="h-4 w-4" />
+            },
+            {
+                title: "sidebarApiKeys",
+                href: "/admin/api-keys",
+                icon: <KeyRound className="h-4 w-4" />
+            },
+            {
+                title: "sidebarIdentityProviders",
+                href: "/admin/idp",
+                icon: <Fingerprint className="h-4 w-4" />
+            },
+            {
+                title: "sidebarLicense",
+                href: "/admin/license",
+                icon: <TicketCheck className="h-4 w-4" />
+            }
+        ]
     }
 ];

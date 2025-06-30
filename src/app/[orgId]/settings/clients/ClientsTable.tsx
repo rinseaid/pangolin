@@ -246,7 +246,7 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
                         <Link
                             href={`/${clientRow.orgId}/settings/clients/${clientRow.id}`}
                         >
-                            <Button variant={"outlinePrimary"} className="ml-2">
+                            <Button variant={"secondary"} className="ml-2">
                                 Edit
                                 <ArrowRight className="ml-2 w-4 h-4" />
                             </Button>

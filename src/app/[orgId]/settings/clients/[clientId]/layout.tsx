@@ -1,7 +1,6 @@
 import { internal } from "@app/lib/api";
 import { AxiosResponse } from "axios";
 import { authCookieHeader } from "@app/lib/api/cookies";
-import { SidebarSettings } from "@app/components/SidebarSettings";
 import SettingsSectionTitle from "@app/components/SettingsSectionTitle";
 import { GetClientResponse } from "@server/routers/client";
 import ClientInfoCard from "./ClientInfoCard";

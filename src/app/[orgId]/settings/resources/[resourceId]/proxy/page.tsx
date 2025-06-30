@@ -128,7 +128,7 @@ export default function ReverseProxyTargets(props: {
                     return true;
                 },
                 {
-                    message: t('proxyErrorInvalidHeader')
+                    message: t("proxyErrorInvalidHeader")
                 }
             )
     });
@@ -146,7 +146,7 @@ export default function ReverseProxyTargets(props: {
                     return true;
                 },
                 {
-                    message: t('proxyErrorTls')
+                    message: t("proxyErrorTls")
                 }
             )
     });
@@ -203,10 +203,10 @@ export default function ReverseProxyTargets(props: {
                 console.error(err);
                 toast({
                     variant: "destructive",
-                    title: t('targetErrorFetch'),
+                    title: t("targetErrorFetch"),
                     description: formatAxiosError(
                         err,
-                        t('targetErrorFetchDescription')
+                        t("targetErrorFetchDescription")
                     )
                 });
             } finally {
@@ -228,10 +228,10 @@ export default function ReverseProxyTargets(props: {
                 console.error(err);
                 toast({
                     variant: "destructive",
-                    title: t('siteErrorFetch'),
+                    title: t("siteErrorFetch"),
                     description: formatAxiosError(
                         err,
-                        t('siteErrorFetchDescription')
+                        t("siteErrorFetchDescription")
                     )
                 });
             }
@@ -251,8 +251,8 @@ export default function ReverseProxyTargets(props: {
         if (isDuplicate) {
             toast({
                 variant: "destructive",
-                title: t('targetErrorDuplicate'),
-                description: t('targetErrorDuplicateDescription')
+                title: t("targetErrorDuplicate"),
+                description: t("targetErrorDuplicateDescription")
             });
             return;
         }
@@ -264,8 +264,8 @@ export default function ReverseProxyTargets(props: {
             if (!isIPInSubnet(targetIp, subnet)) {
                 toast({
                     variant: "destructive",
-                    title: t('targetWireGuardErrorInvalidIp'),
-                    description: t('targetWireGuardErrorInvalidIpDescription')
+                    title: t("targetWireGuardErrorInvalidIp"),
+                    description: t("targetWireGuardErrorInvalidIpDescription")
                 });
                 return;
             }
@@ -307,10 +307,13 @@ export default function ReverseProxyTargets(props: {
         );
     }
 
-    async function saveTargets() {
+    async function saveAllSettings() {
         try {
             setTargetsLoading(true);
+            setHttpsTlsLoading(true);
+            setProxySettingsLoading(true);
 
+            // Save targets
             for (let target of targets) {
                 const data = {
                     ip: target.ip,
@@ -342,9 +345,31 @@ export default function ReverseProxyTargets(props: {
             });
             updateResource({ stickySession: stickySessionData.stickySession });
 
+            // Save TLS settings
+            const tlsData = tlsSettingsForm.getValues();
+            await api.post(`/resource/${params.resourceId}`, {
+                ssl: tlsData.ssl,
+                tlsServerName: tlsData.tlsServerName || null
+            });
+            updateResource({
+                ...resource,
+                ssl: tlsData.ssl,
+                tlsServerName: tlsData.tlsServerName || null
+            });
+
+            // Save proxy settings
+            const proxyData = proxySettingsForm.getValues();
+            await api.post(`/resource/${params.resourceId}`, {
+                setHostHeader: proxyData.setHostHeader || null
+            });
+            updateResource({
+                ...resource,
+                setHostHeader: proxyData.setHostHeader || null
+            });
+
             toast({
-                title: t('targetsUpdated'),
-                description: t('targetsUpdatedDescription')
+                title: t("settingsUpdated"),
+                description: t("settingsUpdatedDescription")
             });
 
             setTargetsToRemove([]);
@@ -353,73 +378,15 @@ export default function ReverseProxyTargets(props: {
             console.error(err);
             toast({
                 variant: "destructive",
-                title: t('targetsErrorUpdate'),
+                title: t("settingsErrorUpdate"),
                 description: formatAxiosError(
                     err,
-                    t('targetsErrorUpdateDescription')
+                    t("settingsErrorUpdateDescription")
                 )
             });
         } finally {
             setTargetsLoading(false);
-        }
-    }
-
-    async function saveTlsSettings(data: TlsSettingsValues) {
-        try {
-            setHttpsTlsLoading(true);
-            await api.post(`/resource/${params.resourceId}`, {
-                ssl: data.ssl,
-                tlsServerName: data.tlsServerName || null
-            });
-            updateResource({
-                ...resource,
-                ssl: data.ssl,
-                tlsServerName: data.tlsServerName || null
-            });
-            toast({
-                title: t('targetTlsUpdate'),
-                description: t('targetTlsUpdateDescription')
-            });
-        } catch (err) {
-            console.error(err);
-            toast({
-                variant: "destructive",
-                title: t('targetErrorTlsUpdate'),
-                description: formatAxiosError(
-                    err,
-                    t('targetErrorTlsUpdateDescription')
-                )
-            });
-        } finally {
             setHttpsTlsLoading(false);
-        }
-    }
-
-    async function saveProxySettings(data: ProxySettingsValues) {
-        try {
-            setProxySettingsLoading(true);
-            await api.post(`/resource/${params.resourceId}`, {
-                setHostHeader: data.setHostHeader || null
-            });
-            updateResource({
-                ...resource,
-                setHostHeader: data.setHostHeader || null
-            });
-            toast({
-                title: t('proxyUpdated'),
-                description: t('proxyUpdatedDescription')
-            });
-        } catch (err) {
-            console.error(err);
-            toast({
-                variant: "destructive",
-                title: t('proxyErrorUpdate'),
-                description: formatAxiosError(
-                    err,
-                    t('proxyErrorUpdateDescription')
-                )
-            });
-        } finally {
             setProxySettingsLoading(false);
         }
     }
@@ -427,7 +394,7 @@ export default function ReverseProxyTargets(props: {
     const columns: ColumnDef<LocalTarget>[] = [
         {
             accessorKey: "ip",
-            header: t('targetAddr'),
+            header: t("targetAddr"),
             cell: ({ row }) => (
                 <Input
                     defaultValue={row.original.ip}
@@ -442,7 +409,7 @@ export default function ReverseProxyTargets(props: {
         },
         {
             accessorKey: "port",
-            header: t('targetPort'),
+            header: t("targetPort"),
             cell: ({ row }) => (
                 <Input
                     type="number"
@@ -476,7 +443,7 @@ export default function ReverseProxyTargets(props: {
         // },
         {
             accessorKey: "enabled",
-            header: t('enabled'),
+            header: t("enabled"),
             cell: ({ row }) => (
                 <Switch
                     defaultChecked={row.original.enabled}
@@ -503,7 +470,7 @@ export default function ReverseProxyTargets(props: {
                             variant="outline"
                             onClick={() => removeTarget(row.original.targetId)}
                         >
-                            {t('delete')}
+                            {t("delete")}
                         </Button>
                     </div>
                 </>
@@ -514,7 +481,7 @@ export default function ReverseProxyTargets(props: {
     if (resource.http) {
         const methodCol: ColumnDef<LocalTarget> = {
             accessorKey: "method",
-            header: t('method'),
+            header: t("method"),
             cell: ({ row }) => (
                 <Select
                     defaultValue={row.original.method ?? ""}
@@ -561,11 +528,9 @@ export default function ReverseProxyTargets(props: {
         <SettingsContainer>
             <SettingsSection>
                 <SettingsSectionHeader>
-                    <SettingsSectionTitle>
-                        {t('targets')}
-                    </SettingsSectionTitle>
+                    <SettingsSectionTitle>{t("targets")}</SettingsSectionTitle>
                     <SettingsSectionDescription>
-                        {t('targetsDescription')}
+                        {t("targetsDescription")}
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
                 <SettingsSectionBody>
@@ -573,7 +538,7 @@ export default function ReverseProxyTargets(props: {
                         <Form {...targetsSettingsForm}>
                             <form
                                 onSubmit={targetsSettingsForm.handleSubmit(
-                                    saveTargets
+                                    saveAllSettings
                                 )}
                                 className="space-y-4"
                                 id="targets-settings-form"
@@ -587,8 +552,12 @@ export default function ReverseProxyTargets(props: {
                                                 <FormControl>
                                                     <SwitchInput
                                                         id="sticky-toggle"
-                                                        label={t('targetStickySessions')}
-                                                        description={t('targetStickySessionsDescription')}
+                                                        label={t(
+                                                            "targetStickySessions"
+                                                        )}
+                                                        description={t(
+                                                            "targetStickySessionsDescription"
+                                                        )}
                                                         defaultChecked={
                                                             field.value
                                                         }
@@ -619,7 +588,9 @@ export default function ReverseProxyTargets(props: {
                                         name="method"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>{t('method')}</FormLabel>
+                                                <FormLabel>
+                                                    {t("method")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Select
                                                         value={
@@ -635,8 +606,15 @@ export default function ReverseProxyTargets(props: {
                                                             );
                                                         }}
                                                     >
-                                                        <SelectTrigger id="method">
-                                                            <SelectValue placeholder={t('methodSelect')} />
+                                                        <SelectTrigger
+                                                            id="method"
+                                                            className="w-full"
+                                                        >
+                                                            <SelectValue
+                                                                placeholder={t(
+                                                                    "methodSelect"
+                                                                )}
+                                                            />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="http">
@@ -662,7 +640,9 @@ export default function ReverseProxyTargets(props: {
                                     name="ip"
                                     render={({ field }) => (
                                         <FormItem className="relative">
-                                            <FormLabel>{t('targetAddr')}</FormLabel>
+                                            <FormLabel>
+                                                {t("targetAddr")}
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input id="ip" {...field} />
                                             </FormControl>
@@ -695,7 +675,9 @@ export default function ReverseProxyTargets(props: {
                                     name="port"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('targetPort')}</FormLabel>
+                                            <FormLabel>
+                                                {t("targetPort")}
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     id="port"
@@ -710,11 +692,11 @@ export default function ReverseProxyTargets(props: {
                                 />
                                 <Button
                                     type="submit"
-                                    variant="outlinePrimary"
+                                    variant="secondary"
                                     className="mt-6"
                                     disabled={!(watchedIp && watchedPort)}
                                 >
-                                    {t('targetSubmit')}
+                                    {t("targetSubmit")}
                                 </Button>
                             </div>
                         </form>
@@ -758,189 +740,170 @@ export default function ReverseProxyTargets(props: {
                                         colSpan={columns.length}
                                         className="h-24 text-center"
                                     >
-                                        {t('targetNoOne')}
+                                        {t("targetNoOne")}
                                     </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
-                        <TableCaption>
-                            {t('targetNoOneDescription')}
-                        </TableCaption>
+                        {/* <TableCaption> */}
+                        {/*     {t('targetNoOneDescription')} */}
+                        {/* </TableCaption> */}
                     </Table>
                 </SettingsSectionBody>
-                <SettingsSectionFooter>
-                    <Button
-                        onClick={saveTargets}
-                        loading={targetsLoading}
-                        disabled={targetsLoading}
-                        form="targets-settings-form"
-                    >
-                        {t('targetsSubmit')}
-                    </Button>
-                </SettingsSectionFooter>
             </SettingsSection>
 
             {resource.http && (
-                <SettingsSectionGrid cols={2}>
-                    <SettingsSection>
-                        <SettingsSectionHeader>
-                            <SettingsSectionTitle>
-                                {t('targetTlsSettings')}
-                            </SettingsSectionTitle>
-                            <SettingsSectionDescription>
-                                {t('targetTlsSettingsDescription')}
-                            </SettingsSectionDescription>
-                        </SettingsSectionHeader>
-                        <SettingsSectionBody>
-                            <SettingsSectionForm>
-                                <Form {...tlsSettingsForm}>
-                                    <form
-                                        onSubmit={tlsSettingsForm.handleSubmit(
-                                            saveTlsSettings
+                <SettingsSection>
+                    <SettingsSectionHeader>
+                        <SettingsSectionTitle>
+                            {t("proxyAdditional")}
+                        </SettingsSectionTitle>
+                        <SettingsSectionDescription>
+                            {t("proxyAdditionalDescription")}
+                        </SettingsSectionDescription>
+                    </SettingsSectionHeader>
+                    <SettingsSectionBody>
+                        <SettingsSectionForm>
+                            <Form {...tlsSettingsForm}>
+                                <form
+                                    onSubmit={tlsSettingsForm.handleSubmit(
+                                        saveAllSettings
+                                    )}
+                                    className="space-y-4"
+                                    id="tls-settings-form"
+                                >
+                                    <FormField
+                                        control={tlsSettingsForm.control}
+                                        name="ssl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <SwitchInput
+                                                        id="ssl-toggle"
+                                                        label={t(
+                                                            "proxyEnableSSL"
+                                                        )}
+                                                        defaultChecked={
+                                                            field.value
+                                                        }
+                                                        onCheckedChange={(
+                                                            val
+                                                        ) => {
+                                                            field.onChange(val);
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
                                         )}
-                                        className="space-y-4"
-                                        id="tls-settings-form"
+                                    />
+                                    <Collapsible
+                                        open={isAdvancedOpen}
+                                        onOpenChange={setIsAdvancedOpen}
+                                        className="space-y-2"
                                     >
-                                        <FormField
-                                            control={tlsSettingsForm.control}
-                                            name="ssl"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <SwitchInput
-                                                            id="ssl-toggle"
-                                                            label={t('proxyEnableSSL')}
-                                                            defaultChecked={
-                                                                field.value
-                                                            }
-                                                            onCheckedChange={(
-                                                                val
-                                                            ) => {
-                                                                field.onChange(
-                                                                    val
-                                                                );
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <Collapsible
-                                            open={isAdvancedOpen}
-                                            onOpenChange={setIsAdvancedOpen}
-                                            className="space-y-2"
-                                        >
-                                            <div className="flex items-center justify-between space-x-4">
-                                                <CollapsibleTrigger asChild>
-                                                    <Button
-                                                        variant="text"
-                                                        size="sm"
-                                                        className="p-0 flex items-center justify-start gap-2 w-full"
-                                                    >
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {t('targetTlsSettingsAdvanced')}
-                                                        </p>
-                                                        <div>
-                                                            <ChevronsUpDown className="h-4 w-4" />
-                                                            <span className="sr-only">
-                                                                Toggle
-                                                            </span>
-                                                        </div>
-                                                    </Button>
-                                                </CollapsibleTrigger>
-                                            </div>
-                                            <CollapsibleContent className="space-y-2">
-                                                <FormField
-                                                    control={
-                                                        tlsSettingsForm.control
-                                                    }
-                                                    name="tlsServerName"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>
-                                                                {t('targetTlsSni')}
-                                                            </FormLabel>
-                                                            <FormControl>
-                                                                <Input
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                            <FormDescription>
-                                                                {t('targetTlsSniDescription')}
-                                                            </FormDescription>
-                                                            <FormMessage />
-                                                        </FormItem>
+                                        <div className="flex items-center justify-between space-x-4">
+                                            <CollapsibleTrigger asChild>
+                                                <Button
+                                                    variant="text"
+                                                    size="sm"
+                                                    className="p-0 flex items-center justify-start gap-2 w-full"
+                                                >
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {t(
+                                                            "targetTlsSettingsAdvanced"
+                                                        )}
+                                                    </p>
+                                                    <div>
+                                                        <ChevronsUpDown className="h-4 w-4" />
+                                                        <span className="sr-only">
+                                                            Toggle
+                                                        </span>
+                                                    </div>
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                        </div>
+                                        <CollapsibleContent className="space-y-2">
+                                            <FormField
+                                                control={
+                                                    tlsSettingsForm.control
+                                                }
+                                                name="tlsServerName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>
+                                                            {t("targetTlsSni")}
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} />
+                                                        </FormControl>
+                                                        <FormDescription>
+                                                            {t(
+                                                                "targetTlsSniDescription"
+                                                            )}
+                                                        </FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </CollapsibleContent>
+                                    </Collapsible>
+                                </form>
+                            </Form>
+                        </SettingsSectionForm>
+
+                        <SettingsSectionForm>
+                            <Form {...proxySettingsForm}>
+                                <form
+                                    onSubmit={proxySettingsForm.handleSubmit(
+                                        saveAllSettings
+                                    )}
+                                    className="space-y-4"
+                                    id="proxy-settings-form"
+                                >
+                                    <FormField
+                                        control={proxySettingsForm.control}
+                                        name="setHostHeader"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    {t("proxyCustomHeader")}
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    {t(
+                                                        "proxyCustomHeaderDescription"
                                                     )}
-                                                />
-                                            </CollapsibleContent>
-                                        </Collapsible>
-                                    </form>
-                                </Form>
-                            </SettingsSectionForm>
-                        </SettingsSectionBody>
-                        <SettingsSectionFooter>
-                            <Button
-                                type="submit"
-                                loading={httpsTlsLoading}
-                                form="tls-settings-form"
-                            >
-                                {t('targetTlsSubmit')}
-                            </Button>
-                        </SettingsSectionFooter>
-                    </SettingsSection>
-                    <SettingsSection>
-                        <SettingsSectionHeader>
-                            <SettingsSectionTitle>
-                                {t('proxyAdditional')}
-                            </SettingsSectionTitle>
-                            <SettingsSectionDescription>
-                                {t('proxyAdditionalDescription')}
-                            </SettingsSectionDescription>
-                        </SettingsSectionHeader>
-                        <SettingsSectionBody>
-                            <SettingsSectionForm>
-                                <Form {...proxySettingsForm}>
-                                    <form
-                                        onSubmit={proxySettingsForm.handleSubmit(
-                                            saveProxySettings
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
                                         )}
-                                        className="space-y-4"
-                                        id="proxy-settings-form"
-                                    >
-                                        <FormField
-                                            control={proxySettingsForm.control}
-                                            name="setHostHeader"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t('proxyCustomHeader')}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} />
-                                                    </FormControl>
-                                                    <FormDescription>
-                                                        {t('proxyCustomHeaderDescription')}
-                                                    </FormDescription>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </form>
-                                </Form>
-                            </SettingsSectionForm>
-                        </SettingsSectionBody>
-                        <SettingsSectionFooter>
-                            <Button
-                                type="submit"
-                                loading={proxySettingsLoading}
-                                form="proxy-settings-form"
-                            >
-                                {t('targetTlsSubmit')}
-                            </Button>
-                        </SettingsSectionFooter>
-                    </SettingsSection>
-                </SettingsSectionGrid>
+                                    />
+                                </form>
+                            </Form>
+                        </SettingsSectionForm>
+                    </SettingsSectionBody>
+                </SettingsSection>
             )}
+
+            <div className="flex justify-end mt-6">
+                <Button
+                    onClick={saveAllSettings}
+                    loading={
+                        targetsLoading ||
+                        httpsTlsLoading ||
+                        proxySettingsLoading
+                    }
+                    disabled={
+                        targetsLoading ||
+                        httpsTlsLoading ||
+                        proxySettingsLoading
+                    }
+                >
+                    {t("saveAllSettings")}
+                </Button>
+            </div>
         </SettingsContainer>
     );
 }
@@ -953,7 +916,7 @@ function isIPInSubnet(subnet: string, ip: string): boolean {
     const t = useTranslations();
 
     if (mask < 0 || mask > 32) {
-        throw new Error(t('subnetMaskErrorInvalid'));
+        throw new Error(t("subnetMaskErrorInvalid"));
     }
 
     // Convert IP addresses to binary numbers
@@ -973,14 +936,14 @@ function ipToNumber(ip: string): number {
     const t = useTranslations();
 
     if (parts.length !== 4) {
-        throw new Error(t('ipAddressErrorInvalidFormat'));
+        throw new Error(t("ipAddressErrorInvalidFormat"));
     }
 
     // Convert IP octets to 32-bit number
     return parts.reduce((num, octet) => {
         const oct = parseInt(octet);
         if (isNaN(oct) || oct < 0 || oct > 255) {
-            throw new Error(t('ipAddressErrorInvalidOctet'));
+            throw new Error(t("ipAddressErrorInvalidOctet"));
         }
         return (num << 8) + oct;
     }, 0);

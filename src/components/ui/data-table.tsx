@@ -93,8 +93,8 @@ export function DataTable<TData, TValue>({
     return (
         <div className="container mx-auto max-w-12xl">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <div className="flex items-center max-w-sm w-full relative mr-2">
+                <CardHeader className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-4">
+                    <div className="flex items-center w-full sm:max-w-sm sm:mr-2 relative">
                         <Input
                             placeholder={searchPlaceholder}
                             value={globalFilter ?? ""}
@@ -105,7 +105,7 @@ export function DataTable<TData, TValue>({
                         />
                         <Search className="h-4 w-4 absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 sm:justify-end">
                         {onRefresh && (
                             <Button 
                                 variant="outline" 

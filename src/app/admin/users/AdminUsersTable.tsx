@@ -41,11 +41,11 @@ export default function UsersTable({ users }: Props) {
     const deleteUser = (id: string) => {
         api.delete(`/user/${id}`)
             .catch((e) => {
-                console.error(t('userErrorDelete'), e);
+                console.error(t("userErrorDelete"), e);
                 toast({
                     variant: "destructive",
-                    title: t('userErrorDelete'),
-                    description: formatAxiosError(e, t('userErrorDelete'))
+                    title: t("userErrorDelete"),
+                    description: formatAxiosError(e, t("userErrorDelete"))
                 });
             })
             .then(() => {
@@ -84,7 +84,7 @@ export default function UsersTable({ users }: Props) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        {t('username')}
+                        {t("username")}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -100,7 +100,7 @@ export default function UsersTable({ users }: Props) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        {t('email')}
+                        {t("email")}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -116,7 +116,7 @@ export default function UsersTable({ users }: Props) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        {t('name')}
+                        {t("name")}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -132,7 +132,7 @@ export default function UsersTable({ users }: Props) {
                             column.toggleSorting(column.getIsSorted() === "asc")
                         }
                     >
-                        {t('identityProvider')}
+                        {t("identityProvider")}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 );
@@ -146,14 +146,15 @@ export default function UsersTable({ users }: Props) {
                     <>
                         <div className="flex items-center justify-end">
                             <Button
-                                variant={"outlinePrimary"}
+                                variant={"secondary"}
+                                size="sm"
                                 className="ml-2"
                                 onClick={() => {
                                     setSelected(r);
                                     setIsDeleteModalOpen(true);
                                 }}
                             >
-                                {t('delete')}
+                                {t("delete")}
                             </Button>
                         </div>
                     </>
@@ -174,26 +175,27 @@ export default function UsersTable({ users }: Props) {
                     dialog={
                         <div className="space-y-4">
                             <p>
-                                {t('userQuestionRemove', {selectedUser: selected?.email || selected?.name || selected?.username})}
+                                {t("userQuestionRemove", {
+                                    selectedUser:
+                                        selected?.email ||
+                                        selected?.name ||
+                                        selected?.username
+                                })}
                             </p>
 
                             <p>
-                                <b>
-                                    {t('userMessageRemove')}
-                                </b>
+                                <b>{t("userMessageRemove")}</b>
                             </p>
 
-                            <p>
-                                {t('userMessageConfirm')}
-                            </p>
+                            <p>{t("userMessageConfirm")}</p>
                         </div>
                     }
-                    buttonText={t('userDeleteConfirm')}
+                    buttonText={t("userDeleteConfirm")}
                     onConfirm={async () => deleteUser(selected!.id)}
                     string={
                         selected.email || selected.name || selected.username
                     }
-                    title={t('userDeleteServer')}
+                    title={t("userDeleteServer")}
                 />
             )}
 

@@ -36,7 +36,6 @@ import {
     TableBody,
     TableCaption,
     TableCell,
-    TableContainer,
     TableHead,
     TableHeader,
     TableRow
@@ -543,48 +542,48 @@ export default function ResourceRules(props: {
 
     return (
         <SettingsContainer>
-            <Alert className="hidden md:block">
-                <InfoIcon className="h-4 w-4" />
-                <AlertTitle className="font-semibold">{t('rulesAbout')}</AlertTitle>
-                <AlertDescription className="mt-4">
-                    <div className="space-y-1 mb-4">
-                        <p>
-                            {t('rulesAboutDescription')}
-                        </p>
-                    </div>
-                    <InfoSections cols={2}>
-                        <InfoSection>
-                            <InfoSectionTitle>{t('rulesActions')}</InfoSectionTitle>
-                            <ul className="text-sm text-muted-foreground space-y-1">
-                                <li className="flex items-center gap-2">
-                                    <Check className="text-green-500 w-4 h-4" />
-                                    {t('rulesActionAlwaysAllow')}
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <X className="text-red-500 w-4 h-4" />
-                                    {t('rulesActionAlwaysDeny')}
-                                </li>
-                            </ul>
-                        </InfoSection>
-                        <InfoSection>
-                            <InfoSectionTitle>
-                                {t('rulesMatchCriteria')}
-                            </InfoSectionTitle>
-                            <ul className="text-sm text-muted-foreground space-y-1">
-                                <li className="flex items-center gap-2">
-                                    {t('rulesMatchCriteriaIpAddress')}
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    {t('rulesMatchCriteriaIpAddressRange')}
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    {t('rulesMatchCriteriaUrl')}
-                                </li>
-                            </ul>
-                        </InfoSection>
-                    </InfoSections>
-                </AlertDescription>
-            </Alert>
+            {/* <Alert className="hidden md:block"> */}
+            {/*     <InfoIcon className="h-4 w-4" /> */}
+            {/*     <AlertTitle className="font-semibold">{t('rulesAbout')}</AlertTitle> */}
+            {/*     <AlertDescription className="mt-4"> */}
+            {/*         <div className="space-y-1 mb-4"> */}
+            {/*             <p> */}
+            {/*                 {t('rulesAboutDescription')} */}
+            {/*             </p> */}
+            {/*         </div> */}
+            {/*         <InfoSections cols={2}> */}
+            {/*             <InfoSection> */}
+            {/*                 <InfoSectionTitle>{t('rulesActions')}</InfoSectionTitle> */}
+            {/*                 <ul className="text-sm text-muted-foreground space-y-1"> */}
+            {/*                     <li className="flex items-center gap-2"> */}
+            {/*                         <Check className="text-green-500 w-4 h-4" /> */}
+            {/*                         {t('rulesActionAlwaysAllow')} */}
+            {/*                     </li> */}
+            {/*                     <li className="flex items-center gap-2"> */}
+            {/*                         <X className="text-red-500 w-4 h-4" /> */}
+            {/*                         {t('rulesActionAlwaysDeny')} */}
+            {/*                     </li> */}
+            {/*                 </ul> */}
+            {/*             </InfoSection> */}
+            {/*             <InfoSection> */}
+            {/*                 <InfoSectionTitle> */}
+            {/*                     {t('rulesMatchCriteria')} */}
+            {/*                 </InfoSectionTitle> */}
+            {/*                 <ul className="text-sm text-muted-foreground space-y-1"> */}
+            {/*                     <li className="flex items-center gap-2"> */}
+            {/*                         {t('rulesMatchCriteriaIpAddress')} */}
+            {/*                     </li> */}
+            {/*                     <li className="flex items-center gap-2"> */}
+            {/*                         {t('rulesMatchCriteriaIpAddressRange')} */}
+            {/*                     </li> */}
+            {/*                     <li className="flex items-center gap-2"> */}
+            {/*                         {t('rulesMatchCriteriaUrl')} */}
+            {/*                     </li> */}
+            {/*                 </ul> */}
+            {/*             </InfoSection> */}
+            {/*         </InfoSections> */}
+            {/*     </AlertDescription> */}
+            {/* </Alert> */}
 
             <SettingsSection>
                 <SettingsSectionHeader>
@@ -634,7 +633,7 @@ export default function ResourceRules(props: {
                                                         field.onChange
                                                     }
                                                 >
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="w-full">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -664,7 +663,7 @@ export default function ResourceRules(props: {
                                                         field.onChange
                                                     }
                                                 >
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="w-full">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -690,7 +689,7 @@ export default function ResourceRules(props: {
                                     control={addRuleForm.control}
                                     name="value"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-0 mb-2">
+                                        <FormItem className="gap-1">
                                             <InfoPopup
                                                 text={t('value')}
                                                 info={
@@ -702,7 +701,7 @@ export default function ResourceRules(props: {
                                                 }
                                             />
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input {...field}/>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -710,8 +709,7 @@ export default function ResourceRules(props: {
                                 />
                                 <Button
                                     type="submit"
-                                    variant="outlinePrimary"
-                                    className="mb-2"
+                                    variant="secondary"
                                     disabled={!rulesEnabled}
                                 >
                                     {t('ruleSubmit')}
@@ -762,9 +760,9 @@ export default function ResourceRules(props: {
                                 </TableRow>
                             )}
                         </TableBody>
-                        <TableCaption>
-                            {t('rulesOrder')}
-                        </TableCaption>
+                        {/* <TableCaption> */}
+                        {/*     {t('rulesOrder')} */}
+                        {/* </TableCaption> */}
                     </Table>
                 </SettingsSectionBody>
                 <SettingsSectionFooter>

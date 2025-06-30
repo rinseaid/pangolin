@@ -11,7 +11,7 @@ import { AxiosResponse } from "axios";
 import { IsSupporterKeyVisibleResponse } from "@server/routers/supporterKey";
 import LicenseStatusProvider from "@app/providers/LicenseStatusProvider";
 import { GetLicenseStatusResponse } from "@server/routers/license";
-import LicenseViolation from "./components/LicenseViolation";
+import LicenseViolation from "@app/components/LicenseViolation";
 import { cache } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";

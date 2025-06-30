@@ -568,7 +568,7 @@ export default function ResourceAuthenticationPage() {
                                 </span>
                             </div>
                             <Button
-                                variant="outlinePrimary"
+                                variant="secondary"
                                 onClick={
                                     authInfo.password
                                         ? removeResourcePassword
@@ -593,7 +593,7 @@ export default function ResourceAuthenticationPage() {
                                 </span>
                             </div>
                             <Button
-                                variant="outlinePrimary"
+                                variant="secondary"
                                 onClick={
                                     authInfo.pincode
                                         ? removeResourcePincode

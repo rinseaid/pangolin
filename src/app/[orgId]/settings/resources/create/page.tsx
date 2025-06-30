@@ -459,29 +459,31 @@ export default function Page() {
                                 </SettingsSectionBody>
                             </SettingsSection>
 
-                            <SettingsSection>
-                                <SettingsSectionHeader>
-                                    <SettingsSectionTitle>
-                                        {t("resourceType")}
-                                    </SettingsSectionTitle>
-                                    <SettingsSectionDescription>
-                                        {t("resourceTypeDescription")}
-                                    </SettingsSectionDescription>
-                                </SettingsSectionHeader>
-                                <SettingsSectionBody>
-                                    <StrategySelect
-                                        options={resourceTypes}
-                                        defaultValue="http"
-                                        onChange={(value) => {
-                                            baseForm.setValue(
-                                                "http",
-                                                value === "http"
-                                            );
-                                        }}
-                                        cols={2}
-                                    />
-                                </SettingsSectionBody>
-                            </SettingsSection>
+                            {resourceTypes.length > 1 && (
+                                <SettingsSection>
+                                    <SettingsSectionHeader>
+                                        <SettingsSectionTitle>
+                                            {t("resourceType")}
+                                        </SettingsSectionTitle>
+                                        <SettingsSectionDescription>
+                                            {t("resourceTypeDescription")}
+                                        </SettingsSectionDescription>
+                                    </SettingsSectionHeader>
+                                    <SettingsSectionBody>
+                                        <StrategySelect
+                                            options={resourceTypes}
+                                            defaultValue="http"
+                                            onChange={(value) => {
+                                                baseForm.setValue(
+                                                    "http",
+                                                    value === "http"
+                                                );
+                                            }}
+                                            cols={2}
+                                        />
+                                    </SettingsSectionBody>
+                                </SettingsSection>
+                            )}
 
                             {baseForm.watch("http") ? (
                                 <SettingsSection>
