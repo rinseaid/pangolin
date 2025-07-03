@@ -1132,5 +1132,22 @@
     "initialSetupTitle": "Initial Server Setup",
     "initialSetupDescription": "Create the intial server admin account. Only one server admin can exist. You can always change these credentials later.",
     "createAdminAccount": "Create Admin Account",
-    "setupErrorCreateAdmin": "An error occurred while creating the server admin account."
+    "setupErrorCreateAdmin": "An error occurred while creating the server admin account.",
+    "passkeyManage": "Manage Passkeys",
+    "passkeyDescription": "Add or remove passkeys for passwordless authentication",
+    "passkeyRegister": "Register New Passkey",
+    "passkeyList": "Your Passkeys",
+    "passkeyNone": "No passkeys registered yet",
+    "passkeyNameRequired": "Name is required",
+    "passkeyRemove": "Remove",
+    "passkeyLastUsed": "Last used: {date}",
+    "passkeyNameLabel": "Name",
+    "passkeyNamePlaceholder": "Enter a name for this passkey",
+    "passkeyRegisterSuccess": "Passkey registered successfully",
+    "passkeyRegisterError": "Failed to register passkey",
+    "passkeyRemoveSuccess": "Passkey removed successfully",
+    "passkeyRemoveError": "Failed to remove passkey",
+    "passkeyLoadError": "Failed to load passkeys",
+    "passkeyLogin": "Login with Passkey",
+    "passkeyAuthError": "Failed to authenticate with passkey"
 }
