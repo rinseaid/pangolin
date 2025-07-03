@@ -1149,5 +1149,6 @@
     "passkeyRemoveError": "Failed to remove passkey",
     "passkeyLoadError": "Failed to load passkeys",
     "passkeyLogin": "Login with Passkey",
-    "passkeyAuthError": "Failed to authenticate with passkey"
+    "passkeyAuthError": "Failed to authenticate with passkey",
+    "passkeyRecommendation": "Consider registering another passkey on a different device to ensure you don't get locked out of your account."
 }

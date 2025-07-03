@@ -22,8 +22,14 @@ import type {
     VerifiedRegistrationResponse,
     VerifiedAuthenticationResponse
 } from "@simplewebauthn/server";
+import type { 
+    AuthenticatorTransport,
+    PublicKeyCredentialDescriptorJSON
+} from "@simplewebauthn/types";
 import config from "@server/lib/config";
 import { UserType } from "@server/types/UserTypes";
+import { verifyPassword } from "@server/auth/password";
+import { unauthorized } from "@server/auth/unauthorizedResponse";
 
 // The RP ID is the domain name of your application
 const rpID = new URL(config.getRawConfig().app.dashboard_url).hostname;
@@ -89,7 +95,8 @@ async function clearChallenge(sessionId: string) {
 }
 
 export const registerPasskeyBody = z.object({
-    name: z.string().min(1)
+    name: z.string().min(1),
+    password: z.string().min(1)
 }).strict();
 
 export const verifyRegistrationBody = z.object({
@@ -102,6 +109,10 @@ export const startAuthenticationBody = z.object({
 
 export const verifyAuthenticationBody = z.object({
     credential: z.any()
+}).strict();
+
+export const deletePasskeyBody = z.object({
+    password: z.string().min(1)
 }).strict();
 
 export async function startRegistration(
@@ -120,7 +131,7 @@ export async function startRegistration(
         );
     }
 
-    const { name } = parsedBody.data;
+    const { name, password } = parsedBody.data;
     const user = req.user as User;
 
     // Only allow internal users to use passkeys
@@ -134,6 +145,23 @@ export async function startRegistration(
     }
 
     try {
+        // Verify password
+        const validPassword = await verifyPassword(password, user.passwordHash!);
+        if (!validPassword) {
+            return next(unauthorized());
+        }
+
+        // If user has 2FA enabled, require a code
+        if (user.twoFactorEnabled) {
+            return response<{ codeRequested: boolean }>(res, {
+                data: { codeRequested: true },
+                success: true,
+                error: false,
+                message: "Two-factor authentication required",
+                status: HttpCode.ACCEPTED
+            });
+        }
+
         // Get existing passkeys for user
         const existingPasskeys = await db
             .select()
@@ -141,10 +169,10 @@ export async function startRegistration(
             .where(eq(passkeys.userId, user.userId));
 
         const excludeCredentials = existingPasskeys.map(key => ({
-            id: Buffer.from(key.credentialId, 'base64'),
+            id: Buffer.from(key.credentialId, 'base64').toString('base64url'),
             type: 'public-key' as const,
-            transports: key.transports ? JSON.parse(key.transports) : undefined
-        }));
+            transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransport[] : undefined
+        } satisfies PublicKeyCredentialDescriptorJSON));
 
         const options: GenerateRegistrationOptionsOpts = {
             rpName,
@@ -164,11 +192,11 @@ export async function startRegistration(
         // Store challenge in database
         await storeChallenge(req.session.sessionId, registrationOptions.challenge, name, user.userId);
 
-        return response(res, {
+        return response<typeof registrationOptions>(res, {
             data: registrationOptions,
             success: true,
             error: false,
-            message: "Registration options generated",
+            message: "Registration options generated successfully",
             status: HttpCode.OK
         });
     } catch (error) {
@@ -176,7 +204,7 @@ export async function startRegistration(
         return next(
             createHttpError(
                 HttpCode.INTERNAL_SERVER_ERROR,
-                "Failed to generate registration options"
+                "Failed to start registration"
             )
         );
     }
@@ -326,6 +354,19 @@ export async function deletePasskey(
     const credentialId = decodeURIComponent(encodedCredentialId);
     const user = req.user as User;
 
+    const parsedBody = deletePasskeyBody.safeParse(req.body);
+
+    if (!parsedBody.success) {
+        return next(
+            createHttpError(
+                HttpCode.BAD_REQUEST,
+                fromError(parsedBody.error).toString()
+            )
+        );
+    }
+
+    const { password } = parsedBody.data;
+
     // Only allow internal users to use passkeys
     if (user.type !== UserType.Internal) {
         return next(
@@ -337,6 +378,23 @@ export async function deletePasskey(
     }
 
     try {
+        // Verify password
+        const validPassword = await verifyPassword(password, user.passwordHash!);
+        if (!validPassword) {
+            return next(unauthorized());
+        }
+
+        // If user has 2FA enabled, require a code
+        if (user.twoFactorEnabled) {
+            return response<{ codeRequested: boolean }>(res, {
+                data: { codeRequested: true },
+                success: true,
+                error: false,
+                message: "Two-factor authentication required",
+                status: HttpCode.ACCEPTED
+            });
+        }
+
         await db
             .delete(passkeys)
             .where(and(
@@ -424,7 +482,7 @@ export async function startAuthentication(
             allowCredentials = userPasskeys.map(key => ({
                 id: Buffer.from(key.credentialId, 'base64'),
                 type: 'public-key' as const,
-                transports: key.transports ? JSON.parse(key.transports) : undefined
+                transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransport[] : undefined
             }));
         } else {
             // If no email provided, allow any passkey (for resident key authentication)
@@ -546,7 +604,7 @@ export async function verifyAuthentication(
                 credentialID: Buffer.from(passkey.credentialId, 'base64'),
                 credentialPublicKey: Buffer.from(passkey.publicKey, 'base64'),
                 counter: passkey.signCount,
-                transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
+                transports: passkey.transports ? JSON.parse(passkey.transports) as AuthenticatorTransport[] : undefined
             },
             requireUserVerification: false
         });
