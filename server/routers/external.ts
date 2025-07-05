@@ -789,35 +789,35 @@ authRouter.post("/idp/:idpId/oidc/validate-callback", idp.validateOidcCallback);
 authRouter.put("/set-server-admin", auth.setServerAdmin);
 authRouter.get("/initial-setup-complete", auth.initialSetupComplete);
 
-// Passkey routes
+// Security Key routes
 authRouter.post(
-    "/passkey/register/start", 
+    "/security-key/register/start", 
     rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 5, // Allow 5 passkey registrations per 15 minutes per IP
-        keyGenerator: (req) => `passkeyRegister:${req.ip}:${req.user?.userId}`,
+        max: 5, // Allow 5 security key registrations per 15 minutes per IP
+        keyGenerator: (req) => `securityKeyRegister:${req.ip}:${req.user?.userId}`,
         handler: (req, res, next) => {
-            const message = `You can only register ${5} passkeys every ${15} minutes. Please try again later.`;
+            const message = `You can only register ${5} security keys every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         }
     }),
     verifySessionUserMiddleware, 
     auth.startRegistration
 );
-authRouter.post("/passkey/register/verify", verifySessionUserMiddleware, auth.verifyRegistration);
+authRouter.post("/security-key/register/verify", verifySessionUserMiddleware, auth.verifyRegistration);
 authRouter.post(
-    "/passkey/authenticate/start",
+    "/security-key/authenticate/start",
     rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 10, // Allow 10 authentication attempts per 15 minutes per IP
-        keyGenerator: (req) => `passkeyAuth:${req.ip}`,
+        keyGenerator: (req) => `securityKeyAuth:${req.ip}`,
         handler: (req, res, next) => {
-            const message = `You can only attempt passkey authentication ${10} times every ${15} minutes. Please try again later.`;
+            const message = `You can only attempt security key authentication ${10} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         }
     }),
     auth.startAuthentication
 );
-authRouter.post("/passkey/authenticate/verify", auth.verifyAuthentication);
-authRouter.get("/passkey/list", verifySessionUserMiddleware, auth.listPasskeys);
-authRouter.delete("/passkey/:credentialId", verifySessionUserMiddleware, auth.deletePasskey);
+authRouter.post("/security-key/authenticate/verify", auth.verifyAuthentication);
+authRouter.get("/security-key/list", verifySessionUserMiddleware, auth.listSecurityKeys);
+authRouter.delete("/security-key/:credentialId", verifySessionUserMiddleware, auth.deleteSecurityKey);

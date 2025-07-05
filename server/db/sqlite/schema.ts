@@ -135,7 +135,7 @@ export const users = sqliteTable("user", {
         .default(false)
 });
 
-export const passkeys = sqliteTable("webauthnCredentials", {
+export const securityKeys = sqliteTable("webauthnCredentials", {
     credentialId: text("credentialId").primaryKey(),
     userId: text("userId").notNull().references(() => users.userId, {
         onDelete: "cascade"
@@ -151,7 +151,7 @@ export const passkeys = sqliteTable("webauthnCredentials", {
 export const webauthnChallenge = sqliteTable("webauthnChallenge", {
     sessionId: text("sessionId").primaryKey(),
     challenge: text("challenge").notNull(),
-    passkeyName: text("passkeyName"),
+    securityKeyName: text("securityKeyName"),
     userId: text("userId").references(() => users.userId, {
         onDelete: "cascade"
     }),

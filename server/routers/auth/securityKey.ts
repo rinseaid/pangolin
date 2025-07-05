@@ -4,7 +4,7 @@ import HttpCode from "@server/types/HttpCode";
 import { fromError } from "zod-validation-error";
 import { z } from "zod";
 import { db } from "@server/db";
-import { User, passkeys, users, webauthnChallenge } from "@server/db";
+import { User, securityKeys, users, webauthnChallenge } from "@server/db";
 import { eq, and, lt } from "drizzle-orm";
 import { response } from "@server/lib";
 import logger from "@server/logger";
@@ -55,14 +55,14 @@ setInterval(async () => {
         await db
             .delete(webauthnChallenge)
             .where(lt(webauthnChallenge.expiresAt, now));
-        logger.debug("Cleaned up expired passkey challenges");
+        logger.debug("Cleaned up expired security key challenges");
     } catch (error) {
-        logger.error("Failed to clean up expired passkey challenges", error);
+        logger.error("Failed to clean up expired security key challenges", error);
     }
 }, 5 * 60 * 1000);
 
 // Helper functions for challenge management
-async function storeChallenge(sessionId: string, challenge: string, passkeyName?: string, userId?: string) {
+async function storeChallenge(sessionId: string, challenge: string, securityKeyName?: string, userId?: string) {
     const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutes
     
     // Delete any existing challenge for this session
@@ -72,7 +72,7 @@ async function storeChallenge(sessionId: string, challenge: string, passkeyName?
     await db.insert(webauthnChallenge).values({
         sessionId,
         challenge,
-        passkeyName,
+        securityKeyName,
         userId,
         expiresAt
     });
@@ -102,7 +102,7 @@ async function clearChallenge(sessionId: string) {
     await db.delete(webauthnChallenge).where(eq(webauthnChallenge.sessionId, sessionId));
 }
 
-export const registerPasskeyBody = z.object({
+export const registerSecurityKeyBody = z.object({
     name: z.string().min(1),
     password: z.string().min(1)
 }).strict();
@@ -119,7 +119,7 @@ export const verifyAuthenticationBody = z.object({
     credential: z.any()
 }).strict();
 
-export const deletePasskeyBody = z.object({
+export const deleteSecurityKeyBody = z.object({
     password: z.string().min(1)
 }).strict();
 
@@ -128,7 +128,7 @@ export async function startRegistration(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    const parsedBody = registerPasskeyBody.safeParse(req.body);
+    const parsedBody = registerSecurityKeyBody.safeParse(req.body);
 
     if (!parsedBody.success) {
         return next(
@@ -142,12 +142,12 @@ export async function startRegistration(
     const { name, password } = parsedBody.data;
     const user = req.user as User;
 
-    // Only allow internal users to use passkeys
+    // Only allow internal users to use security keys
     if (user.type !== UserType.Internal) {
         return next(
             createHttpError(
                 HttpCode.BAD_REQUEST,
-                "Passkeys are only available for internal users"
+                "Security keys are only available for internal users"
             )
         );
     }
@@ -170,13 +170,13 @@ export async function startRegistration(
             });
         }
 
-        // Get existing passkeys for user
-        const existingPasskeys = await db
+        // Get existing security keys for user
+        const existingSecurityKeys = await db
             .select()
-            .from(passkeys)
-            .where(eq(passkeys.userId, user.userId));
+            .from(securityKeys)
+            .where(eq(securityKeys.userId, user.userId));
 
-        const excludeCredentials = existingPasskeys.map(key => ({
+        const excludeCredentials = existingSecurityKeys.map(key => ({
             id: Buffer.from(key.credentialId, 'base64').toString('base64url'),
             type: 'public-key' as const,
             transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransport[] : undefined
@@ -237,12 +237,12 @@ export async function verifyRegistration(
     const { credential } = parsedBody.data;
     const user = req.user as User;
 
-    // Only allow internal users to use passkeys
+    // Only allow internal users to use security keys
     if (user.type !== UserType.Internal) {
         return next(
             createHttpError(
                 HttpCode.BAD_REQUEST,
-                "Passkeys are only available for internal users"
+                "Security keys are only available for internal users"
             )
         );
     }
@@ -279,14 +279,14 @@ export async function verifyRegistration(
             );
         }
 
-        // Store the passkey in the database
-        await db.insert(passkeys).values({
+        // Store the security key in the database
+        await db.insert(securityKeys).values({
             credentialId: Buffer.from(registrationInfo.credentialID).toString('base64'),
             userId: user.userId,
             publicKey: Buffer.from(registrationInfo.credentialPublicKey).toString('base64'),
             signCount: registrationInfo.counter || 0,
             transports: credential.response.transports ? JSON.stringify(credential.response.transports) : null,
-            name: challengeData.passkeyName,
+            name: challengeData.securityKeyName,
             lastUsed: new Date().toISOString(),
             dateCreated: new Date().toISOString()
         });
@@ -298,7 +298,7 @@ export async function verifyRegistration(
             data: null,
             success: true,
             error: false,
-            message: "Passkey registered successfully",
+            message: "Security key registered successfully",
             status: HttpCode.OK
         });
     } catch (error) {
@@ -312,34 +312,34 @@ export async function verifyRegistration(
     }
 }
 
-export async function listPasskeys(
+export async function listSecurityKeys(
     req: Request,
     res: Response,
     next: NextFunction
 ): Promise<any> {
     const user = req.user as User;
 
-    // Only allow internal users to use passkeys
+    // Only allow internal users to use security keys
     if (user.type !== UserType.Internal) {
         return next(
             createHttpError(
                 HttpCode.BAD_REQUEST,
-                "Passkeys are only available for internal users"
+                "Security keys are only available for internal users"
             )
         );
     }
 
     try {
-        const userPasskeys = await db
+        const userSecurityKeys = await db
             .select()
-            .from(passkeys)
-            .where(eq(passkeys.userId, user.userId));
+            .from(securityKeys)
+            .where(eq(securityKeys.userId, user.userId));
 
-        return response<typeof userPasskeys>(res, {
-            data: userPasskeys,
+        return response<typeof userSecurityKeys>(res, {
+            data: userSecurityKeys,
             success: true,
             error: false,
-            message: "Passkeys retrieved successfully",
+            message: "Security keys retrieved successfully",
             status: HttpCode.OK
         });
     } catch (error) {
@@ -347,13 +347,13 @@ export async function listPasskeys(
         return next(
             createHttpError(
                 HttpCode.INTERNAL_SERVER_ERROR,
-                "Failed to retrieve passkeys"
+                "Failed to retrieve security keys"
             )
         );
     }
 }
 
-export async function deletePasskey(
+export async function deleteSecurityKey(
     req: Request,
     res: Response,
     next: NextFunction
@@ -362,7 +362,7 @@ export async function deletePasskey(
     const credentialId = decodeURIComponent(encodedCredentialId);
     const user = req.user as User;
 
-    const parsedBody = deletePasskeyBody.safeParse(req.body);
+    const parsedBody = deleteSecurityKeyBody.safeParse(req.body);
 
     if (!parsedBody.success) {
         return next(
@@ -375,12 +375,12 @@ export async function deletePasskey(
 
     const { password } = parsedBody.data;
 
-    // Only allow internal users to use passkeys
+    // Only allow internal users to use security keys
     if (user.type !== UserType.Internal) {
         return next(
             createHttpError(
                 HttpCode.BAD_REQUEST,
-                "Passkeys are only available for internal users"
+                "Security keys are only available for internal users"
             )
         );
     }
@@ -404,17 +404,17 @@ export async function deletePasskey(
         }
 
         await db
-            .delete(passkeys)
+            .delete(securityKeys)
             .where(and(
-                eq(passkeys.credentialId, credentialId),
-                eq(passkeys.userId, user.userId)
+                eq(securityKeys.credentialId, credentialId),
+                eq(securityKeys.userId, user.userId)
             ));
 
         return response<null>(res, {
             data: null,
             success: true,
             error: false,
-            message: "Passkey deleted successfully",
+            message: "Security key deleted successfully",
             status: HttpCode.OK
         });
     } catch (error) {
@@ -422,7 +422,7 @@ export async function deletePasskey(
         return next(
             createHttpError(
                 HttpCode.INTERNAL_SERVER_ERROR,
-                "Failed to delete passkey"
+                "Failed to delete security key"
             )
         );
     }
@@ -454,7 +454,7 @@ export async function startAuthentication(
         }> = [];
         let userId;
 
-        // If email is provided, get passkeys for that specific user
+        // If email is provided, get security keys for that specific user
         if (email) {
             const [user] = await db
                 .select()
@@ -473,27 +473,27 @@ export async function startAuthentication(
 
             userId = user.userId;
 
-            const userPasskeys = await db
+            const userSecurityKeys = await db
                 .select()
-                .from(passkeys)
-                .where(eq(passkeys.userId, user.userId));
+                .from(securityKeys)
+                .where(eq(securityKeys.userId, user.userId));
 
-            if (userPasskeys.length === 0) {
+            if (userSecurityKeys.length === 0) {
                 return next(
                     createHttpError(
                         HttpCode.BAD_REQUEST,
-                        "No passkeys registered for this user"
+                        "No security keys registered for this user"
                     )
                 );
             }
 
-            allowCredentials = userPasskeys.map(key => ({
+            allowCredentials = userSecurityKeys.map(key => ({
                 id: Buffer.from(key.credentialId, 'base64'),
                 type: 'public-key' as const,
                 transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransport[] : undefined
             }));
         } else {
-            // If no email provided, allow any passkey (for resident key authentication)
+            // If no email provided, allow any security key (for resident key authentication)
             allowCredentials = [];
         }
 
@@ -570,15 +570,15 @@ export async function verifyAuthentication(
             );
         }
 
-        // Find the passkey in database
+        // Find the security key in database
         const credentialId = Buffer.from(credential.id, 'base64').toString('base64');
-        const [passkey] = await db
+        const [securityKey] = await db
             .select()
-            .from(passkeys)
-            .where(eq(passkeys.credentialId, credentialId))
+            .from(securityKeys)
+            .where(eq(securityKeys.credentialId, credentialId))
             .limit(1);
 
-        if (!passkey) {
+        if (!securityKey) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
@@ -591,14 +591,14 @@ export async function verifyAuthentication(
         const [user] = await db
             .select()
             .from(users)
-            .where(eq(users.userId, passkey.userId))
+            .where(eq(users.userId, securityKey.userId))
             .limit(1);
 
         if (!user || user.type !== UserType.Internal) {
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "User not found or not authorized for passkey authentication"
+                    "User not found or not authorized for security key authentication"
                 )
             );
         }
@@ -609,10 +609,10 @@ export async function verifyAuthentication(
             expectedOrigin: origin,
             expectedRPID: rpID,
             authenticator: {
-                credentialID: Buffer.from(passkey.credentialId, 'base64'),
-                credentialPublicKey: Buffer.from(passkey.publicKey, 'base64'),
-                counter: passkey.signCount,
-                transports: passkey.transports ? JSON.parse(passkey.transports) as AuthenticatorTransport[] : undefined
+                credentialID: Buffer.from(securityKey.credentialId, 'base64'),
+                credentialPublicKey: Buffer.from(securityKey.publicKey, 'base64'),
+                counter: securityKey.signCount,
+                transports: securityKey.transports ? JSON.parse(securityKey.transports) as AuthenticatorTransport[] : undefined
             },
             requireUserVerification: false
         });
@@ -630,12 +630,12 @@ export async function verifyAuthentication(
 
         // Update sign count
         await db
-            .update(passkeys)
+            .update(securityKeys)
             .set({
                 signCount: authenticationInfo.newCounter,
                 lastUsed: new Date().toISOString()
             })
-            .where(eq(passkeys.credentialId, credentialId));
+            .where(eq(securityKeys.credentialId, credentialId));
 
         // Create session for the user
         const { createSession, generateSessionToken, serializeSessionCookie } = await import("@server/auth/sessions/app");

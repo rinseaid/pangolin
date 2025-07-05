@@ -4,7 +4,7 @@ import {
     serializeSessionCookie
 } from "@server/auth/sessions/app";
 import { db } from "@server/db";
-import { users, passkeys } from "@server/db";
+import { users, securityKeys } from "@server/db";
 import HttpCode from "@server/types/HttpCode";
 import response from "@server/lib/response";
 import { eq, and } from "drizzle-orm";
@@ -35,6 +35,7 @@ export type LoginBody = z.infer<typeof loginBodySchema>;
 export type LoginResponse = {
     codeRequested?: boolean;
     emailVerificationRequired?: boolean;
+    useSecurityKey?: boolean;
 };
 
 export const dynamic = "force-dynamic";
@@ -91,15 +92,15 @@ export async function login(
 
         const existingUser = existingUserRes[0];
 
-        // Check if user has passkeys registered
-        const userPasskeys = await db
+        // Check if user has security keys registered
+        const userSecurityKeys = await db
             .select()
-            .from(passkeys)
-            .where(eq(passkeys.userId, existingUser.userId));
+            .from(securityKeys)
+            .where(eq(securityKeys.userId, existingUser.userId));
 
-        if (userPasskeys.length > 0) {
-            return response<{ usePasskey: boolean }>(res, {
-                data: { usePasskey: true },
+        if (userSecurityKeys.length > 0) {
+            return response<{ useSecurityKey: boolean }>(res, {
+                data: { useSecurityKey: true },
                 success: true,
                 error: false,
                 message: "Please use your security key to sign in",

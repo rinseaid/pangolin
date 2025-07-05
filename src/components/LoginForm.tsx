@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@app/components/ui/button";
+import { Input } from "@app/components/ui/input";
 import {
     Form,
     FormControl,
@@ -13,15 +13,15 @@ import {
     FormItem,
     FormLabel,
     FormMessage
-} from "@/components/ui/form";
+} from "@app/components/ui/form";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle
-} from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from "@app/components/ui/card";
+import { Alert, AlertDescription } from "@app/components/ui/alert";
 import { LoginResponse } from "@server/routers/auth";
 import { useRouter } from "next/navigation";
 import { AxiosResponse } from "axios";
@@ -120,8 +120,8 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                 setError(null);
                 const data = res.data.data;
 
-                if (data?.usePasskey) {
-                    await initiateSecurityKeyAuth();
+                if (data?.useSecurityKey) {
+                    setShowSecurityKeyPrompt(true);
                     return;
                 }
 
@@ -197,7 +197,7 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
             const email = form.getValues().email;
 
             // Start WebAuthn authentication
-            const startRes = await api.post("/auth/passkey/authenticate/start", {
+            const startRes = await api.post("/auth/security-key/authenticate/start", {
                 email: email || undefined
             });
 
@@ -216,7 +216,7 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                 
                 // Verify authentication
                 const verifyRes = await api.post(
-                    "/auth/passkey/authenticate/verify",
+                    "/auth/security-key/authenticate/verify",
                     { credential },
                     {
                         headers: {
@@ -355,9 +355,9 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                                                     pattern={
                                                         REGEXP_ONLY_DIGITS_AND_CHARS
                                                     }
-                                                    onChange={(e) => {
-                                                        field.onChange(e);
-                                                        if (e.length === 6) {
+                                                    onChange={(value: string) => {
+                                                        field.onChange(value);
+                                                        if (value.length === 6) {
                                                             mfaForm.handleSubmit(onSubmit)();
                                                         }
                                                     }}

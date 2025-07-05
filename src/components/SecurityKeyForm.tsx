@@ -108,7 +108,7 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
 
     const loadSecurityKeys = async () => {
         try {
-            const response = await api.get("/auth/passkey/list");
+            const response = await api.get("/auth/security-key/list");
             setSecurityKeys(response.data.data);
         } catch (error) {
             toast({
@@ -132,7 +132,7 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
             }
 
             setIsRegistering(true);
-            const startRes = await api.post("/auth/passkey/register/start", {
+            const startRes = await api.post("/auth/security-key/register/start", {
                 name: values.name,
                 password: values.password,
             });
@@ -152,7 +152,7 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
             try {
                 const credential = await startRegistration(options);
 
-                await api.post("/auth/passkey/register/verify", {
+                await api.post("/auth/security-key/register/verify", {
                     credential,
                 });
 
@@ -217,7 +217,7 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
 
         try {
             const encodedCredentialId = encodeURIComponent(selectedSecurityKey.credentialId);
-            await api.delete(`/auth/passkey/${encodedCredentialId}`, {
+            await api.delete(`/auth/security-key/${encodedCredentialId}`, {
                 data: {
                     password: values.password,
                 }

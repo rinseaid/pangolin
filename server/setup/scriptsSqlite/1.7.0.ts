@@ -14,7 +14,7 @@ export default async function migration() {
         db.pragma("foreign_keys = OFF");
         db.transaction(() => {
             db.exec(`
-                CREATE TABLE IF NOT EXISTS passkey (
+                CREATE TABLE IF NOT EXISTS securityKey (
                     credentialId TEXT PRIMARY KEY,
                     userId TEXT NOT NULL,
                     publicKey TEXT NOT NULL,
@@ -28,9 +28,9 @@ export default async function migration() {
             `);
         })(); // executes the transaction immediately
         db.pragma("foreign_keys = ON");
-        console.log(`Created passkey table`);
+        console.log(`Created securityKey table`);
     } catch (e) {
-        console.error("Unable to create passkey table");
+        console.error("Unable to create securityKey table");
         console.error(e);
         throw e;
     }

@@ -8,7 +8,7 @@ export default async function migration() {
 
     try {
         db.transaction((trx) => {
-            trx.run(sql`CREATE TABLE 'passkey' (
+            trx.run(sql`CREATE TABLE 'securityKey' (
                 'credentialId' text PRIMARY KEY NOT NULL,
                 'userId' text NOT NULL,
                 'publicKey' text NOT NULL,

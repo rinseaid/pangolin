@@ -14,22 +14,22 @@ export default async function migration() {
         db.pragma("foreign_keys = OFF");
         db.transaction(() => {
             db.exec(`
-                CREATE TABLE IF NOT EXISTS passkeyChallenge (
+                CREATE TABLE IF NOT EXISTS securityKeyChallenge (
                     sessionId TEXT PRIMARY KEY,
                     challenge TEXT NOT NULL,
-                    passkeyName TEXT,
+                    securityKeyName TEXT,
                     userId TEXT,
                     expiresAt INTEGER NOT NULL,
                     FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
                 );
                 
-                CREATE INDEX IF NOT EXISTS idx_passkeyChallenge_expiresAt ON passkeyChallenge(expiresAt);
+                CREATE INDEX IF NOT EXISTS idx_securityKeyChallenge_expiresAt ON securityKeyChallenge(expiresAt);
             `);
         })(); // executes the transaction immediately
         db.pragma("foreign_keys = ON");
-        console.log(`Created passkeyChallenge table`);
+        console.log(`Created securityKeyChallenge table`);
     } catch (e) {
-        console.error("Unable to create passkeyChallenge table");
+        console.error("Unable to create securityKeyChallenge table");
         console.error(e);
         throw e;
     }
