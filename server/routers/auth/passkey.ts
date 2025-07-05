@@ -544,7 +544,7 @@ export async function verifyAuthentication(
         return next(
             createHttpError(
                 HttpCode.BAD_REQUEST,
-                "Missing temp session ID"
+                "Your session information is missing. This might happen if you've been inactive for too long or if your browser cleared temporary data. Please start the sign-in process again."
             )
         );
     }
@@ -557,7 +557,7 @@ export async function verifyAuthentication(
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "No challenge found or challenge expired"
+                    "Your sign-in session has expired. For security reasons, you have 5 minutes to complete the authentication process. Please try signing in again."
                 )
             );
         }
@@ -574,7 +574,7 @@ export async function verifyAuthentication(
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "We couldn't find this security key. Please make sure you're using a security key that was previously registered with this account. If you're having trouble, try registering a new security key or contact support."
+                    "We couldn't verify your security key. This might happen if your device isn't compatible or if the security key was removed too quickly. Please try again and keep your security key connected until the process completes."
                 )
             );
         }
@@ -615,7 +615,7 @@ export async function verifyAuthentication(
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "Authentication failed"
+                    "Authentication failed. This could happen if your security key wasn't recognized or was removed too early. Please ensure your security key is properly connected and try again."
                 )
             );
         }
