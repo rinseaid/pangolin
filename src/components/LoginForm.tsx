@@ -183,6 +183,14 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
 
     async function loginWithSecurityKey() {
         try {
+            // Check browser compatibility first
+            if (!window.PublicKeyCredential) {
+                setError(t('securityKeyBrowserNotSupported', {
+                    defaultValue: "Your browser doesn't support security keys. Please use a modern browser like Chrome, Firefox, or Safari."
+                }));
+                return;
+            }
+
             setLoading(true);
             setError(null);
 
@@ -203,29 +211,49 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
             const { tempSessionId, ...options } = startRes.data.data;
 
             // Perform WebAuthn authentication
-            const credential = await startAuthentication(options);
+            try {
+                const credential = await startAuthentication(options);
+                
+                // Verify authentication
+                const verifyRes = await api.post(
+                    "/auth/passkey/authenticate/verify",
+                    { credential },
+                    {
+                        headers: {
+                            'X-Temp-Session-Id': tempSessionId
+                        }
+                    }
+                );
 
-            // Verify authentication
-            const verifyRes = await api.post(
-                "/auth/passkey/authenticate/verify",
-                { credential },
-                {
-                    headers: {
-                        'X-Temp-Session-Id': tempSessionId
+                if (verifyRes) {
+                    if (onLogin) {
+                        await onLogin();
                     }
                 }
-            );
-
-            if (verifyRes) {
-                if (onLogin) {
-                    await onLogin();
+            } catch (error: any) {
+                if (error.name === 'NotAllowedError') {
+                    if (error.message.includes('denied permission')) {
+                        setError(t('securityKeyPermissionDenied', {
+                            defaultValue: "Please allow access to your security key to continue signing in."
+                        }));
+                    } else {
+                        setError(t('securityKeyRemovedTooQuickly', {
+                            defaultValue: "Please keep your security key connected until the sign-in process completes."
+                        }));
+                    }
+                } else if (error.name === 'NotSupportedError') {
+                    setError(t('securityKeyNotSupported', {
+                        defaultValue: "Your security key may not be compatible. Please try a different security key."
+                    }));
+                } else {
+                    setError(t('securityKeyUnknownError', {
+                        defaultValue: "There was a problem using your security key. Please try again."
+                    }));
                 }
+                throw error; // Re-throw to be caught by outer catch
             }
         } catch (e) {
-            console.error(e);
-            setError(formatAxiosError(e, t('securityKeyAuthError', {
-                defaultValue: "Security key authentication failed"
-            })));
+            console.error(formatAxiosError(e));
         } finally {
             setLoading(false);
         }

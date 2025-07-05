@@ -120,6 +120,17 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
 
     const handleRegisterSecurityKey = async (values: RegisterFormValues) => {
         try {
+            // Check browser compatibility first
+            if (!window.PublicKeyCredential) {
+                toast({
+                    variant: "destructive",
+                    description: t('securityKeyBrowserNotSupported', {
+                        defaultValue: "Your browser doesn't support security keys. Please use a modern browser like Chrome, Firefox, or Safari."
+                    })
+                });
+                return;
+            }
+
             setIsRegistering(true);
             const startRes = await api.post("/auth/passkey/register/start", {
                 name: values.name,
@@ -129,29 +140,72 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
             if (startRes.status === 202) {
                 toast({
                     variant: "destructive",
-                    description: "Two-factor authentication is required to register a security key.",
+                    description: t('twoFactorRequired', {
+                        defaultValue: "Two-factor authentication is required to register a security key."
+                    })
                 });
                 return;
             }
 
             const options = startRes.data.data;
-            const credential = await startRegistration(options);
+            
+            try {
+                const credential = await startRegistration(options);
 
-            await api.post("/auth/passkey/register/verify", {
-                credential,
-            });
+                await api.post("/auth/passkey/register/verify", {
+                    credential,
+                });
 
-            toast({
-                description: t('securityKeyRegisterSuccess')
-            });
+                toast({
+                    description: t('securityKeyRegisterSuccess', {
+                        defaultValue: "Security key registered successfully"
+                    })
+                });
 
-            registerForm.reset();
-            setShowRegisterDialog(false);
-            await loadSecurityKeys();
+                registerForm.reset();
+                setShowRegisterDialog(false);
+                await loadSecurityKeys();
+            } catch (error: any) {
+                if (error.name === 'NotAllowedError') {
+                    if (error.message.includes('denied permission')) {
+                        toast({
+                            variant: "destructive",
+                            description: t('securityKeyPermissionDenied', {
+                                defaultValue: "Please allow access to your security key to continue registration."
+                            })
+                        });
+                    } else {
+                        toast({
+                            variant: "destructive",
+                            description: t('securityKeyRemovedTooQuickly', {
+                                defaultValue: "Please keep your security key connected until the registration process completes."
+                            })
+                        });
+                    }
+                } else if (error.name === 'NotSupportedError') {
+                    toast({
+                        variant: "destructive",
+                        description: t('securityKeyNotSupported', {
+                            defaultValue: "Your security key may not be compatible. Please try a different security key."
+                        })
+                    });
+                } else {
+                    toast({
+                        variant: "destructive",
+                        description: t('securityKeyUnknownError', {
+                            defaultValue: "There was a problem registering your security key. Please try again."
+                        })
+                    });
+                }
+                throw error; // Re-throw to be caught by outer catch
+            }
         } catch (error) {
+            console.error('Security key registration error:', error);
             toast({
                 variant: "destructive",
-                description: formatAxiosError(error, t('securityKeyRegisterError')),
+                description: formatAxiosError(error, t('securityKeyRegisterError', {
+                    defaultValue: "Failed to register security key"
+                }))
             });
         } finally {
             setIsRegistering(false);

@@ -32,7 +32,15 @@ import { verifyPassword } from "@server/auth/password";
 import { unauthorized } from "@server/auth/unauthorizedResponse";
 
 // The RP ID is the domain name of your application
-const rpID = new URL(config.getRawConfig().app.dashboard_url).hostname;
+const rpID = (() => {
+    const url = new URL(config.getRawConfig().app.dashboard_url);
+    // For localhost, we must use 'localhost' without port
+    if (url.hostname === 'localhost') {
+        return 'localhost';
+    }
+    return url.hostname;
+})();
+
 const rpName = "Pangolin";
 const origin = config.getRawConfig().app.dashboard_url;
 

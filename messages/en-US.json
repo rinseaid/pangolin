@@ -1152,5 +1152,11 @@
     "securityKeyAuthError": "Failed to authenticate with security key",
     "securityKeyRecommendation": "Consider registering another security key on a different device to ensure you don't get locked out of your account.",
     "registering": "Registering...",
-    "securityKeyPrompt": "Please verify your identity using your security key. Make sure your security key is connected and ready."
+    "securityKeyPrompt": "Please verify your identity using your security key. Make sure your security key is connected and ready.",
+    "securityKeyBrowserNotSupported": "Your browser doesn't support security keys. Please use a modern browser like Chrome, Firefox, or Safari.",
+    "securityKeyPermissionDenied": "Please allow access to your security key to continue signing in.",
+    "securityKeyRemovedTooQuickly": "Please keep your security key connected until the sign-in process completes.",
+    "securityKeyNotSupported": "Your security key may not be compatible. Please try a different security key.",
+    "securityKeyUnknownError": "There was a problem using your security key. Please try again.",
+    "twoFactorRequired": "Two-factor authentication is required to register a security key."
 }
