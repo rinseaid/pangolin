@@ -55,7 +55,7 @@ setInterval(async () => {
 
 // Helper functions for challenge management
 async function storeChallenge(sessionId: string, challenge: string, passkeyName?: string, userId?: string) {
-    const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+    const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutes
     
     // Delete any existing challenge for this session
     await db.delete(webauthnChallenge).where(eq(webauthnChallenge.sessionId, sessionId));
@@ -458,7 +458,7 @@ export async function startAuthentication(
                 return next(
                     createHttpError(
                         HttpCode.BAD_REQUEST,
-                        "No passkeys available for this user"
+                        "Invalid credentials"
                     )
                 );
             }
@@ -574,7 +574,7 @@ export async function verifyAuthentication(
             return next(
                 createHttpError(
                     HttpCode.BAD_REQUEST,
-                    "Passkey not found"
+                    "We couldn't find this security key. Please make sure you're using a security key that was previously registered with this account. If you're having trouble, try registering a new security key or contact support."
                 )
             );
         }
