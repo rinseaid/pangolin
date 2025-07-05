@@ -66,6 +66,7 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
     const hasIdp = idps && idps.length > 0;
 
     const [mfaRequested, setMfaRequested] = useState(false);
+    const [showSecurityKeyPrompt, setShowSecurityKeyPrompt] = useState(false);
 
     const t = useTranslations();
 
@@ -95,49 +96,63 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
         }
     });
 
+    async function initiateSecurityKeyAuth() {
+        setShowSecurityKeyPrompt(true);
+        setError(null);
+        await loginWithSecurityKey();
+        setShowSecurityKeyPrompt(false);
+    }
+
     async function onSubmit(values: any) {
         const { email, password } = form.getValues();
         const { code } = mfaForm.getValues();
 
         setLoading(true);
 
-        const res = await api
-            .post<AxiosResponse<LoginResponse>>("/auth/login", {
+        try {
+            const res = await api.post<AxiosResponse<LoginResponse>>("/auth/login", {
                 email,
                 password,
                 code
-            })
-            .catch((e) => {
-                console.error(e);
-                setError(
-                    formatAxiosError(e, t('loginError'))
-                );
             });
 
-        if (res) {
-            setError(null);
+            if (res) {
+                setError(null);
+                const data = res.data.data;
 
-            const data = res.data.data;
-
-            if (data?.codeRequested) {
-                setMfaRequested(true);
-                setLoading(false);
-                mfaForm.reset();
-                return;
-            }
-
-            if (data?.emailVerificationRequired) {
-                if (redirect) {
-                    router.push(`/auth/verify-email?redirect=${redirect}`);
-                } else {
-                    router.push("/auth/verify-email");
+                if (data?.usePasskey) {
+                    await initiateSecurityKeyAuth();
+                    return;
                 }
+
+                if (data?.codeRequested) {
+                    setMfaRequested(true);
+                    setLoading(false);
+                    mfaForm.reset();
+                    return;
+                }
+
+                if (data?.emailVerificationRequired) {
+                    if (redirect) {
+                        router.push(`/auth/verify-email?redirect=${redirect}`);
+                    } else {
+                        router.push("/auth/verify-email");
+                    }
+                    return;
+                }
+
+                if (onLogin) {
+                    await onLogin();
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            const errorMessage = formatAxiosError(e, t('loginError'));
+            if (errorMessage.includes("Please use your security key")) {
+                await initiateSecurityKeyAuth();
                 return;
             }
-
-            if (onLogin) {
-                await onLogin();
-            }
+            setError(errorMessage);
         }
 
         setLoading(false);
@@ -166,26 +181,28 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
         }
     }
 
-    async function loginWithPasskey() {
+    async function loginWithSecurityKey() {
         try {
             setLoading(true);
             setError(null);
 
             const email = form.getValues().email;
 
-            // Start passkey authentication
+            // Start WebAuthn authentication
             const startRes = await api.post("/auth/passkey/authenticate/start", {
                 email: email || undefined
             });
 
             if (!startRes) {
-                setError(t('passkeyAuthError'));
+                setError(t('securityKeyAuthError', {
+                    defaultValue: "Failed to start security key authentication"
+                }));
                 return;
             }
 
             const { tempSessionId, ...options } = startRes.data.data;
 
-            // Perform passkey authentication
+            // Perform WebAuthn authentication
             const credential = await startAuthentication(options);
 
             // Verify authentication
@@ -206,7 +223,9 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
             }
         } catch (e) {
             console.error(e);
-            setError(formatAxiosError(e, t('passkeyAuthError')));
+            setError(formatAxiosError(e, t('securityKeyAuthError', {
+                defaultValue: "Security key authentication failed"
+            })));
         } finally {
             setLoading(false);
         }
@@ -214,6 +233,17 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
 
     return (
         <div className="space-y-4">
+            {showSecurityKeyPrompt && (
+                <Alert>
+                    <FingerprintIcon className="w-5 h-5 mr-2" />
+                    <AlertDescription>
+                        {t('securityKeyPrompt', {
+                            defaultValue: "Please verify your identity using your security key. Make sure your security key is connected and ready."
+                        })}
+                    </AlertDescription>
+                </Alert>
+            )}
+
             {!mfaRequested && (
                 <>
                     <Form {...form}>
@@ -362,7 +392,7 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                             form="form"
                             className="w-full"
                             loading={loading}
-                            disabled={loading}
+                            disabled={loading || showSecurityKeyPrompt}
                         >
                             <LockIcon className="w-4 h-4 mr-2" />
                             {t('login')}
@@ -372,12 +402,14 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                             type="button"
                             variant="outline"
                             className="w-full"
-                            onClick={loginWithPasskey}
+                            onClick={initiateSecurityKeyAuth}
                             loading={loading}
-                            disabled={loading}
+                            disabled={loading || showSecurityKeyPrompt}
                         >
                             <FingerprintIcon className="w-4 h-4 mr-2" />
-                            {t('passkeyLogin')}
+                            {t('securityKeyLogin', {
+                                defaultValue: "Sign in with security key"
+                            })}
                         </Button>
 
                         {hasIdp && (

@@ -4,7 +4,7 @@ import {
     serializeSessionCookie
 } from "@server/auth/sessions/app";
 import { db } from "@server/db";
-import { users } from "@server/db";
+import { users, passkeys } from "@server/db";
 import HttpCode from "@server/types/HttpCode";
 import response from "@server/lib/response";
 import { eq, and } from "drizzle-orm";
@@ -90,6 +90,22 @@ export async function login(
         }
 
         const existingUser = existingUserRes[0];
+
+        // Check if user has passkeys registered
+        const userPasskeys = await db
+            .select()
+            .from(passkeys)
+            .where(eq(passkeys.userId, existingUser.userId));
+
+        if (userPasskeys.length > 0) {
+            return response<{ usePasskey: boolean }>(res, {
+                data: { usePasskey: true },
+                success: true,
+                error: false,
+                message: "Please use your security key to sign in",
+                status: HttpCode.UNAUTHORIZED
+            });
+        }
 
         const validPassword = await verifyPassword(
             password,
