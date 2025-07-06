@@ -1150,7 +1150,7 @@
     "securityKeyLoadError": "Failed to load security keys",
     "securityKeyLogin": "Sign in with security key",
     "securityKeyAuthError": "Failed to authenticate with security key",
-    "securityKeyRecommendation": "Consider registering another security key on a different device to ensure you don't get locked out of your account.",
+    "securityKeyRecommendation": "Tip: Register a backup security key on another device to ensure you always have access to your account.",
     "registering": "Registering...",
     "securityKeyPrompt": "Please verify your identity using your security key. Make sure your security key is connected and ready.",
     "securityKeyBrowserNotSupported": "Your browser doesn't support security keys. Please use a modern browser like Chrome, Firefox, or Safari.",

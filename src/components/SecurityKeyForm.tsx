@@ -267,19 +267,12 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-medium text-muted-foreground">{t('securityKeyList')}</h3>
-                            <div className="flex items-center gap-2">
-                                {securityKeys.length > 0 && (
-                                    <Badge className="text-xs">
-                                        {securityKeys.length} {securityKeys.length === 1 ? 'key' : 'keys'}
-                                    </Badge>
-                                )}
-                                <Button
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => setShowRegisterDialog(true)}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
+                            <Button
+                                className="h-8 w-8 p-0"
+                                onClick={() => setShowRegisterDialog(true)}
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
                         </div>
 
                         {securityKeys.length > 0 ? (
