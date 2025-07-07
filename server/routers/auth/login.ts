@@ -92,22 +92,6 @@ export async function login(
 
         const existingUser = existingUserRes[0];
 
-        // Check if user has security keys registered
-        const userSecurityKeys = await db
-            .select()
-            .from(securityKeys)
-            .where(eq(securityKeys.userId, existingUser.userId));
-
-        if (userSecurityKeys.length > 0) {
-            return response<{ useSecurityKey: boolean }>(res, {
-                data: { useSecurityKey: true },
-                success: true,
-                error: false,
-                message: "Please use your security key to sign in",
-                status: HttpCode.UNAUTHORIZED
-            });
-        }
-
         const validPassword = await verifyPassword(
             password,
             existingUser.passwordHash!
@@ -124,6 +108,22 @@ export async function login(
                     "Username or password is incorrect"
                 )
             );
+        }
+
+        // Check if user has security keys registered
+        const userSecurityKeys = await db
+            .select()
+            .from(securityKeys)
+            .where(eq(securityKeys.userId, existingUser.userId));
+
+        if (userSecurityKeys.length > 0) {
+            return response<LoginResponse>(res, {
+                data: { useSecurityKey: true },
+                success: true,
+                error: false,
+                message: "Security key authentication required",
+                status: HttpCode.OK
+            });
         }
 
         if (existingUser.twoFactorEnabled) {

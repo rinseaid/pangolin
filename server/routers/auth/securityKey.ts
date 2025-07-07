@@ -30,6 +30,7 @@ import config from "@server/lib/config";
 import { UserType } from "@server/types/UserTypes";
 import { verifyPassword } from "@server/auth/password";
 import { unauthorized } from "@server/auth/unauthorizedResponse";
+import { verifyTotpCode } from "@server/auth/totp";
 
 // The RP ID is the domain name of your application
 const rpID = (() => {
@@ -120,7 +121,8 @@ export const verifyAuthenticationBody = z.object({
 }).strict();
 
 export const deleteSecurityKeyBody = z.object({
-    password: z.string().min(1)
+    password: z.string().min(1),
+    code: z.string().optional()
 }).strict();
 
 export async function startRegistration(
@@ -157,17 +159,6 @@ export async function startRegistration(
         const validPassword = await verifyPassword(password, user.passwordHash!);
         if (!validPassword) {
             return next(unauthorized());
-        }
-
-        // If user has 2FA enabled, require a code
-        if (user.twoFactorEnabled) {
-            return response<{ codeRequested: boolean }>(res, {
-                data: { codeRequested: true },
-                success: true,
-                error: false,
-                message: "Two-factor authentication required",
-                status: HttpCode.ACCEPTED
-            });
         }
 
         // Get existing security keys for user
@@ -373,7 +364,7 @@ export async function deleteSecurityKey(
         );
     }
 
-    const { password } = parsedBody.data;
+    const { password, code } = parsedBody.data;
 
     // Only allow internal users to use security keys
     if (user.type !== UserType.Internal) {
@@ -392,15 +383,37 @@ export async function deleteSecurityKey(
             return next(unauthorized());
         }
 
-        // If user has 2FA enabled, require a code
+        // If user has 2FA enabled, require and verify the code
         if (user.twoFactorEnabled) {
-            return response<{ codeRequested: boolean }>(res, {
-                data: { codeRequested: true },
-                success: true,
-                error: false,
-                message: "Two-factor authentication required",
-                status: HttpCode.ACCEPTED
-            });
+            if (!code) {
+                return response<{ codeRequested: boolean }>(res, {
+                    data: { codeRequested: true },
+                    success: true,
+                    error: false,
+                    message: "Two-factor authentication required",
+                    status: HttpCode.ACCEPTED
+                });
+            }
+
+            const validOTP = await verifyTotpCode(
+                code,
+                user.twoFactorSecret!,
+                user.userId
+            );
+
+            if (!validOTP) {
+                if (config.getRawConfig().app.log_failed_attempts) {
+                    logger.info(
+                        `Two-factor code incorrect. Email: ${user.email}. IP: ${req.ip}.`
+                    );
+                }
+                return next(
+                    createHttpError(
+                        HttpCode.UNAUTHORIZED,
+                        "The two-factor code you entered is incorrect"
+                    )
+                );
+            }
         }
 
         await db

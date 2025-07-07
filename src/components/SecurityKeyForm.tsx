@@ -57,6 +57,7 @@ type RegisterFormValues = {
 
 type DeleteFormValues = {
     password: string;
+    code?: string;
 };
 
 type FieldProps = {
@@ -77,6 +78,10 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
     const [isRegistering, setIsRegistering] = useState(false);
     const [showRegisterDialog, setShowRegisterDialog] = useState(false);
     const [selectedSecurityKey, setSelectedSecurityKey] = useState<DeleteSecurityKeyData | null>(null);
+    const [show2FADialog, setShow2FADialog] = useState(false);
+    const [deleteInProgress, setDeleteInProgress] = useState(false);
+    const [pendingDeleteCredentialId, setPendingDeleteCredentialId] = useState<string | null>(null);
+    const [pendingDeletePassword, setPendingDeletePassword] = useState<string | null>(null);
 
     useEffect(() => {
         loadSecurityKeys();
@@ -89,6 +94,7 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
 
     const deleteSchema = z.object({
         password: z.string().min(1, { message: t('passwordRequired') }),
+        code: z.string().optional()
     });
 
     const registerForm = useForm<RegisterFormValues>({
@@ -103,6 +109,7 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
         resolver: zodResolver(deleteSchema),
         defaultValues: {
             password: "",
+            code: ""
         },
     });
 
@@ -216,12 +223,22 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
         if (!selectedSecurityKey) return;
 
         try {
+            setDeleteInProgress(true);
             const encodedCredentialId = encodeURIComponent(selectedSecurityKey.credentialId);
-            await api.delete(`/auth/security-key/${encodedCredentialId}`, {
+            const response = await api.delete(`/auth/security-key/${encodedCredentialId}`, {
                 data: {
                     password: values.password,
+                    code: values.code
                 }
             });
+
+            // If 2FA is required
+            if (response.status === 202 && response.data.data.codeRequested) {
+                setPendingDeleteCredentialId(encodedCredentialId);
+                setPendingDeletePassword(values.password);
+                setShow2FADialog(true);
+                return;
+            }
 
             toast({
                 description: t('securityKeyRemoveSuccess')
@@ -235,6 +252,40 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
                 variant: "destructive",
                 description: formatAxiosError(error, t('securityKeyRemoveError')),
             });
+        } finally {
+            setDeleteInProgress(false);
+        }
+    };
+
+    const handle2FASubmit = async (values: DeleteFormValues) => {
+        if (!pendingDeleteCredentialId || !pendingDeletePassword) return;
+
+        try {
+            setDeleteInProgress(true);
+            await api.delete(`/auth/security-key/${pendingDeleteCredentialId}`, {
+                data: {
+                    password: pendingDeletePassword,
+                    code: values.code
+                }
+            });
+
+            toast({
+                description: t('securityKeyRemoveSuccess')
+            });
+
+            deleteForm.reset();
+            setSelectedSecurityKey(null);
+            setShow2FADialog(false);
+            setPendingDeleteCredentialId(null);
+            setPendingDeletePassword(null);
+            await loadSecurityKeys();
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                description: formatAxiosError(error, t('securityKeyRemoveError')),
+            });
+        } finally {
+            setDeleteInProgress(false);
         }
     };
 
@@ -421,11 +472,15 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
                             <FormField
                                 control={deleteForm.control}
                                 name="password"
-                                render={({ field }: FieldProps) => (
+                                render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('password')}</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="password" />
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                disabled={deleteInProgress}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -440,11 +495,87 @@ export default function SecurityKeyForm({ open, setOpen }: SecurityKeyFormProps)
                                         deleteForm.reset();
                                         setSelectedSecurityKey(null);
                                     }}
+                                    disabled={deleteInProgress}
                                 >
                                     {t('cancel')}
                                 </Button>
-                                <Button type="submit" className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    {t('securityKeyRemove')}
+                                <Button
+                                    type="submit"
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    disabled={deleteInProgress}
+                                >
+                                    {deleteInProgress ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            {t('securityKeyRemoving')}
+                                        </>
+                                    ) : (
+                                        t('securityKeyRemove')
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={show2FADialog} onOpenChange={(open) => !open && setShow2FADialog(false)}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle>Two-Factor Authentication Required</DialogTitle>
+                        <DialogDescription>
+                            Please enter your two-factor authentication code to remove the security key
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...deleteForm}>
+                        <form onSubmit={deleteForm.handleSubmit(handle2FASubmit)} className="space-y-4">
+                            <FormField
+                                control={deleteForm.control}
+                                name="code"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Two-Factor Code</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="text"
+                                                placeholder="Enter your 6-digit code"
+                                                disabled={deleteInProgress}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    className="border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
+                                    onClick={() => {
+                                        deleteForm.reset();
+                                        setShow2FADialog(false);
+                                        setPendingDeleteCredentialId(null);
+                                        setPendingDeletePassword(null);
+                                    }}
+                                    disabled={deleteInProgress}
+                                >
+                                    {t('cancel')}
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    disabled={deleteInProgress}
+                                >
+                                    {deleteInProgress ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            {t('securityKeyRemoving')}
+                                        </>
+                                    ) : (
+                                        t('securityKeyRemove')
+                                    )}
                                 </Button>
                             </DialogFooter>
                         </form>

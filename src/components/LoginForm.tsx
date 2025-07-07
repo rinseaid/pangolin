@@ -98,108 +98,12 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
 
     async function initiateSecurityKeyAuth() {
         setShowSecurityKeyPrompt(true);
-        setError(null);
-        await loginWithSecurityKey();
-        setShowSecurityKeyPrompt(false);
-    }
-
-    async function onSubmit(values: any) {
-        const { email, password } = form.getValues();
-        const { code } = mfaForm.getValues();
-
         setLoading(true);
+        setError(null);
 
         try {
-            const res = await api.post<AxiosResponse<LoginResponse>>("/auth/login", {
-                email,
-                password,
-                code
-            });
-
-            if (res) {
-                setError(null);
-                const data = res.data.data;
-
-                if (data?.useSecurityKey) {
-                    setShowSecurityKeyPrompt(true);
-                    return;
-                }
-
-                if (data?.codeRequested) {
-                    setMfaRequested(true);
-                    setLoading(false);
-                    mfaForm.reset();
-                    return;
-                }
-
-                if (data?.emailVerificationRequired) {
-                    if (redirect) {
-                        router.push(`/auth/verify-email?redirect=${redirect}`);
-                    } else {
-                        router.push("/auth/verify-email");
-                    }
-                    return;
-                }
-
-                if (onLogin) {
-                    await onLogin();
-                }
-            }
-        } catch (e) {
-            console.error(e);
-            const errorMessage = formatAxiosError(e, t('loginError'));
-            if (errorMessage.includes("Please use your security key")) {
-                await initiateSecurityKeyAuth();
-                return;
-            }
-            setError(errorMessage);
-        }
-
-        setLoading(false);
-    }
-
-    async function loginWithIdp(idpId: number) {
-        try {
-            const res = await api.post<AxiosResponse<GenerateOidcUrlResponse>>(
-                `/auth/idp/${idpId}/oidc/generate-url`,
-                {
-                    redirectUrl: redirect || "/"
-                }
-            );
-
-            console.log(res);
-
-            if (!res) {
-                setError(t('loginError'));
-                return;
-            }
-
-            const data = res.data.data;
-            window.location.href = data.redirectUrl;
-        } catch (e) {
-            console.error(formatAxiosError(e));
-        }
-    }
-
-    async function loginWithSecurityKey() {
-        try {
-            // Check browser compatibility first
-            if (!window.PublicKeyCredential) {
-                setError(t('securityKeyBrowserNotSupported', {
-                    defaultValue: "Your browser doesn't support security keys. Please use a modern browser like Chrome, Firefox, or Safari."
-                }));
-                return;
-            }
-
-            setLoading(true);
-            setError(null);
-
-            const email = form.getValues().email;
-
-            // Start WebAuthn authentication
-            const startRes = await api.post("/auth/security-key/authenticate/start", {
-                email: email || undefined
-            });
+            // Start WebAuthn authentication without email
+            const startRes = await api.post("/auth/security-key/authenticate/start", {});
 
             if (!startRes) {
                 setError(t('securityKeyAuthError', {
@@ -250,12 +154,104 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                         defaultValue: "There was a problem using your security key. Please try again."
                     }));
                 }
-                throw error; // Re-throw to be caught by outer catch
             }
-        } catch (e) {
-            console.error(formatAxiosError(e));
+        } catch (e: any) {
+            if (e.isAxiosError) {
+                setError(formatAxiosError(e, t('securityKeyAuthError', {
+                    defaultValue: "Failed to authenticate with security key"
+                })));
+            } else {
+                console.error(e);
+                setError(e.message || t('securityKeyAuthError', {
+                    defaultValue: "Failed to authenticate with security key"
+                }));
+            }
         } finally {
             setLoading(false);
+            setShowSecurityKeyPrompt(false);
+        }
+    }
+
+    async function onSubmit(values: any) {
+        const { email, password } = form.getValues();
+        const { code } = mfaForm.getValues();
+
+        setLoading(true);
+        setError(null);
+        setShowSecurityKeyPrompt(false);
+
+        try {
+            const res = await api.post<AxiosResponse<LoginResponse>>("/auth/login", {
+                email,
+                password,
+                code
+            });
+
+            const data = res.data.data;
+
+            if (data?.useSecurityKey) {
+                await initiateSecurityKeyAuth();
+                return;
+            }
+
+            if (data?.codeRequested) {
+                setMfaRequested(true);
+                setLoading(false);
+                mfaForm.reset();
+                return;
+            }
+
+            if (data?.emailVerificationRequired) {
+                if (redirect) {
+                    router.push(`/auth/verify-email?redirect=${redirect}`);
+                } else {
+                    router.push("/auth/verify-email");
+                }
+                return;
+            }
+
+            if (onLogin) {
+                await onLogin();
+            }
+        } catch (e: any) {
+            if (e.isAxiosError) {
+                const errorMessage = formatAxiosError(e, t('loginError', {
+                    defaultValue: "Failed to log in"
+                }));
+                setError(errorMessage);
+                return;
+            } else {
+                console.error(e);
+                setError(e.message || t('loginError', {
+                    defaultValue: "Failed to log in"
+                }));
+                return;
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function loginWithIdp(idpId: number) {
+        try {
+            const res = await api.post<AxiosResponse<GenerateOidcUrlResponse>>(
+                `/auth/idp/${idpId}/oidc/generate-url`,
+                {
+                    redirectUrl: redirect || "/"
+                }
+            );
+
+            console.log(res);
+
+            if (!res) {
+                setError(t('loginError'));
+                return;
+            }
+
+            const data = res.data.data;
+            window.location.href = data.redirectUrl;
+        } catch (e) {
+            console.error(formatAxiosError(e));
         }
     }
 
@@ -320,6 +316,16 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
                                         {t('passwordForgot')}
                                     </Link>
                                 </div>
+                            </div>
+
+                            <div className="flex flex-col space-y-2">
+                                <Button type="submit" disabled={loading}>
+                                    {loading ? t('idpConnectingToProcess', {
+                                        defaultValue: "Connecting..."
+                                    }) : t('login', {
+                                        defaultValue: "Log in"
+                                    })}
+                                </Button>
                             </div>
                         </form>
                     </Form>
@@ -415,17 +421,6 @@ export default function LoginForm({ redirect, onLogin, idps }: LoginFormProps) {
 
                 {!mfaRequested && (
                     <>
-                        <Button
-                            type="submit"
-                            form="form"
-                            className="w-full"
-                            loading={loading}
-                            disabled={loading || showSecurityKeyPrompt}
-                        >
-                            <LockIcon className="w-4 h-4 mr-2" />
-                            {t('login')}
-                        </Button>
-
                         <Button
                             type="button"
                             variant="outline"
