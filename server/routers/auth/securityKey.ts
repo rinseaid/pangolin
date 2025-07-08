@@ -24,7 +24,9 @@ import type {
 } from "@simplewebauthn/server";
 import type { 
     AuthenticatorTransport,
-    PublicKeyCredentialDescriptorJSON
+    AuthenticatorTransportFuture,
+    PublicKeyCredentialDescriptorJSON,
+    PublicKeyCredentialDescriptorFuture
 } from "@simplewebauthn/types";
 import config from "@server/lib/config";
 import { UserType } from "@server/types/UserTypes";
@@ -168,10 +170,10 @@ export async function startRegistration(
             .where(eq(securityKeys.userId, user.userId));
 
         const excludeCredentials = existingSecurityKeys.map(key => ({
-            id: Buffer.from(key.credentialId, 'base64').toString('base64url'),
+            id: new Uint8Array(Buffer.from(key.credentialId, 'base64')),
             type: 'public-key' as const,
-            transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransport[] : undefined
-        } satisfies PublicKeyCredentialDescriptorJSON));
+            transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransportFuture[] : undefined
+        }));
 
         const options: GenerateRegistrationOptionsOpts = {
             rpName,
@@ -460,11 +462,7 @@ export async function startAuthentication(
     const { email } = parsedBody.data;
 
     try {
-        let allowCredentials: Array<{
-            id: Buffer;
-            type: 'public-key';
-            transports?: string[];
-        }> = [];
+        let allowCredentials: PublicKeyCredentialDescriptorFuture[] = [];
         let userId;
 
         // If email is provided, get security keys for that specific user
@@ -501,9 +499,9 @@ export async function startAuthentication(
             }
 
             allowCredentials = userSecurityKeys.map(key => ({
-                id: Buffer.from(key.credentialId, 'base64'),
+                id: new Uint8Array(Buffer.from(key.credentialId, 'base64')),
                 type: 'public-key' as const,
-                transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransport[] : undefined
+                transports: key.transports ? JSON.parse(key.transports) as AuthenticatorTransportFuture[] : undefined
             }));
         } else {
             // If no email provided, allow any security key (for resident key authentication)
@@ -625,7 +623,7 @@ export async function verifyAuthentication(
                 credentialID: Buffer.from(securityKey.credentialId, 'base64'),
                 credentialPublicKey: Buffer.from(securityKey.publicKey, 'base64'),
                 counter: securityKey.signCount,
-                transports: securityKey.transports ? JSON.parse(securityKey.transports) as AuthenticatorTransport[] : undefined
+                transports: securityKey.transports ? JSON.parse(securityKey.transports) as AuthenticatorTransportFuture[] : undefined
             },
             requireUserVerification: false
         });
