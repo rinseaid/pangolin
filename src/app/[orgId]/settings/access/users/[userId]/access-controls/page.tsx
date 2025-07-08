@@ -45,9 +45,6 @@ import { useTranslations } from "next-intl";
 
 export default function AccessControlsPage() {
     const { orgUser: user, updateOrgUser } = userOrgUserContext();
-
-    console.log("User:", user);
-
     const api = createApiClient(useEnvContext());
 
     const { orgId } = useParams();
@@ -224,7 +221,7 @@ export default function AccessControlsPage() {
                                     <p className="text-xs text-muted-foreground ml-6">
                                         When enabled, the user will be required to set up their authenticator app on their next login.
                                         {user.twoFactorEnabled && (
-                                            <span className="text-blue-600"> This user currently has 2FA enabled.</span>
+                                            <span className="text-primary"> This user currently has 2FA enabled.</span>
                                         )}
                                     </p>
                                 </div>
@@ -246,6 +243,8 @@ export default function AccessControlsPage() {
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
+
+
         </SettingsContainer>
     );
 }
