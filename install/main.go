@@ -56,12 +56,12 @@ type SupportedContainer string
 
 const (
 	Docker SupportedContainer = "docker"
-	Podman                    = "podman"
+	Podman SupportedContainer = "podman"
 )
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	inputContainer := readString(reader, "Would you like to run pangolin as docker or podman container?", "docker")
+	inputContainer := readString(reader, "Would you like to run Pangolin as docker or podman container?", "docker")
 
 	chosenContainer := Docker
 	if strings.EqualFold(inputContainer, "docker") {
