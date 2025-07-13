@@ -10,3 +10,4 @@ export * from "./adminRemoveUser";
 export * from "./listInvitations";
 export * from "./removeInvitation";
 export * from "./createOrgUser";
+export * from "./updateUser2FA";
