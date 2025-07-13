@@ -36,6 +36,7 @@ export type LoginResponse = {
     codeRequested?: boolean;
     emailVerificationRequired?: boolean;
     useSecurityKey?: boolean;
+    twoFactorSetupRequired?: boolean;
 };
 
 export const dynamic = "force-dynamic";
@@ -127,6 +128,17 @@ export async function login(
         }
 
         if (existingUser.twoFactorEnabled) {
+            // If 2FA is enabled but no secret exists, force setup
+            if (!existingUser.twoFactorSecret) {
+                return response<LoginResponse>(res, {
+                    data: { twoFactorSetupRequired: true },
+                    success: true,
+                    error: false,
+                    message: "Two-factor authentication setup required",
+                    status: HttpCode.ACCEPTED
+                });
+            }
+
             if (!code) {
                 return response<{ codeRequested: boolean }>(res, {
                     data: { codeRequested: true },
@@ -139,7 +151,7 @@ export async function login(
 
             const validOTP = await verifyTotpCode(
                 code,
-                existingUser.twoFactorSecret!,
+                existingUser.twoFactorSecret,
                 existingUser.userId
             );
 
