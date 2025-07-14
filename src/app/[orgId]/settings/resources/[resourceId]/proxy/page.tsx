@@ -75,6 +75,7 @@ import {
 } from "@app/components/ui/collapsible";
 import { ContainersSelector } from "@app/components/ContainersSelector";
 import { useTranslations } from "next-intl";
+import { build } from "@server/build";
 
 const addTargetSchema = z.object({
     ip: z.string().refine(isTargetValid),
@@ -772,30 +773,34 @@ export default function ReverseProxyTargets(props: {
                                     className="space-y-4"
                                     id="tls-settings-form"
                                 >
-                                    <FormField 
-                                        control={tlsSettingsForm.control} 
-                                        name="ssl" 
-                                        render={({ field }) => ( 
-                                            <FormItem> 
-                                                <FormControl> 
-                                                    <SwitchInput 
-                                                        id="ssl-toggle" 
-                                                        label={t( 
-                                                            "proxyEnableSSL" 
-                                                        )} 
-                                                        defaultChecked={ 
-                                                            field.value 
-                                                        } 
-                                                        onCheckedChange={( 
-                                                            val 
-                                                        ) => { 
-                                                            field.onChange(val); 
-                                                        }} 
-                                                    /> 
-                                                </FormControl> 
-                                            </FormItem> 
-                                        )} 
-                                    /> 
+                                    {build == "oss" && (
+                                        <FormField
+                                            control={tlsSettingsForm.control}
+                                            name="ssl"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <SwitchInput
+                                                            id="ssl-toggle"
+                                                            label={t(
+                                                                "proxyEnableSSL"
+                                                            )}
+                                                            defaultChecked={
+                                                                field.value
+                                                            }
+                                                            onCheckedChange={(
+                                                                val
+                                                            ) => {
+                                                                field.onChange(
+                                                                    val
+                                                                );
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                     <FormField
                                         control={tlsSettingsForm.control}
                                         name="tlsServerName"
