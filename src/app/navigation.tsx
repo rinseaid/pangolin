@@ -1,4 +1,5 @@
 import { SidebarNavItem } from "@app/components/SidebarNav";
+import { build } from "@server/build";
 import {
     Home,
     Settings,
@@ -20,7 +21,9 @@ export type SidebarNavSection = {
     items: SidebarNavItem[];
 };
 
-export const orgNavSections = (enableClients: boolean = true): SidebarNavSection[] => [
+export const orgNavSections = (
+    enableClients: boolean = true
+): SidebarNavSection[] => [
     {
         heading: "General",
         items: [
@@ -34,16 +37,20 @@ export const orgNavSections = (enableClients: boolean = true): SidebarNavSection
                 href: "/{orgId}/settings/resources",
                 icon: <Waypoints className="h-4 w-4" />
             },
-            ...(enableClients ? [{
-                title: "sidebarClients",
-                href: "/{orgId}/settings/clients",
-                icon: <MonitorUp className="h-4 w-4" />
-            }] : []),
+            ...(enableClients
+                ? [
+                      {
+                          title: "sidebarClients",
+                          href: "/{orgId}/settings/clients",
+                          icon: <MonitorUp className="h-4 w-4" />
+                      }
+                  ]
+                : []),
             {
                 title: "sidebarDomains",
                 href: "/{orgId}/settings/domains",
                 icon: <Globe className="h-4 w-4" />
-            },
+            }
         ]
     },
     {
@@ -107,11 +114,15 @@ export const adminNavSections: SidebarNavSection[] = [
                 href: "/admin/idp",
                 icon: <Fingerprint className="h-4 w-4" />
             },
-            {
-                title: "sidebarLicense",
-                href: "/admin/license",
-                icon: <TicketCheck className="h-4 w-4" />
-            }
+            ...(build == "enterprise"
+                ? [
+                      {
+                          title: "sidebarLicense",
+                          href: "/admin/license",
+                          icon: <TicketCheck className="h-4 w-4" />
+                      }
+                  ]
+                : [])
         ]
     }
 ];
