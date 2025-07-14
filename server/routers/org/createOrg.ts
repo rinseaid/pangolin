@@ -33,8 +33,6 @@ const createOrgSchema = z
     })
     .strict();
 
-// const MAX_ORGS = 5;
-
 registry.registerPath({
     method: "put",
     path: "/org",
@@ -79,16 +77,6 @@ export async function createOrg(
                 )
             );
         }
-
-        // const userOrgIds = req.userOrgIds;
-        // if (userOrgIds && userOrgIds.length > MAX_ORGS) {
-        //     return next(
-        //         createHttpError(
-        //             HttpCode.FORBIDDEN,
-        //             `Maximum number of organizations reached.`
-        //         )
-        //     );
-        // }
 
         const { orgId, name, subnet } = parsedBody.data;
 
@@ -147,7 +135,7 @@ export async function createOrg(
                 .values({
                     orgId,
                     name,
-                    subnet,
+                    subnet
                 })
                 .returning();
 
@@ -182,15 +170,13 @@ export async function createOrg(
             const actionIds = await trx.select().from(actions).execute();
 
             if (actionIds.length > 0) {
-                await trx
-                    .insert(roleActions)
-                    .values(
-                        actionIds.map((action) => ({
-                            roleId,
-                            actionId: action.actionId,
-                            orgId: newOrg[0].orgId
-                        }))
-                    );
+                await trx.insert(roleActions).values(
+                    actionIds.map((action) => ({
+                        roleId,
+                        actionId: action.actionId,
+                        orgId: newOrg[0].orgId
+                    }))
+                );
             }
 
             if (allDomains.length) {
@@ -227,7 +213,7 @@ export async function createOrg(
                     orgId: newOrg[0].orgId,
                     roleId: roleId,
                     isOwner: true
-                });
+                }); 
             }
 
             const memberRole = await trx

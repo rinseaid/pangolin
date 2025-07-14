@@ -56,12 +56,8 @@ export async function traefikConfigProvider(
                 .select({
                     // Resource fields
                     resourceId: resources.resourceId,
-                    subdomain: resources.subdomain,
                     fullDomain: resources.fullDomain,
                     ssl: resources.ssl,
-                    blockAccess: resources.blockAccess,
-                    sso: resources.sso,
-                    emailWhitelistEnabled: resources.emailWhitelistEnabled,
                     http: resources.http,
                     proxyPort: resources.proxyPort,
                     protocol: resources.protocol,
@@ -74,10 +70,6 @@ export async function traefikConfigProvider(
                         subnet: sites.subnet,
                         exitNodeId: sites.exitNodeId,
                     },
-                    // Org fields
-                    org: {
-                        orgId: orgs.orgId
-                    },
                     enabled: resources.enabled,
                     stickySession: resources.stickySession,
                     tlsServerName: resources.tlsServerName,
@@ -85,7 +77,6 @@ export async function traefikConfigProvider(
                 })
                 .from(resources)
                 .innerJoin(sites, eq(sites.siteId, resources.siteId))
-                .innerJoin(orgs, eq(resources.orgId, orgs.orgId))
                 .where(eq(sites.exitNodeId, currentExitNodeId));
 
             // Get all resource IDs from the first query
@@ -179,7 +170,6 @@ export async function traefikConfigProvider(
         for (const resource of allResources) {
             const targets = resource.targets as Target[];
             const site = resource.site;
-            const org = resource.org;
 
             const routerName = `${resource.resourceId}-router`;
             const serviceName = `${resource.resourceId}-service`;
@@ -200,11 +190,6 @@ export async function traefikConfigProvider(
                     logger.error(
                         `Resource ${resource.resourceId} has no fullDomain`
                     );
-                    continue;
-                }
-
-                // HTTP configuration remains the same
-                if (!resource.subdomain && !resource.isBaseDomain) {
                     continue;
                 }
 
@@ -299,7 +284,7 @@ export async function traefikConfigProvider(
                                 } else if (site.type === "newt") {
                                     if (
                                         !target.internalPort ||
-                                        !target.method
+                                        !target.method || !site.subnet
                                     ) {
                                         return false;
                                     }
@@ -315,7 +300,7 @@ export async function traefikConfigProvider(
                                         url: `${target.method}://${target.ip}:${target.port}`
                                     };
                                 } else if (site.type === "newt") {
-                                    const ip = site.subnet.split("/")[0];
+                                    const ip = site.subnet!.split("/")[0];
                                     return {
                                         url: `${target.method}://${ip}:${target.internalPort}`
                                     };
@@ -409,7 +394,7 @@ export async function traefikConfigProvider(
                                         return false;
                                     }
                                 } else if (site.type === "newt") {
-                                    if (!target.internalPort) {
+                                    if (!target.internalPort || !site.subnet) {
                                         return false;
                                     }
                                 }
@@ -424,7 +409,7 @@ export async function traefikConfigProvider(
                                         address: `${target.ip}:${target.port}`
                                     };
                                 } else if (site.type === "newt") {
-                                    const ip = site.subnet.split("/")[0];
+                                    const ip = site.subnet!.split("/")[0];
                                     return {
                                         address: `${ip}:${target.internalPort}`
                                     };

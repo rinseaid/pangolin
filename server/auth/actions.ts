@@ -90,7 +90,10 @@ export enum ActionsEnum {
     setApiKeyOrgs = "setApiKeyOrgs",
     listApiKeyActions = "listApiKeyActions",
     listApiKeys = "listApiKeys",
-    getApiKey = "getApiKey"
+    getApiKey = "getApiKey",
+    createOrgDomain = "createOrgDomain",
+    deleteOrgDomain = "deleteOrgDomain",
+    restartOrgDomain = "restartOrgDomain"
 }
 
 export async function checkUserActionPermission(

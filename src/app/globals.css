@@ -111,6 +111,9 @@
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+
+    --shadow-2xs: 0 1px 1px rgba(0, 0, 0, 0.03);
+    --inset-shadow-2xs: inset 0 1px 1px rgba(0, 0, 1, 0.03);
 }
 
 @layer base {

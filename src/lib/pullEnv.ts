@@ -47,7 +47,9 @@ export function pullEnv(): Env {
                     ? true
                     : false,
             enableClients:
-                process.env.FLAGS_ENABLE_CLIENTS === "true" ? true : false
-        }
+                process.env.FLAGS_ENABLE_CLIENTS === "true" ? true : false,
+            hideSupporterKey:
+                process.env.HIDE_SUPPORTER_KEY === "true" ? true : false
+        },
     };
 }

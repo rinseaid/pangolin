@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
-import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@app/providers/ThemeProvider";
 import EnvProvider from "@app/providers/EnvProvider";
 import { pullEnv } from "@app/lib/pullEnv";
@@ -15,10 +14,11 @@ import LicenseViolation from "@app/components/LicenseViolation";
 import { cache } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+import { Toaster } from "@app/components/ui/toaster";
 
 export const metadata: Metadata = {
     title: `Dashboard - Pangolin`,
-    description: ""
+    description: "",
 };
 
 export const dynamic = "force-dynamic";

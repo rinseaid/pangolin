@@ -6,7 +6,8 @@ import logger from "@server/logger";
 import {
     errorHandlerMiddleware,
     notFoundMiddleware,
-    rateLimitMiddleware
+    rateLimitMiddleware,
+    requestTimeoutMiddleware
 } from "@server/middlewares";
 import { authenticated, unauthenticated } from "@server/routers/external";
 import { router as wsRouter, handleWSUpgrade } from "@server/routers/ws";
@@ -19,6 +20,7 @@ const externalPort = config.getRawConfig().server.external_port;
 
 export function createApiServer() {
     const apiServer = express();
+    const prefix = `/api/v1`;
 
     const trustProxy = config.getRawConfig().server.trust_proxy;
     if (trustProxy) {
@@ -54,6 +56,9 @@ export function createApiServer() {
     apiServer.use(cookieParser());
     apiServer.use(express.json());
 
+    // Add request timeout middleware
+    apiServer.use(requestTimeoutMiddleware(60000)); // 60 second timeout
+
     if (!dev) {
         apiServer.use(
             rateLimitMiddleware({
@@ -66,7 +71,6 @@ export function createApiServer() {
     }
 
     // API routes
-    const prefix = `/api/v1`;
     apiServer.use(logIncomingMiddleware);
     apiServer.use(prefix, unauthenticated);
     apiServer.use(prefix, authenticated);

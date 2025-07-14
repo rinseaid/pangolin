@@ -67,7 +67,8 @@ export default function SupporterStatus({ isCollapsed = false }: SupporterStatus
     const [keyOpen, setKeyOpen] = useState(false);
     const [purchaseOptionsOpen, setPurchaseOptionsOpen] = useState(false);
 
-    const api = createApiClient(useEnvContext());
+    const { env } = useEnvContext();
+    const api = createApiClient({ env });
     const t = useTranslations();
 
     const formSchema = z.object({

@@ -38,7 +38,7 @@ const createSiteSchema = z
         subnet: z.string().optional(),
         newtId: z.string().optional(),
         secret: z.string().optional(),
-        address: z.string().optional(),
+        // address: z.string().optional(),
         type: z.enum(["newt", "wireguard", "local"])
     })
     .strict()
@@ -97,7 +97,7 @@ export async function createSite(
             subnet,
             newtId,
             secret,
-            address
+            // address
         } = parsedBody.data;
 
         const parsedParams = createSiteParamsSchema.safeParse(req.params);
@@ -129,58 +129,58 @@ export async function createSite(
             );
         }
 
-        let updatedAddress = null;
-        if (address) {
-            if (!isValidIP(address)) {
-                return next(
-                    createHttpError(
-                        HttpCode.BAD_REQUEST,
-                        "Invalid subnet format. Please provide a valid CIDR notation."
-                    )
-                );
-            }
-
-            if (!isIpInCidr(address, org.subnet)) {
-                return next(
-                    createHttpError(
-                        HttpCode.BAD_REQUEST,
-                        "IP is not in the CIDR range of the subnet."
-                    )
-                );
-            }
-
-            updatedAddress = `${address}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
-
-            // make sure the subnet is unique
-            const addressExistsSites = await db
-                .select()
-                .from(sites)
-                .where(eq(sites.address, updatedAddress))
-                .limit(1);
-
-            if (addressExistsSites.length > 0) {
-                return next(
-                    createHttpError(
-                        HttpCode.CONFLICT,
-                        `Subnet ${subnet} already exists`
-                    )
-                );
-            }
-
-            const addressExistsClients = await db
-                .select()
-                .from(sites)
-                .where(eq(sites.subnet, updatedAddress))
-                .limit(1);
-            if (addressExistsClients.length > 0) {
-                return next(
-                    createHttpError(
-                        HttpCode.CONFLICT,
-                        `Subnet ${subnet} already exists`
-                    )
-                );
-            }
-        }
+        // let updatedAddress = null;
+        // if (address) {
+        //     if (!isValidIP(address)) {
+        //         return next(
+        //             createHttpError(
+        //                 HttpCode.BAD_REQUEST,
+        //                 "Invalid subnet format. Please provide a valid CIDR notation."
+        //             )
+        //         );
+        //     }
+        //
+        //     if (!isIpInCidr(address, org.subnet)) {
+        //         return next(
+        //             createHttpError(
+        //                 HttpCode.BAD_REQUEST,
+        //                 "IP is not in the CIDR range of the subnet."
+        //             )
+        //         );
+        //     }
+        //
+        //     updatedAddress = `${address}/${org.subnet.split("/")[1]}`; // we want the block size of the whole org
+        //
+        //     // make sure the subnet is unique
+        //     const addressExistsSites = await db
+        //         .select()
+        //         .from(sites)
+        //         .where(eq(sites.address, updatedAddress))
+        //         .limit(1);
+        //
+        //     if (addressExistsSites.length > 0) {
+        //         return next(
+        //             createHttpError(
+        //                 HttpCode.CONFLICT,
+        //                 `Subnet ${subnet} already exists`
+        //             )
+        //         );
+        //     }
+        //
+        //     const addressExistsClients = await db
+        //         .select()
+        //         .from(sites)
+        //         .where(eq(sites.subnet, updatedAddress))
+        //         .limit(1);
+        //     if (addressExistsClients.length > 0) {
+        //         return next(
+        //             createHttpError(
+        //                 HttpCode.CONFLICT,
+        //                 `Subnet ${subnet} already exists`
+        //             )
+        //         );
+        //     }
+        // }
 
         const niceId = await getUniqueSiteName(orgId);
 
@@ -205,7 +205,7 @@ export async function createSite(
                         exitNodeId,
                         name,
                         niceId,
-                        address: updatedAddress || null,
+                        // address: updatedAddress || null,
                         subnet,
                         type,
                         dockerSocketEnabled: type == "newt",
@@ -221,7 +221,7 @@ export async function createSite(
                         orgId,
                         name,
                         niceId,
-                        address: updatedAddress || null,
+                        // address: updatedAddress || null,
                         type,
                         dockerSocketEnabled: type == "newt",
                         subnet: "0.0.0.0/0"

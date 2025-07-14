@@ -12,6 +12,7 @@ import { createTOTPKeyURI } from "oslo/otp";
 import logger from "@server/logger";
 import { verifyPassword } from "@server/auth/password";
 import { unauthorized } from "@server/auth/unauthorizedResponse";
+import config from "@server/lib/config";
 import { UserType } from "@server/types/UserTypes";
 
 export const requestTotpSecretBody = z
@@ -73,7 +74,11 @@ export async function requestTotpSecret(
 
         const hex = crypto.getRandomValues(new Uint8Array(20));
         const secret = encodeHex(hex);
-        const uri = createTOTPKeyURI("Pangolin", user.email!, hex);
+        const uri = createTOTPKeyURI(
+            "Pangolin",
+            user.email!,
+            hex
+        );
 
         await db
             .update(users)

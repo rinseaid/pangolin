@@ -152,7 +152,7 @@ export function LayoutSidebar({
                             onClick={() =>
                                 setIsSidebarCollapsed(!isSidebarCollapsed)
                             }
-                            className="cursor-pointer absolute -right-2.5 top-1/2 transform -translate-y-1/2 w-2 h-8 rounded-full flex items-center justify-center transition-all duration-200 ease-in-out hover:scale-110 group"
+                            className="cursor-pointer absolute -right-2.5 top-1/2 transform -translate-y-1/2 w-2 h-8 rounded-full flex items-center justify-center transition-all duration-200 ease-in-out hover:scale-110 group z-[60]"
                             aria-label={
                                 isSidebarCollapsed
                                     ? "Expand sidebar"

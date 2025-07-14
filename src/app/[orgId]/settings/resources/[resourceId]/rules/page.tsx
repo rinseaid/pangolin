@@ -247,7 +247,7 @@ export default function ResourceRules(props: {
     async function saveAllSettings() {
         try {
             setLoading(true);
-            
+
             // Save rules enabled state
             const res = await api
                 .post(`/resource/${params.resourceId}`, {
@@ -594,17 +594,10 @@ export default function ResourceRules(props: {
                         <div className="flex items-center space-x-2">
                             <SwitchInput
                                 id="rules-toggle"
+                                label={t('rulesEnable')}
                                 defaultChecked={rulesEnabled}
                                 onCheckedChange={(val) => setRulesEnabled(val)}
                             />
-                            <div className="space-y-1">
-                                <label className="text-base font-medium">
-                                    {t('rulesEnable')}
-                                </label>
-                                <p className="text-sm text-muted-foreground">
-                                    {t('rulesEnableDescription')}
-                                </p>
-                            </div>
                         </div>
 
                         <Form {...addRuleForm}>

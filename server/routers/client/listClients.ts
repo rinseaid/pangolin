@@ -126,7 +126,7 @@ export async function listClients(
         }
         const { orgId } = parsedParams.data;
 
-        if (orgId && orgId !== req.userOrgId) {
+        if (req.user && orgId && orgId !== req.userOrgId) {
             return next(
                 createHttpError(
                     HttpCode.FORBIDDEN,
@@ -135,21 +135,29 @@ export async function listClients(
             );
         }
 
-        const accessibleClients = await db
-            .select({
-                clientId: sql<number>`COALESCE(${userClients.clientId}, ${roleClients.clientId})`
-            })
-            .from(userClients)
-            .fullJoin(
-                roleClients,
-                eq(userClients.clientId, roleClients.clientId)
-            )
-            .where(
-                or(
-                    eq(userClients.userId, req.user!.userId),
-                    eq(roleClients.roleId, req.userOrgRoleId!)
+        let accessibleClients;
+        if (req.user) {
+            accessibleClients = await db
+                .select({
+                    clientId: sql<number>`COALESCE(${userClients.clientId}, ${roleClients.clientId})`
+                })
+                .from(userClients)
+                .fullJoin(
+                    roleClients,
+                    eq(userClients.clientId, roleClients.clientId)
                 )
-            );
+                .where(
+                    or(
+                        eq(userClients.userId, req.user!.userId),
+                        eq(roleClients.roleId, req.userOrgRoleId!)
+                    )
+                );
+        } else {
+            accessibleClients = await db
+                .select({ clientId: clients.clientId })
+                .from(clients)
+                .where(eq(clients.orgId, orgId));
+        }
 
         const accessibleClientIds = accessibleClients.map(
             (client) => client.clientId

@@ -80,8 +80,8 @@ export function OrgSelector({ orgId, orgs, isCollapsed = false }: OrgSelectorPro
             </PopoverTrigger>
             <PopoverContent className="w-[320px] p-0" align="start">
                 <Command className="rounded-lg">
-                    <CommandInput 
-                        placeholder={t('searchProgress')} 
+                    <CommandInput
+                        placeholder={t('searchProgress')}
                         className="border-0 focus:ring-0"
                     />
                     <CommandEmpty className="py-6 text-center">

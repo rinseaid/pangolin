@@ -7,13 +7,22 @@ export const domains = sqliteTable("domains", {
     configManaged: integer("configManaged", { mode: "boolean" })
         .notNull()
         .default(false),
-    type: text("type"), // "ns", "cname", "a"
+    type: text("type") // "ns", "cname", "a"
 });
 
 export const orgs = sqliteTable("orgs", {
     orgId: text("orgId").primaryKey(),
     name: text("name").notNull(),
     subnet: text("subnet").notNull(),
+});
+
+export const userDomains = sqliteTable("userDomains", {
+    userId: text("userId")
+        .notNull()
+        .references(() => users.userId, { onDelete: "cascade" }),
+    domainId: text("domainId")
+        .notNull()
+        .references(() => domains.domainId, { onDelete: "cascade" })
 });
 
 export const orgDomains = sqliteTable("orgDomains", {
@@ -38,9 +47,9 @@ export const sites = sqliteTable("sites", {
     }),
     name: text("name").notNull(),
     pubKey: text("pubKey"),
-    subnet: text("subnet").notNull(),
-    megabytesIn: integer("bytesIn"),
-    megabytesOut: integer("bytesOut"),
+    subnet: text("subnet"),
+    megabytesIn: integer("bytesIn").default(0),
+    megabytesOut: integer("bytesOut").default(0),
     lastBandwidthUpdate: text("lastBandwidthUpdate"),
     type: text("type").notNull(), // "newt" or "wireguard"
     online: integer("online", { mode: "boolean" }).notNull().default(false),
@@ -48,7 +57,7 @@ export const sites = sqliteTable("sites", {
     // exit node stuff that is how to connect to the site when it has a wg server
     address: text("address"), // this is the address of the wireguard interface in newt
     endpoint: text("endpoint"), // this is how to reach gerbil externally - gets put into the wireguard config
-    publicKey: text("pubicKey"), // TODO: Fix typo in publicKey
+    publicKey: text("publicKey"), // TODO: Fix typo in publicKey
     lastHolePunch: integer("lastHolePunch"),
     listenPort: integer("listenPort"),
     dockerSocketEnabled: integer("dockerSocketEnabled", { mode: "boolean" })
@@ -626,13 +635,14 @@ export type ResourceAccessToken = InferSelectModel<typeof resourceAccessToken>;
 export type ResourceWhitelist = InferSelectModel<typeof resourceWhitelist>;
 export type VersionMigration = InferSelectModel<typeof versionMigrations>;
 export type ResourceRule = InferSelectModel<typeof resourceRules>;
+export type Domain = InferSelectModel<typeof domains>;
 export type Client = InferSelectModel<typeof clients>;
 export type ClientSite = InferSelectModel<typeof clientSites>;
 export type RoleClient = InferSelectModel<typeof roleClients>;
 export type UserClient = InferSelectModel<typeof userClients>;
-export type Domain = InferSelectModel<typeof domains>;
 export type SupporterKey = InferSelectModel<typeof supporterKey>;
 export type Idp = InferSelectModel<typeof idp>;
 export type ApiKey = InferSelectModel<typeof apiKeys>;
 export type ApiKeyAction = InferSelectModel<typeof apiKeyActions>;
 export type ApiKeyOrg = InferSelectModel<typeof apiKeyOrg>;
+export type OrgDomains = InferSelectModel<typeof orgDomains>;

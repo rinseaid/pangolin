@@ -202,25 +202,25 @@ export default function GeneralPage() {
                                     )}
                                 />
 
-                                <FormField
-                                    control={form.control}
-                                    name="subnet"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Subnet</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    disabled={true}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                            <FormDescription>
-                                                The subnet for this organization's network configuration.
-                                            </FormDescription>
-                                        </FormItem>
-                                    )}
-                                />
+                                {/* <FormField */}
+                                {/*     control={form.control} */}
+                                {/*     name="subnet" */}
+                                {/*     render={({ field }) => ( */}
+                                {/*         <FormItem> */}
+                                {/*             <FormLabel>Subnet</FormLabel> */}
+                                {/*             <FormControl> */}
+                                {/*                 <Input */}
+                                {/*                     {...field} */}
+                                {/*                     disabled={true} */}
+                                {/*                 /> */}
+                                {/*             </FormControl> */}
+                                {/*             <FormMessage /> */}
+                                {/*             <FormDescription> */}
+                                {/*                 The subnet for this organization's network configuration. */}
+                                {/*             </FormDescription> */}
+                                {/*         </FormItem> */}
+                                {/*     )} */}
+                                {/* /> */}
                             </form>
                         </Form>
                     </SettingsSectionForm>

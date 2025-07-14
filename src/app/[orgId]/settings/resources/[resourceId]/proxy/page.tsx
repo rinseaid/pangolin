@@ -772,81 +772,50 @@ export default function ReverseProxyTargets(props: {
                                     className="space-y-4"
                                     id="tls-settings-form"
                                 >
+                                    <FormField 
+                                        control={tlsSettingsForm.control} 
+                                        name="ssl" 
+                                        render={({ field }) => ( 
+                                            <FormItem> 
+                                                <FormControl> 
+                                                    <SwitchInput 
+                                                        id="ssl-toggle" 
+                                                        label={t( 
+                                                            "proxyEnableSSL" 
+                                                        )} 
+                                                        defaultChecked={ 
+                                                            field.value 
+                                                        } 
+                                                        onCheckedChange={( 
+                                                            val 
+                                                        ) => { 
+                                                            field.onChange(val); 
+                                                        }} 
+                                                    /> 
+                                                </FormControl> 
+                                            </FormItem> 
+                                        )} 
+                                    /> 
                                     <FormField
                                         control={tlsSettingsForm.control}
-                                        name="ssl"
+                                        name="tlsServerName"
                                         render={({ field }) => (
                                             <FormItem>
+                                                <FormLabel>
+                                                    {t("targetTlsSni")}
+                                                </FormLabel>
                                                 <FormControl>
-                                                    <SwitchInput
-                                                        id="ssl-toggle"
-                                                        label={t(
-                                                            "proxyEnableSSL"
-                                                        )}
-                                                        defaultChecked={
-                                                            field.value
-                                                        }
-                                                        onCheckedChange={(
-                                                            val
-                                                        ) => {
-                                                            field.onChange(val);
-                                                        }}
-                                                    />
+                                                    <Input {...field} />
                                                 </FormControl>
+                                                <FormDescription>
+                                                    {t(
+                                                        "targetTlsSniDescription"
+                                                    )}
+                                                </FormDescription>
+                                                <FormMessage />
                                             </FormItem>
                                         )}
                                     />
-                                    <Collapsible
-                                        open={isAdvancedOpen}
-                                        onOpenChange={setIsAdvancedOpen}
-                                        className="space-y-2"
-                                    >
-                                        <div className="flex items-center justify-between space-x-4">
-                                            <CollapsibleTrigger asChild>
-                                                <Button
-                                                    variant="text"
-                                                    size="sm"
-                                                    className="p-0 flex items-center justify-start gap-2 w-full"
-                                                >
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {t(
-                                                            "targetTlsSettingsAdvanced"
-                                                        )}
-                                                    </p>
-                                                    <div>
-                                                        <ChevronsUpDown className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Toggle
-                                                        </span>
-                                                    </div>
-                                                </Button>
-                                            </CollapsibleTrigger>
-                                        </div>
-                                        <CollapsibleContent className="space-y-2">
-                                            <FormField
-                                                control={
-                                                    tlsSettingsForm.control
-                                                }
-                                                name="tlsServerName"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            {t("targetTlsSni")}
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <Input {...field} />
-                                                        </FormControl>
-                                                        <FormDescription>
-                                                            {t(
-                                                                "targetTlsSniDescription"
-                                                            )}
-                                                        </FormDescription>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </CollapsibleContent>
-                                    </Collapsible>
                                 </form>
                             </Form>
                         </SettingsSectionForm>

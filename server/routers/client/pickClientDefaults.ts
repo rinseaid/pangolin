@@ -7,6 +7,7 @@ import { generateId } from "@server/auth/sessions/app";
 import { getNextAvailableClientSubnet } from "@server/lib/ip";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
+import { OpenAPITags, registry } from "@server/openApi";
 
 export type PickClientDefaultsResponse = {
     olmId: string;
@@ -19,6 +20,17 @@ const pickClientDefaultsSchema = z
         orgId: z.string()
     })
     .strict();
+
+registry.registerPath({
+    method: "get",
+    path: "/site/{siteId}/pick-client-defaults",
+    description: "Return pre-requisite data for creating a client.",
+    tags: [OpenAPITags.Client, OpenAPITags.Site],
+    request: {
+        params: pickClientDefaultsSchema
+    },
+    responses: {}
+});
 
 export async function pickClientDefaults(
     req: Request,

@@ -7,6 +7,8 @@ import Link from "next/link";
 import ProfileIcon from "@app/components/ProfileIcon";
 import ThemeSwitcher from "@app/components/ThemeSwitcher";
 import { useTheme } from "next-themes";
+import { useEnvContext } from "@app/hooks/useEnvContext";
+import { Badge } from "./ui/badge";
 
 interface LayoutHeaderProps {
     showTopBar: boolean;
@@ -15,6 +17,7 @@ interface LayoutHeaderProps {
 export function LayoutHeader({ showTopBar }: LayoutHeaderProps) {
     const { theme } = useTheme();
     const [path, setPath] = useState<string>("");
+    const { env } = useEnvContext();
 
     useEffect(() => {
         function getPath() {
@@ -56,7 +59,6 @@ export function LayoutHeader({ showTopBar }: LayoutHeaderProps) {
                             </Link>
                         </div>
 
-                        {/* Profile controls on the right */}
                         {showTopBar && (
                             <div className="flex items-center space-x-2">
                                 <ThemeSwitcher />

@@ -10,7 +10,8 @@ import {
     Workflow,
     KeyRound,
     TicketCheck,
-    User
+    User,
+    Globe
 } from "lucide-react";
 
 export type SidebarNavSection = {
@@ -31,6 +32,11 @@ export const orgNavSections: SidebarNavSection[] = [
                 title: "sidebarResources",
                 href: "/{orgId}/settings/resources",
                 icon: <Waypoints className="h-4 w-4" />
+            },
+            {
+                title: "sidebarDomains",
+                href: "/{orgId}/settings/domains",
+                icon: <Globe className="h-4 w-4" />
             }
         ]
     },

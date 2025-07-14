@@ -133,7 +133,10 @@ export const configSchema = z
                 db: z.number().int().nonnegative().optional().default(0),
                 tls: z
                     .object({
-                        reject_unauthorized: z.boolean().optional().default(true)
+                        reject_unauthorized: z
+                            .boolean()
+                            .optional()
+                            .default(true)
                     })
                     .optional()
             })
@@ -226,9 +229,9 @@ export const configSchema = z
                 disable_local_sites: z.boolean().optional(),
                 disable_basic_wireguard_sites: z.boolean().optional(),
                 disable_config_managed_domains: z.boolean().optional(),
-                enable_clients: z.boolean().optional()
+                enable_clients: z.boolean().optional(),
             })
-            .optional()
+            .optional(),
     })
     .refine(
         (data) => {

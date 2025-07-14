@@ -32,6 +32,8 @@ import { Switch } from "@app/components/ui/switch";
 import { AxiosResponse } from "axios";
 import { UpdateResourceResponse } from "@server/routers/resource";
 import { useTranslations } from "next-intl";
+import { InfoPopup } from "@app/components/ui/info-popup";
+import { Badge } from "@app/components/ui/badge";
 
 export type ResourceRow = {
     id: number;
@@ -45,6 +47,7 @@ export type ResourceRow = {
     protocol: string;
     proxyPort: number | null;
     enabled: boolean;
+    domainId?: string;
 };
 
 type ResourcesTableProps = {
@@ -158,17 +161,26 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
             cell: ({ row }) => {
                 const resourceRow = row.original;
                 return (
-                    <div>
-                        {!resourceRow.http ? (
-                            <CopyToClipboard
-                                text={resourceRow.proxyPort!.toString()}
-                                isLink={false}
+                    <div className="flex items-center space-x-2">
+                        {!resourceRow.domainId ? (
+                            <InfoPopup
+                                info={t("domainNotFoundDescription")}
+                                text={t("domainNotFound")}
                             />
                         ) : (
-                            <CopyToClipboard
-                                text={resourceRow.domain}
-                                isLink={true}
-                            />
+                            <div>
+                                {!resourceRow.http ? (
+                                    <CopyToClipboard
+                                        text={resourceRow.proxyPort!.toString()}
+                                        isLink={false}
+                                    />
+                                ) : (
+                                    <CopyToClipboard
+                                        text={resourceRow.domain}
+                                        isLink={true}
+                                    />
+                                )}
+                            </div>
                         )}
                     </div>
                 );
@@ -215,7 +227,10 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
             header: t("enabled"),
             cell: ({ row }) => (
                 <Switch
-                    defaultChecked={row.original.enabled}
+                    defaultChecked={
+                        !row.original.domainId ? false : row.original.enabled
+                    }
+                    disabled={!row.original.domainId}
                     onCheckedChange={(val) =>
                         toggleResourceEnabled(val, row.original.id)
                     }
@@ -261,7 +276,11 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
                         <Link
                             href={`/${resourceRow.orgId}/settings/resources/${resourceRow.id}`}
                         >
-                            <Button variant={"secondary"} className="ml-2" size="sm">
+                            <Button
+                                variant={"secondary"}
+                                className="ml-2"
+                                size="sm"
+                            >
                                 {t("edit")}
                                 <ArrowRight className="ml-2 w-4 h-4" />
                             </Button>

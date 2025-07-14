@@ -48,6 +48,7 @@ export function SidebarNav({
     const niceId = params.niceId as string;
     const resourceId = params.resourceId as string;
     const userId = params.userId as string;
+    const apiKeyId = params.apiKeyId as string;
     const clientId = params.clientId as string;
     const { licenseStatus, isUnlocked } = useLicenseStatusContext();
     const { user } = useUserContext();
@@ -59,6 +60,7 @@ export function SidebarNav({
             .replace("{niceId}", niceId)
             .replace("{resourceId}", resourceId)
             .replace("{userId}", userId)
+            .replace("{apiKeyId}", apiKeyId)
             .replace("{clientId}", clientId);
     }
 

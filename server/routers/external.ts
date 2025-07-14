@@ -33,15 +33,16 @@ import {
     verifyClientAccess,
     verifyApiKeyAccess,
     createStore,
+    verifyDomainAccess,
+    verifyClientsEnabled,
+    verifyUserHasAction,
+    verifyUserIsOrgOwner
 } from "@server/middlewares";
-import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
 import { ActionsEnum } from "@server/auth/actions";
-import { verifyUserIsOrgOwner } from "../middlewares/verifyUserIsOrgOwner";
 import { createNewt, getNewtToken } from "./newt";
 import { getOlmToken } from "./olm";
 import rateLimit from "express-rate-limit";
 import createHttpError from "http-errors";
-import { verifyClientsEnabled } from "@server/middlewares/verifyClintsEnabled";
 
 // Root routes
 export const unauthenticated = Router();
@@ -54,10 +55,7 @@ unauthenticated.get("/", (_, res) => {
 export const authenticated = Router();
 authenticated.use(verifySessionUserMiddleware);
 
-authenticated.get(
-    "/pick-org-defaults",
-    org.pickOrgDefaults
-);
+authenticated.get("/pick-org-defaults", org.pickOrgDefaults);
 authenticated.get("/org/checkId", org.checkId);
 authenticated.put("/org", getUserOrgs, org.createOrg);
 
@@ -748,6 +746,29 @@ authenticated.get(
     verifyApiKeyAccess,
     verifyUserHasAction(ActionsEnum.getApiKey),
     apiKeys.getApiKey
+);
+
+authenticated.put(
+    `/org/:orgId/domain`,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.createOrgDomain),
+    domain.createOrgDomain
+);
+
+authenticated.post(
+    `/org/:orgId/domain/:domainId/restart`,
+    verifyOrgAccess,
+    verifyDomainAccess,
+    verifyUserHasAction(ActionsEnum.restartOrgDomain),
+    domain.restartOrgDomain
+);
+
+authenticated.delete(
+    `/org/:orgId/domain/:domainId`,
+    verifyOrgAccess,
+    verifyDomainAccess,
+    verifyUserHasAction(ActionsEnum.deleteOrgDomain),
+    domain.deleteAccountDomain
 );
 
 // Auth routes

@@ -375,7 +375,10 @@ WantedBy=default.target`
     async function onSubmit(data: CreateSiteFormValues) {
         setCreateLoading(true);
 
-        let payload: CreateSiteBody = { name: data.name, type: data.method };
+        let payload: CreateSiteBody = {
+            name: data.name,
+            type: data.method as "newt" | "wireguard" | "local"
+        };
 
         if (data.method == "wireguard") {
             if (!siteDefaults || !wgConfig) {
@@ -412,7 +415,7 @@ WantedBy=default.target`
                 exitNodeId: siteDefaults.exitNodeId,
                 secret: siteDefaults.newtSecret,
                 newtId: siteDefaults.newtId,
-                address: clientAddress
+                // address: clientAddress
             };
         }
 
@@ -573,42 +576,42 @@ WantedBy=default.target`
                                                     </FormItem>
                                                 )}
                                             />
-                                            <FormField
-                                                control={form.control}
-                                                name="clientAddress"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>
-                                                            Site Address
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                autoComplete="off"
-                                                                value={
-                                                                    clientAddress
-                                                                }
-                                                                onChange={(
-                                                                    e
-                                                                ) => {
-                                                                    setClientAddress(
-                                                                        e.target
-                                                                            .value
-                                                                    );
-                                                                    field.onChange(
-                                                                        e.target
-                                                                            .value
-                                                                    );
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                        <FormDescription>
-                                                            Specify the IP
-                                                            address of the host.
-                                                        </FormDescription>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            {/* <FormField */}
+                                            {/*     control={form.control} */}
+                                            {/*     name="clientAddress" */}
+                                            {/*     render={({ field }) => ( */}
+                                            {/*         <FormItem> */}
+                                            {/*             <FormLabel> */}
+                                            {/*                 Site Address */}
+                                            {/*             </FormLabel> */}
+                                            {/*             <FormControl> */}
+                                            {/*                 <Input */}
+                                            {/*                     autoComplete="off" */}
+                                            {/*                     value={ */}
+                                            {/*                         clientAddress */}
+                                            {/*                     } */}
+                                            {/*                     onChange={( */}
+                                            {/*                         e */}
+                                            {/*                     ) => { */}
+                                            {/*                         setClientAddress( */}
+                                            {/*                             e.target */}
+                                            {/*                                 .value */}
+                                            {/*                         ); */}
+                                            {/*                         field.onChange( */}
+                                            {/*                             e.target */}
+                                            {/*                                 .value */}
+                                            {/*                         ); */}
+                                            {/*                     }} */}
+                                            {/*                 /> */}
+                                            {/*             </FormControl> */}
+                                            {/*             <FormMessage /> */}
+                                            {/*             <FormDescription> */}
+                                            {/*                 Specify the IP */}
+                                            {/*                 address of the host. */}
+                                            {/*             </FormDescription> */}
+                                            {/*         </FormItem> */}
+                                            {/*     )} */}
+                                            {/* /> */}
                                         </form>
                                     </Form>
                                 </SettingsSectionForm>
@@ -760,7 +763,7 @@ WantedBy=default.target`
                                                                 ? "squareOutlinePrimary"
                                                                 : "squareOutline"
                                                         }
-                                                        className={`flex-1 min-w-[120px] ${platform === os ? "bg-primary/10" : ""}`}
+                                                        className={`flex-1 min-w-[120px] ${platform === os ? "bg-primary/10" : ""} shadow-none`}
                                                         onClick={() => {
                                                             setPlatform(os);
                                                         }}
@@ -791,7 +794,7 @@ WantedBy=default.target`
                                                                     ? "squareOutlinePrimary"
                                                                     : "squareOutline"
                                                             }
-                                                            className={`flex-1 min-w-[120px] ${architecture === arch ? "bg-primary/10" : ""}`}
+                                                            className={`flex-1 min-w-[120px] ${architecture === arch ? "bg-primary/10" : ""} shadow-none`}
                                                             onClick={() =>
                                                                 setArchitecture(
                                                                     arch

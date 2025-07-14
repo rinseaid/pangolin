@@ -87,7 +87,7 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
 
     let siteSubnet = oldSite.subnet;
     let exitNodeIdToQuery = oldSite.exitNodeId;
-    if (exitNodeId && oldSite.exitNodeId !== exitNodeId) {
+    if (exitNodeId && (oldSite.exitNodeId !== exitNodeId || !oldSite.subnet)) {
         // This effectively moves the exit node to the new one
         exitNodeIdToQuery = exitNodeId; // Use the provided exitNodeId if it differs from the site's exitNodeId
 
@@ -105,7 +105,7 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
             .limit(1);
 
         const blockSize = config.getRawConfig().gerbil.site_block_size;
-        const subnets = sitesQuery.map((site) => site.subnet);
+        const subnets = sitesQuery.map((site) => site.subnet).filter((subnet) => subnet !== null);
         subnets.push(exitNode.address.replace(/\/\d+$/, `/${blockSize}`));
         const newSubnet = findNextAvailableCidr(
             subnets,

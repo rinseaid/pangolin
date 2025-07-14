@@ -14,6 +14,9 @@ export const domains = pgTable("domains", {
     baseDomain: varchar("baseDomain").notNull(),
     configManaged: boolean("configManaged").notNull().default(false),
     type: varchar("type"), // "ns", "cname", "a"
+    verified: boolean("verified").notNull().default(false),
+    failed: boolean("failed").notNull().default(false),
+    tries: integer("tries").notNull().default(0)
 });
 
 export const orgs = pgTable("orgs", {
@@ -44,9 +47,9 @@ export const sites = pgTable("sites", {
     }),
     name: varchar("name").notNull(),
     pubKey: varchar("pubKey"),
-    subnet: varchar("subnet").notNull(),
-    megabytesIn: real("bytesIn"),
-    megabytesOut: real("bytesOut"),
+    subnet: varchar("subnet"),
+    megabytesIn: real("bytesIn").default(0),
+    megabytesOut: real("bytesOut").default(0),
     lastBandwidthUpdate: varchar("lastBandwidthUpdate"),
     type: varchar("type").notNull(), // "newt" or "wireguard"
     online: boolean("online").notNull().default(false),
@@ -282,18 +285,6 @@ export const userResources = pgTable("userResources", {
         .references(() => resources.resourceId, { onDelete: "cascade" })
 });
 
-export const limitsTable = pgTable("limits", {
-    limitId: serial("limitId").primaryKey(),
-    orgId: varchar("orgId")
-        .references(() => orgs.orgId, {
-            onDelete: "cascade"
-        })
-        .notNull(),
-    name: varchar("name").notNull(),
-    value: bigint("value", { mode: "number" }).notNull(),
-    description: varchar("description")
-});
-
 export const userInvites = pgTable("userInvites", {
     inviteId: varchar("inviteId").primaryKey(),
     orgId: varchar("orgId")
@@ -520,7 +511,8 @@ export const clients = pgTable("clients", {
     type: varchar("type").notNull(), // "olm"
     online: boolean("online").notNull().default(false),
     endpoint: varchar("endpoint"),
-    lastHolePunch: integer("lastHolePunch")
+    lastHolePunch: integer("lastHolePunch"),
+    maxConnections: integer("maxConnections")
 });
 
 export const clientSites = pgTable("clientSites", {
@@ -590,7 +582,6 @@ export type RoleSite = InferSelectModel<typeof roleSites>;
 export type UserSite = InferSelectModel<typeof userSites>;
 export type RoleResource = InferSelectModel<typeof roleResources>;
 export type UserResource = InferSelectModel<typeof userResources>;
-export type Limit = InferSelectModel<typeof limitsTable>;
 export type UserInvite = InferSelectModel<typeof userInvites>;
 export type UserOrg = InferSelectModel<typeof userOrgs>;
 export type ResourceSession = InferSelectModel<typeof resourceSessions>;
@@ -613,3 +604,4 @@ export type Olm = InferSelectModel<typeof olms>;
 export type OlmSession = InferSelectModel<typeof olmSessions>;
 export type UserClient = InferSelectModel<typeof userClients>;
 export type RoleClient = InferSelectModel<typeof roleClients>;
+export type OrgDomains = InferSelectModel<typeof orgDomains>;

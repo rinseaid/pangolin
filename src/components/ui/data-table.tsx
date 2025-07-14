@@ -107,8 +107,8 @@ export function DataTable<TData, TValue>({
                     </div>
                     <div className="flex items-center gap-2 sm:justify-end">
                         {onRefresh && (
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 onClick={onRefresh}
                                 disabled={isRefreshing}
                                 loading={isRefreshing}
