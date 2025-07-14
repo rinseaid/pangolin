@@ -86,7 +86,7 @@ export default async function SettingsLayout(props: SettingsLayoutProps) {
 
     return (
         <UserProvider user={user}>
-            <Layout orgId={params.orgId} orgs={orgs} navItems={orgNavSections}>
+            <Layout orgId={params.orgId} orgs={orgs} navItems={orgNavSections(env.flags.enableClients)}>
                 {children}
             </Layout>
         </UserProvider>

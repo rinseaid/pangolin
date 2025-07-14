@@ -9,7 +9,7 @@ export async function verifyClientsEnabled(
     next: NextFunction
 ) {
     try {
-        if (!config.getRawConfig().flags?.enable_redis) {
+        if (!config.getRawConfig().flags?.enable_clients) {
             return next(
                 createHttpError(
                     HttpCode.NOT_IMPLEMENTED,

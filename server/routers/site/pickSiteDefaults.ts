@@ -108,17 +108,17 @@ export async function pickSiteDefaults(
             );
         }
 
-        // const newClientAddress = await getNextAvailableClientSubnet(orgId);
-        // if (!newClientAddress) {
-        //     return next(
-        //         createHttpError(
-        //             HttpCode.INTERNAL_SERVER_ERROR,
-        //             "No available subnet found"
-        //         )
-        //     );
-        // }
+        const newClientAddress = await getNextAvailableClientSubnet(orgId);
+        if (!newClientAddress) {
+            return next(
+                createHttpError(
+                    HttpCode.INTERNAL_SERVER_ERROR,
+                    "No available subnet found"
+                )
+            );
+        }
 
-        // const clientAddress = newClientAddress.split("/")[0];
+        const clientAddress = newClientAddress.split("/")[0];
 
         const newtId = generateId(15);
         const secret = generateId(48);
@@ -133,7 +133,7 @@ export async function pickSiteDefaults(
                 endpoint: exitNode.endpoint,
                 // subnet: `${newSubnet.split("/")[0]}/${config.getRawConfig().gerbil.block_size}`, // we want the block size of the whole subnet
                 subnet: newSubnet,
-                // clientAddress: clientAddress,
+                clientAddress: clientAddress,
                 newtId,
                 newtSecret: secret
             },

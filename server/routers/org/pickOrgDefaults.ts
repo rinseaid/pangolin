@@ -4,6 +4,7 @@ import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
 import { getNextAvailableOrgSubnet } from "@server/lib/ip";
+import config from "@server/lib/config";
 
 export type PickOrgDefaultsResponse = {
     subnet: string;
@@ -15,7 +16,10 @@ export async function pickOrgDefaults(
     next: NextFunction
 ): Promise<any> {
     try {
-        const subnet = await getNextAvailableOrgSubnet();
+        // TODO: Why would each org have to have its own subnet?
+        // const subnet = await getNextAvailableOrgSubnet();
+        // Just hard code the subnet for now for everyone
+        const subnet = config.getRawConfig().orgs.subnet_group;
 
         return response<PickOrgDefaultsResponse>(res, {
             data: {

@@ -11,7 +11,8 @@ import {
     KeyRound,
     TicketCheck,
     User,
-    Globe
+    Globe,
+    MonitorUp
 } from "lucide-react";
 
 export type SidebarNavSection = {
@@ -19,7 +20,7 @@ export type SidebarNavSection = {
     items: SidebarNavItem[];
 };
 
-export const orgNavSections: SidebarNavSection[] = [
+export const orgNavSections = (enableClients: boolean = true): SidebarNavSection[] => [
     {
         heading: "General",
         items: [
@@ -33,11 +34,16 @@ export const orgNavSections: SidebarNavSection[] = [
                 href: "/{orgId}/settings/resources",
                 icon: <Waypoints className="h-4 w-4" />
             },
+            ...(enableClients ? [{
+                title: "sidebarClients",
+                href: "/{orgId}/settings/clients",
+                icon: <MonitorUp className="h-4 w-4" />
+            }] : []),
             {
                 title: "sidebarDomains",
                 href: "/{orgId}/settings/domains",
                 icon: <Globe className="h-4 w-4" />
-            }
+            },
         ]
     },
     {

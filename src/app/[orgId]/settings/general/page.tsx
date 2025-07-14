@@ -35,7 +35,7 @@ import {
     SettingsSectionFooter
 } from "@app/components/Settings";
 import { useUserContext } from "@app/hooks/useUserContext";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 
 // Updated schema to include subnet field
 const GeneralFormSchema = z.object({
@@ -53,6 +53,7 @@ export default function GeneralPage() {
     const api = createApiClient(useEnvContext());
     const { user } = useUserContext();
     const t = useTranslations();
+    const { env } = useEnvContext();
 
     const [loadingDelete, setLoadingDelete] = useState(false);
     const [loadingSave, setLoadingSave] = useState(false);
@@ -73,8 +74,8 @@ export default function GeneralPage() {
                 `/org/${org?.org.orgId}`
             );
             toast({
-                title: t('orgDeleted'),
-                description: t('orgDeletedMessage')
+                title: t("orgDeleted"),
+                description: t("orgDeletedMessage")
             });
             if (res.status === 200) {
                 pickNewOrgAndNavigate();
@@ -83,8 +84,8 @@ export default function GeneralPage() {
             console.error(err);
             toast({
                 variant: "destructive",
-                title: t('orgErrorDelete'),
-                description: formatAxiosError(err, t('orgErrorDeleteMessage'))
+                title: t("orgErrorDelete"),
+                description: formatAxiosError(err, t("orgErrorDeleteMessage"))
             });
         } finally {
             setLoadingDelete(false);
@@ -111,8 +112,8 @@ export default function GeneralPage() {
             console.error(err);
             toast({
                 variant: "destructive",
-                title: t('orgErrorFetch'),
-                description: formatAxiosError(err, t('orgErrorFetchMessage'))
+                title: t("orgErrorFetch"),
+                description: formatAxiosError(err, t("orgErrorFetchMessage"))
             });
         }
     }
@@ -126,16 +127,16 @@ export default function GeneralPage() {
             })
             .then(() => {
                 toast({
-                    title: t('orgUpdated'),
-                    description: t('orgUpdatedDescription')
+                    title: t("orgUpdated"),
+                    description: t("orgUpdatedDescription")
                 });
                 router.refresh();
             })
             .catch((e) => {
                 toast({
                     variant: "destructive",
-                    title: t('orgErrorUpdate'),
-                    description: formatAxiosError(e, t('orgErrorUpdateMessage'))
+                    title: t("orgErrorUpdate"),
+                    description: formatAxiosError(e, t("orgErrorUpdateMessage"))
                 });
             })
             .finally(() => {
@@ -153,28 +154,26 @@ export default function GeneralPage() {
                 dialog={
                     <div>
                         <p className="mb-2">
-                            {t('orgQuestionRemove', {selectedOrg: org?.org.name})}
+                            {t("orgQuestionRemove", {
+                                selectedOrg: org?.org.name
+                            })}
                         </p>
-                        <p className="mb-2">
-                            {t('orgMessageRemove')}
-                        </p>
-                        <p>
-                            {t('orgMessageConfirm')}
-                        </p>
+                        <p className="mb-2">{t("orgMessageRemove")}</p>
+                        <p>{t("orgMessageConfirm")}</p>
                     </div>
                 }
-                buttonText={t('orgDeleteConfirm')}
+                buttonText={t("orgDeleteConfirm")}
                 onConfirm={deleteOrg}
                 string={org?.org.name || ""}
-                title={t('orgDelete')}
+                title={t("orgDelete")}
             />
             <SettingsSection>
                 <SettingsSectionHeader>
                     <SettingsSectionTitle>
-                        {t('orgGeneralSettings')}
+                        {t("orgGeneralSettings")}
                     </SettingsSectionTitle>
                     <SettingsSectionDescription>
-                        {t('orgGeneralSettingsDescription')}
+                        {t("orgGeneralSettingsDescription")}
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
                 <SettingsSectionBody>
@@ -190,37 +189,40 @@ export default function GeneralPage() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('name')}</FormLabel>
+                                            <FormLabel>{t("name")}</FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
                                             <FormMessage />
                                             <FormDescription>
-                                                {t('orgDisplayName')}
+                                                {t("orgDisplayName")}
                                             </FormDescription>
                                         </FormItem>
                                     )}
                                 />
-
-                                {/* <FormField */}
-                                {/*     control={form.control} */}
-                                {/*     name="subnet" */}
-                                {/*     render={({ field }) => ( */}
-                                {/*         <FormItem> */}
-                                {/*             <FormLabel>Subnet</FormLabel> */}
-                                {/*             <FormControl> */}
-                                {/*                 <Input */}
-                                {/*                     {...field} */}
-                                {/*                     disabled={true} */}
-                                {/*                 /> */}
-                                {/*             </FormControl> */}
-                                {/*             <FormMessage /> */}
-                                {/*             <FormDescription> */}
-                                {/*                 The subnet for this organization's network configuration. */}
-                                {/*             </FormDescription> */}
-                                {/*         </FormItem> */}
-                                {/*     )} */}
-                                {/* /> */}
+                                {env.flags.enableClients && (
+                                    <FormField
+                                        control={form.control}
+                                        name="subnet"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Subnet</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        {...field}
+                                                        disabled={true}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                                <FormDescription>
+                                                    The subnet for this
+                                                    organization's network
+                                                    configuration.
+                                                </FormDescription>
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                             </form>
                         </Form>
                     </SettingsSectionForm>
@@ -232,15 +234,17 @@ export default function GeneralPage() {
                         loading={loadingSave}
                         disabled={loadingSave}
                     >
-                        {t('saveGeneralSettings')}
+                        {t("saveGeneralSettings")}
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
             <SettingsSection>
                 <SettingsSectionHeader>
-                    <SettingsSectionTitle>{t('orgDangerZone')}</SettingsSectionTitle>
+                    <SettingsSectionTitle>
+                        {t("orgDangerZone")}
+                    </SettingsSectionTitle>
                     <SettingsSectionDescription>
-                        {t('orgDangerZoneDescription')}
+                        {t("orgDangerZoneDescription")}
                     </SettingsSectionDescription>
                 </SettingsSectionHeader>
                 <SettingsSectionFooter>
@@ -251,7 +255,7 @@ export default function GeneralPage() {
                         loading={loadingDelete}
                         disabled={loadingDelete}
                     >
-                        {t('orgDelete')}
+                        {t("orgDelete")}
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
