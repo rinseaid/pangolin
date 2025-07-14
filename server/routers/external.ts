@@ -794,17 +794,17 @@ authRouter.get("/initial-setup-complete", auth.initialSetupComplete);
 
 // Security Key routes
 authRouter.post(
-    "/security-key/register/start", 
+    "/security-key/register/start",
+    verifySessionUserMiddleware,
     rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 5, // Allow 5 security key registrations per 15 minutes per IP
-        keyGenerator: (req) => `securityKeyRegister:${req.ip}:${req.user?.userId}`,
+        max: 5, // Allow 5 security key registrations per 15 minutes
+        keyGenerator: (req) => `securityKeyRegister:${req.user?.userId}`,
         handler: (req, res, next) => {
             const message = `You can only register ${5} security keys every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         }
     }),
-    verifySessionUserMiddleware, 
     auth.startRegistration
 );
 authRouter.post("/security-key/register/verify", verifySessionUserMiddleware, auth.verifyRegistration);
