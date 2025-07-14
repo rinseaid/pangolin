@@ -958,6 +958,8 @@
     "licenseTierProfessionalRequiredDescription": "This feature is only available in the Professional Edition.",
     "actionGetOrg": "Get Organization",
     "actionUpdateOrg": "Update Organization",
+    "actionUpdateUser": "Update User",
+    "actionGetUser": "Get User",
     "actionGetOrgUser": "Get Organization User",
     "actionListOrgDomains": "List Organization Domains",
     "actionCreateSite": "Create Site",
@@ -1158,5 +1160,8 @@
     "securityKeyRemovedTooQuickly": "Please keep your security key connected until the sign-in process completes.",
     "securityKeyNotSupported": "Your security key may not be compatible. Please try a different security key.",
     "securityKeyUnknownError": "There was a problem using your security key. Please try again.",
-    "twoFactorRequired": "Two-factor authentication is required to register a security key."
+    "twoFactorRequired": "Two-factor authentication is required to register a security key.",
+    "twoFactor": "Two-Factor Authentication",
+    "adminEnabled2FaOnYourAccount": "Your administrator has enabled two-factor authentication for {email}. Please complete the setup process to continue.",
+    "continueToApplication": "Continue to Application"
 }

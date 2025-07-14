@@ -20,8 +20,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useUserContext } from "@app/hooks/useUserContext";
 import Disable2FaForm from "./Disable2FaForm";
-import Enable2FaForm from "./Enable2FaForm";
 import SecurityKeyForm from "./SecurityKeyForm";
+import Enable2FaDialog from "./Enable2FaDialog";
 import SupporterStatus from "./SupporterStatus";
 import { UserType } from "@server/types/UserTypes";
 import LocaleSwitcher from '@app/components/LocaleSwitcher';
@@ -72,7 +72,7 @@ export default function ProfileIcon() {
 
     return (
         <>
-            <Enable2FaForm open={openEnable2fa} setOpen={setOpenEnable2fa} />
+            <Enable2FaDialog open={openEnable2fa} setOpen={setOpenEnable2fa} />
             <Disable2FaForm open={openDisable2fa} setOpen={setOpenDisable2fa} />
             <SecurityKeyForm open={openSecurityKey} setOpen={setOpenSecurityKey} />
 

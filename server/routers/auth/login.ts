@@ -21,10 +21,7 @@ import { UserType } from "@server/types/UserTypes";
 
 export const loginBodySchema = z
     .object({
-        email: z
-            .string()
-            .toLowerCase()
-            .email(),
+        email: z.string().toLowerCase().email(),
         password: z.string(),
         code: z.string().optional()
     })
@@ -38,8 +35,6 @@ export type LoginResponse = {
     useSecurityKey?: boolean;
     twoFactorSetupRequired?: boolean;
 };
-
-export const dynamic = "force-dynamic";
 
 export async function login(
     req: Request,
@@ -127,18 +122,20 @@ export async function login(
             });
         }
 
-        if (existingUser.twoFactorEnabled) {
-            // If 2FA is enabled but no secret exists, force setup
-            if (!existingUser.twoFactorSecret) {
-                return response<LoginResponse>(res, {
-                    data: { twoFactorSetupRequired: true },
-                    success: true,
-                    error: false,
-                    message: "Two-factor authentication setup required",
-                    status: HttpCode.ACCEPTED
-                });
-            }
+        if (
+            existingUser.twoFactorSetupRequested &&
+            !existingUser.twoFactorEnabled
+        ) {
+            return response<LoginResponse>(res, {
+                data: { twoFactorSetupRequired: true },
+                success: true,
+                error: false,
+                message: "Two-factor authentication setup required",
+                status: HttpCode.ACCEPTED
+            });
+        }
 
+        if (existingUser.twoFactorEnabled) {
             if (!code) {
                 return response<{ codeRequested: boolean }>(res, {
                     data: { codeRequested: true },
@@ -151,7 +148,7 @@ export async function login(
 
             const validOTP = await verifyTotpCode(
                 code,
-                existingUser.twoFactorSecret,
+                existingUser.twoFactorSecret!,
                 existingUser.userId
             );
 
