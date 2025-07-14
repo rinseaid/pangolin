@@ -36,6 +36,7 @@ import {
 } from "@app/components/Settings";
 import { useUserContext } from "@app/hooks/useUserContext";
 import { useTranslations } from "next-intl";
+import { build } from "@server/build";
 
 // Updated schema to include subnet field
 const GeneralFormSchema = z.object({
@@ -238,27 +239,29 @@ export default function GeneralPage() {
                     </Button>
                 </SettingsSectionFooter>
             </SettingsSection>
-            <SettingsSection>
-                <SettingsSectionHeader>
-                    <SettingsSectionTitle>
-                        {t("orgDangerZone")}
-                    </SettingsSectionTitle>
-                    <SettingsSectionDescription>
-                        {t("orgDangerZoneDescription")}
-                    </SettingsSectionDescription>
-                </SettingsSectionHeader>
-                <SettingsSectionFooter>
-                    <Button
-                        variant="destructive"
-                        onClick={() => setIsDeleteModalOpen(true)}
-                        className="flex items-center gap-2"
-                        loading={loadingDelete}
-                        disabled={loadingDelete}
-                    >
-                        {t("orgDelete")}
-                    </Button>
-                </SettingsSectionFooter>
-            </SettingsSection>
+            {build === "oss" && (
+                <SettingsSection>
+                    <SettingsSectionHeader>
+                        <SettingsSectionTitle>
+                            {t("orgDangerZone")}
+                        </SettingsSectionTitle>
+                        <SettingsSectionDescription>
+                            {t("orgDangerZoneDescription")}
+                        </SettingsSectionDescription>
+                    </SettingsSectionHeader>
+                    <SettingsSectionFooter>
+                        <Button
+                            variant="destructive"
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            className="flex items-center gap-2"
+                            loading={loadingDelete}
+                            disabled={loadingDelete}
+                        >
+                            {t("orgDelete")}
+                        </Button>
+                    </SettingsSectionFooter>
+                </SettingsSection>
+            )}
         </SettingsContainer>
     );
 }
