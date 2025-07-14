@@ -339,34 +339,32 @@ export default function ReverseProxyTargets(props: {
                 await api.delete(`/target/${targetId}`);
             }
 
-            // Save sticky session setting
-            const stickySessionData = targetsSettingsForm.getValues();
-            await api.post(`/resource/${params.resourceId}`, {
-                stickySession: stickySessionData.stickySession
-            });
-            updateResource({ stickySession: stickySessionData.stickySession });
+            if (resource.http) {
+                // Gather all settings
+                const stickySessionData = targetsSettingsForm.getValues();
+                const tlsData = tlsSettingsForm.getValues();
+                const proxyData = proxySettingsForm.getValues();
 
-            // Save TLS settings
-            const tlsData = tlsSettingsForm.getValues();
-            await api.post(`/resource/${params.resourceId}`, {
-                ssl: tlsData.ssl,
-                tlsServerName: tlsData.tlsServerName || null
-            });
-            updateResource({
-                ...resource,
-                ssl: tlsData.ssl,
-                tlsServerName: tlsData.tlsServerName || null
-            });
+                // Combine into one payload
+                const payload = {
+                    stickySession: stickySessionData.stickySession,
+                    ssl: tlsData.ssl,
+                    tlsServerName: tlsData.tlsServerName || null,
+                    setHostHeader: proxyData.setHostHeader || null
+                };
 
-            // Save proxy settings
-            const proxyData = proxySettingsForm.getValues();
-            await api.post(`/resource/${params.resourceId}`, {
-                setHostHeader: proxyData.setHostHeader || null
-            });
-            updateResource({
-                ...resource,
-                setHostHeader: proxyData.setHostHeader || null
-            });
+                // Single API call to update all settings
+                await api.post(`/resource/${params.resourceId}`, payload);
+
+                // Update local resource context
+                updateResource({
+                    ...resource,
+                    stickySession: stickySessionData.stickySession,
+                    ssl: tlsData.ssl,
+                    tlsServerName: tlsData.tlsServerName || null,
+                    setHostHeader: proxyData.setHostHeader || null
+                });
+            }
 
             toast({
                 title: t("settingsUpdated"),

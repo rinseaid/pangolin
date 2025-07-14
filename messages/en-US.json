@@ -1213,5 +1213,6 @@
     "domainNotFoundDescription": "This resource is disabled because the domain no longer exists our system. Please set a new domain for this resource.",
     "failed": "Failed",
     "createNewOrgDescription": "Create a new organization",
-    "organization": "Organization"
+    "organization": "Organization",
+    "port": "Port"
 }

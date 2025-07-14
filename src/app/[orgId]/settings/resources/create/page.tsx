@@ -165,7 +165,8 @@ export default function Page() {
                 const httpData = httpForm.getValues();
                     Object.assign(payload, {
                         subdomain: httpData.subdomain,
-                        domainId: httpData.domainId
+                        domainId: httpData.domainId,
+                        protocol: "tcp",
                     });
             } else {
                 const tcpUdpData = tcpUdpForm.getValues();

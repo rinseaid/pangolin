@@ -162,25 +162,21 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
                 const resourceRow = row.original;
                 return (
                     <div className="flex items-center space-x-2">
-                        {!resourceRow.domainId ? (
+                        {!resourceRow.http ? (
+                            <CopyToClipboard
+                                text={resourceRow.proxyPort!.toString()}
+                                isLink={false}
+                            />
+                        ) : !resourceRow.domainId ? (
                             <InfoPopup
                                 info={t("domainNotFoundDescription")}
                                 text={t("domainNotFound")}
                             />
                         ) : (
-                            <div>
-                                {!resourceRow.http ? (
-                                    <CopyToClipboard
-                                        text={resourceRow.proxyPort!.toString()}
-                                        isLink={false}
-                                    />
-                                ) : (
-                                    <CopyToClipboard
-                                        text={resourceRow.domain}
-                                        isLink={true}
-                                    />
-                                )}
-                            </div>
+                            <CopyToClipboard
+                                text={resourceRow.domain}
+                                isLink={true}
+                            />
                         )}
                     </div>
                 );
@@ -228,9 +224,11 @@ export default function SitesTable({ resources, orgId }: ResourcesTableProps) {
             cell: ({ row }) => (
                 <Switch
                     defaultChecked={
-                        !row.original.domainId ? false : row.original.enabled
+                        row.original.http
+                            ? (!!row.original.domainId && row.original.enabled)
+                            : row.original.enabled
                     }
-                    disabled={!row.original.domainId}
+                    disabled={row.original.http ? !row.original.domainId : false}
                     onCheckedChange={(val) =>
                         toggleResourceEnabled(val, row.original.id)
                     }
