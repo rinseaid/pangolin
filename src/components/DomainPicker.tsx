@@ -21,6 +21,7 @@ import { AxiosResponse } from "axios";
 import { cn } from "@/lib/cn";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
+import { build } from "@server/build";
 
 type OrganizationDomain = {
     domainId: string;
@@ -95,7 +96,9 @@ export default function DomainPicker({
                     const domains = response.data.data.domains
                         .filter(
                             (domain) =>
-                                domain.type === "ns" || domain.type === "cname" || domain.type === "wildcard"
+                                domain.type === "ns" ||
+                                domain.type === "cname" ||
+                                domain.type === "wildcard"
                         )
                         .map((domain) => ({
                             ...domain,
@@ -198,7 +201,7 @@ export default function DomainPicker({
                         -(baseDomainLower.length + 1)
                     );
                     // Only allow one level up (no dots in subdomain)
-                    if (!subdomain.includes('.')) {
+                    if (!subdomain.includes(".")) {
                         options.push({
                             id: `org-${orgDomain.domainId}`,
                             domain: userInput,
@@ -220,7 +223,7 @@ export default function DomainPicker({
                 domain: option.fullDomain,
                 type: "provided",
                 domainNamespaceId: option.domainNamespaceId,
-                domainId: option.domainId,
+                domainId: option.domainId
             });
         });
 
@@ -277,8 +280,8 @@ export default function DomainPicker({
                     type: "organization",
                     subdomain: option.subdomain || undefined,
                     fullDomain: option.domain,
-                    baseDomain: option.subdomain 
-                        ? option.domain.split('.').slice(1).join('.')
+                    baseDomain: option.subdomain
+                        ? option.domain.split(".").slice(1).join(".")
                         : option.domain
                 });
             }
@@ -339,9 +342,11 @@ export default function DomainPicker({
                         <TabsTrigger value="organization">
                             {t("domainPickerTabOrganization")}
                         </TabsTrigger>
-                        <TabsTrigger value="provided">
-                            {t("domainPickerTabProvided")}
-                        </TabsTrigger>
+                        {build == "saas" && (
+                            <TabsTrigger value="provided">
+                                {t("domainPickerTabProvided")}
+                            </TabsTrigger>
+                        )}
                     </TabsList>
                 </Tabs>
                 <Button
@@ -406,7 +411,8 @@ export default function DomainPicker({
                                                 : "cursor-not-allowed opacity-60"
                                         )}
                                         onClick={() =>
-                                            option.verified && handleOptionSelect(option)
+                                            option.verified &&
+                                            handleOptionSelect(option)
                                         }
                                     >
                                         <div className="flex items-center justify-between">

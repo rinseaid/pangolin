@@ -63,7 +63,7 @@ async function copyInDomains() {
             if (existingDomainKeys.has(domainId)) {
                 await trx
                     .update(domains)
-                    .set({ baseDomain })
+                    .set({ baseDomain, verified: true, type: "wildcard" })
                     .where(eq(domains.domainId, domainId))
                     .execute();
             } else {
