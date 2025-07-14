@@ -26,7 +26,7 @@ type OrganizationDomain = {
     domainId: string;
     baseDomain: string;
     verified: boolean;
-    type: "ns" | "cname";
+    type: "ns" | "cname" | "wildcard";
 };
 
 type AvailableOption = {
@@ -40,7 +40,7 @@ type DomainOption = {
     domain: string;
     type: "organization" | "provided";
     verified?: boolean;
-    domainType?: "ns" | "cname";
+    domainType?: "ns" | "cname" | "wildcard";
     domainId?: string;
     domainNamespaceId?: string;
     subdomain?: string;
@@ -95,11 +95,11 @@ export default function DomainPicker({
                     const domains = response.data.data.domains
                         .filter(
                             (domain) =>
-                                domain.type === "ns" || domain.type === "cname"
+                                domain.type === "ns" || domain.type === "cname" || domain.type === "wildcard"
                         )
                         .map((domain) => ({
                             ...domain,
-                            type: domain.type as "ns" | "cname"
+                            type: domain.type as "ns" | "cname" | "wildcard"
                         }));
                     setOrganizationDomains(domains);
                 }
@@ -175,6 +175,41 @@ export default function DomainPicker({
                         domainId: orgDomain.domainId
                     });
                 }
+            } else if (orgDomain.type === "wildcard") {
+                // For wildcard domains, allow the base domain or one level up
+                const userInputLower = userInput.toLowerCase();
+                const baseDomainLower = orgDomain.baseDomain.toLowerCase();
+
+                // Check if user input is exactly the base domain
+                if (userInputLower === baseDomainLower) {
+                    options.push({
+                        id: `org-${orgDomain.domainId}`,
+                        domain: orgDomain.baseDomain,
+                        type: "organization",
+                        verified: orgDomain.verified,
+                        domainType: "wildcard",
+                        domainId: orgDomain.domainId
+                    });
+                }
+                // Check if user input is one level up (subdomain.baseDomain)
+                else if (userInputLower.endsWith(`.${baseDomainLower}`)) {
+                    const subdomain = userInputLower.slice(
+                        0,
+                        -(baseDomainLower.length + 1)
+                    );
+                    // Only allow one level up (no dots in subdomain)
+                    if (!subdomain.includes('.')) {
+                        options.push({
+                            id: `org-${orgDomain.domainId}`,
+                            domain: userInput,
+                            type: "organization",
+                            verified: orgDomain.verified,
+                            domainType: "wildcard",
+                            domainId: orgDomain.domainId,
+                            subdomain: subdomain
+                        });
+                    }
+                }
             }
         });
 
@@ -235,6 +270,16 @@ export default function DomainPicker({
                     subdomain: subdomain || undefined,
                     fullDomain: option.domain,
                     baseDomain: option.domain
+                });
+            } else if (option.domainType === "wildcard") {
+                onDomainChange?.({
+                    domainId: option.domainId!,
+                    type: "organization",
+                    subdomain: option.subdomain || undefined,
+                    fullDomain: option.domain,
+                    baseDomain: option.subdomain 
+                        ? option.domain.split('.').slice(1).join('.')
+                        : option.domain
                 });
             }
         } else if (option.type === "provided") {
