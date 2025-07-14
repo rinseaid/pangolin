@@ -7,7 +7,10 @@ export const domains = sqliteTable("domains", {
     configManaged: integer("configManaged", { mode: "boolean" })
         .notNull()
         .default(false),
-    type: text("type") // "ns", "cname", "a"
+    type: text("type"), // "ns", "cname", "a"
+    verified: integer("verified", { mode: "boolean" }).notNull().default(false),
+    failed: integer("failed", { mode: "boolean" }).notNull().default(false),
+    tries: integer("tries").notNull().default(0)
 });
 
 export const orgs = sqliteTable("orgs", {
