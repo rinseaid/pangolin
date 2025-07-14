@@ -42,10 +42,11 @@ import {
     InfoSectionTitle
 } from "@app/components/InfoSection";
 import { useOrgContext } from "@app/hooks/useOrgContext";
+import { build } from "@server/build";
 
 const formSchema = z.object({
     baseDomain: z.string().min(1, "Domain is required"),
-    type: z.enum(["ns", "cname"])
+    type: z.enum(["ns", "cname", "wildcard"])
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -73,7 +74,7 @@ export default function CreateDomainForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
             baseDomain: "",
-            type: "ns"
+            type: build == "oss" ? "wildcard" : "ns"
         }
     });
 
@@ -111,6 +112,30 @@ export default function CreateDomainForm({
     const domainType = form.watch("type");
     const baseDomain = form.watch("baseDomain");
 
+    let domainOptions: any = [];
+    if (build == "enterprise" || build == "saas") {
+        domainOptions = [
+            {
+                id: "ns",
+                title: t("selectDomainTypeNsName"),
+                description: t("selectDomainTypeNsDescription")
+            },
+            {
+                id: "cname",
+                title: t("selectDomainTypeCnameName"),
+                description: t("selectDomainTypeCnameDescription")
+            }
+        ];
+    } else if (build == "oss") {
+        domainOptions = [
+            {
+                id: "wildcard",
+                title: t("selectDomainTypeWildcardName"),
+                description: t("selectDomainTypeWildcardDescription")
+            }
+        ];
+    }
+
     return (
         <Credenza
             open={open}
@@ -140,26 +165,7 @@ export default function CreateDomainForm({
                                     render={({ field }) => (
                                         <FormItem>
                                             <StrategySelect
-                                                options={[
-                                                    {
-                                                        id: "ns",
-                                                        title: t(
-                                                            "selectDomainTypeNsName"
-                                                        ),
-                                                        description: t(
-                                                            "selectDomainTypeNsDescription"
-                                                        )
-                                                    },
-                                                    {
-                                                        id: "cname",
-                                                        title: t(
-                                                            "selectDomainTypeCnameName"
-                                                        ),
-                                                        description: t(
-                                                            "selectDomainTypeCnameDescription"
-                                                        )
-                                                    }
-                                                ]}
+                                                options={domainOptions}
                                                 defaultValue={field.value}
                                                 onChange={field.onChange}
                                                 cols={1}
@@ -258,141 +264,149 @@ export default function CreateDomainForm({
                                         </div>
                                     )}
 
-                                {domainType === "cname" && (
-                                    <>
-                                        {createdDomain.cnameRecords &&
-                                            createdDomain.cnameRecords.length >
-                                                0 && (
-                                                <div>
-                                                    <h3 className="font-medium mb-3">
-                                                        CNAME Records
-                                                    </h3>
-                                                    <InfoSections cols={1}>
-                                                        {createdDomain.cnameRecords.map(
-                                                            (
-                                                                cnameRecord,
-                                                                index
-                                                            ) => (
-                                                                <InfoSection
-                                                                    key={index}
-                                                                >
-                                                                    <InfoSectionTitle>
-                                                                        Record{" "}
-                                                                        {index +
-                                                                            1}
-                                                                    </InfoSectionTitle>
-                                                                    <InfoSectionContent>
-                                                                        <div className="space-y-2">
-                                                                            <div className="flex justify-between items-center">
-                                                                                <span className="text-sm font-medium">
-                                                                                    Type:
-                                                                                </span>
-                                                                                <span className="text-sm font-mono">
-                                                                                    CNAME
-                                                                                </span>
+                                {domainType === "cname" ||
+                                    (domainType == "wildcard" && (
+                                        <>
+                                            {createdDomain.cnameRecords &&
+                                                createdDomain.cnameRecords
+                                                    .length > 0 && (
+                                                    <div>
+                                                        <h3 className="font-medium mb-3">
+                                                            CNAME Records
+                                                        </h3>
+                                                        <InfoSections cols={1}>
+                                                            {createdDomain.cnameRecords.map(
+                                                                (
+                                                                    cnameRecord,
+                                                                    index
+                                                                ) => (
+                                                                    <InfoSection
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                    >
+                                                                        <InfoSectionTitle>
+                                                                            Record{" "}
+                                                                            {index +
+                                                                                1}
+                                                                        </InfoSectionTitle>
+                                                                        <InfoSectionContent>
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span className="text-sm font-medium">
+                                                                                        Type:
+                                                                                    </span>
+                                                                                    <span className="text-sm font-mono">
+                                                                                        CNAME
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span className="text-sm font-medium">
+                                                                                        Name:
+                                                                                    </span>
+                                                                                    <span className="text-sm font-mono">
+                                                                                        {
+                                                                                            cnameRecord.baseDomain
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span className="text-sm font-medium">
+                                                                                        Value:
+                                                                                    </span>
+                                                                                    <CopyToClipboard
+                                                                                        text={
+                                                                                            cnameRecord.value
+                                                                                        }
+                                                                                    />
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="flex justify-between items-center">
-                                                                                <span className="text-sm font-medium">
-                                                                                    Name:
-                                                                                </span>
-                                                                                <span className="text-sm font-mono">
-                                                                                    {
-                                                                                        cnameRecord.baseDomain
-                                                                                    }
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-center">
-                                                                                <span className="text-sm font-medium">
-                                                                                    Value:
-                                                                                </span>
-                                                                                <CopyToClipboard
-                                                                                    text={
-                                                                                        cnameRecord.value
-                                                                                    }
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </InfoSectionContent>
-                                                                </InfoSection>
-                                                            )
-                                                        )}
-                                                    </InfoSections>
-                                                </div>
-                                            )}
+                                                                        </InfoSectionContent>
+                                                                    </InfoSection>
+                                                                )
+                                                            )}
+                                                        </InfoSections>
+                                                    </div>
+                                                )}
 
-                                        {createdDomain.txtRecords &&
-                                            createdDomain.txtRecords.length >
-                                                0 && (
-                                                <div>
-                                                    <h3 className="font-medium mb-3">
-                                                        TXT Records
-                                                    </h3>
-                                                    <InfoSections cols={1}>
-                                                        {createdDomain.txtRecords.map(
-                                                            (
-                                                                txtRecord,
-                                                                index
-                                                            ) => (
-                                                                <InfoSection
-                                                                    key={index}
-                                                                >
-                                                                    <InfoSectionTitle>
-                                                                        Record{" "}
-                                                                        {index +
-                                                                            1}
-                                                                    </InfoSectionTitle>
-                                                                    <InfoSectionContent>
-                                                                        <div className="space-y-2">
-                                                                            <div className="flex justify-between items-center">
-                                                                                <span className="text-sm font-medium">
-                                                                                    Type:
-                                                                                </span>
-                                                                                <span className="text-sm font-mono">
-                                                                                    TXT
-                                                                                </span>
+                                            {createdDomain.txtRecords &&
+                                                createdDomain.txtRecords
+                                                    .length > 0 && (
+                                                    <div>
+                                                        <h3 className="font-medium mb-3">
+                                                            TXT Records
+                                                        </h3>
+                                                        <InfoSections cols={1}>
+                                                            {createdDomain.txtRecords.map(
+                                                                (
+                                                                    txtRecord,
+                                                                    index
+                                                                ) => (
+                                                                    <InfoSection
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                    >
+                                                                        <InfoSectionTitle>
+                                                                            Record{" "}
+                                                                            {index +
+                                                                                1}
+                                                                        </InfoSectionTitle>
+                                                                        <InfoSectionContent>
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span className="text-sm font-medium">
+                                                                                        Type:
+                                                                                    </span>
+                                                                                    <span className="text-sm font-mono">
+                                                                                        TXT
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span className="text-sm font-medium">
+                                                                                        Name:
+                                                                                    </span>
+                                                                                    <span className="text-sm font-mono">
+                                                                                        {
+                                                                                            txtRecord.baseDomain
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span className="text-sm font-medium">
+                                                                                        Value:
+                                                                                    </span>
+                                                                                    <CopyToClipboard
+                                                                                        text={
+                                                                                            txtRecord.value
+                                                                                        }
+                                                                                    />
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="flex justify-between items-center">
-                                                                                <span className="text-sm font-medium">
-                                                                                    Name:
-                                                                                </span>
-                                                                                <span className="text-sm font-mono">
-                                                                                    {
-                                                                                        txtRecord.baseDomain
-                                                                                    }
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-center">
-                                                                                <span className="text-sm font-medium">
-                                                                                    Value:
-                                                                                </span>
-                                                                                <CopyToClipboard
-                                                                                    text={
-                                                                                        txtRecord.value
-                                                                                    }
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </InfoSectionContent>
-                                                                </InfoSection>
-                                                            )
-                                                        )}
-                                                    </InfoSections>
-                                                </div>
-                                            )}
-                                    </>
-                                )}
+                                                                        </InfoSectionContent>
+                                                                    </InfoSection>
+                                                                )
+                                                            )}
+                                                        </InfoSections>
+                                                    </div>
+                                                )}
+                                        </>
+                                    ))}
                             </div>
 
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="font-semibold">
-                                    Save These Records
-                                </AlertTitle>
-                                <AlertDescription>
-                                    Make sure to save these DNS records as you
-                                    will not see them again.
-                                </AlertDescription>
-                            </Alert>
+                            {build == "saas" ||
+                                (build == "enterprise" && (
+                                    <Alert variant="destructive">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle className="font-semibold">
+                                            Save These Records
+                                        </AlertTitle>
+                                        <AlertDescription>
+                                            Make sure to save these DNS records
+                                            as you will not see them again.
+                                        </AlertDescription>
+                                    </Alert>
+                                ))}
 
                             <Alert variant="info">
                                 <AlertTriangle className="h-4 w-4" />

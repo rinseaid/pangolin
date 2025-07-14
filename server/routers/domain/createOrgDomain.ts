@@ -10,6 +10,7 @@ import { subdomainSchema } from "@server/lib/schemas";
 import { generateId } from "@server/auth/sessions/app";
 import { eq, and } from "drizzle-orm";
 import { isValidDomain } from "@server/lib/validators";
+import { build } from "@server/build";
 
 const paramsSchema = z
     .object({
@@ -19,7 +20,7 @@ const paramsSchema = z
 
 const bodySchema = z
     .object({
-        type: z.enum(["ns", "cname"]),
+        type: z.enum(["ns", "cname", "wildcard"]),
         baseDomain: subdomainSchema
     })
     .strict();
@@ -67,6 +68,26 @@ export async function createOrgDomain(
 
         const { orgId } = parsedParams.data;
         const { type, baseDomain } = parsedBody.data;
+
+        if (build == "oss") {
+            if (type !== "wildcard") {
+                return next(
+                    createHttpError(
+                        HttpCode.NOT_IMPLEMENTED,
+                        "Creating NS or CNAME records is not supported"
+                    )
+                );
+            }
+        } else if (build == "enterprise" || build == "saas") {
+            if (type !== "ns" && type !== "cname") {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "Invalid domain type. Only NS, CNAME are allowed."
+                    )
+                );
+            }
+        }
 
         // Validate organization exists
         if (!isValidDomain(baseDomain)) {
@@ -132,7 +153,7 @@ export async function createOrgDomain(
                 .from(domains)
                 .where(eq(domains.verified, true));
 
-            if (type === "cname") {
+            if (type == "cname") {
                 // Block if a verified CNAME exists at the same name
                 const cnameExists = verifiedDomains.some(
                     (d) => d.type === "cname" && d.baseDomain === baseDomain
@@ -160,7 +181,7 @@ export async function createOrgDomain(
                         )
                     );
                 }
-            } else if (type === "ns") {
+            } else if (type == "ns") {
                 // Block if a verified NS exists at or below (same or subdomain)
                 const nsAtOrBelow = verifiedDomains.some(
                     (d) =>
@@ -176,6 +197,8 @@ export async function createOrgDomain(
                         )
                     );
                 }
+            } else if (type == "wildcard") {
+                // TODO: Figure out how to handle wildcards
             }
 
             const domainId = generateId(15);
@@ -185,7 +208,8 @@ export async function createOrgDomain(
                 .values({
                     domainId,
                     baseDomain,
-                    type
+                    type,
+                    verified: build == "oss" ? true : false
                 })
                 .returning();
 
@@ -212,6 +236,17 @@ export async function createOrgDomain(
                     {
                         value: `_acme-challenge.${domainId}.cname.fossorial.io`,
                         baseDomain: `_acme-challenge.${baseDomain}`
+                    }
+                ];
+            } else if (type === "wildcard") {
+                cnameRecords = [
+                    {
+                        value: `Server IP Address`,
+                        baseDomain: `*.${baseDomain}`
+                    },
+                    {
+                        value: `Server IP Address`,
+                        baseDomain: `${baseDomain}`
                     }
                 ];
             }

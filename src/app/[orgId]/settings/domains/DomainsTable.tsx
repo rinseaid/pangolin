@@ -106,6 +106,8 @@ export default function DomainsTable({ domains }: Props) {
                 return t("selectDomainTypeNsName");
             case "cname":
                 return t("selectDomainTypeCnameName");
+            case "wildcard":
+                return t("selectDomainTypeWildcardName");
             default:
                 return type;
         }

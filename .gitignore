@@ -34,3 +34,4 @@ bin
 test_event.json
 .idea/
 server/db/index.ts
+build.ts
