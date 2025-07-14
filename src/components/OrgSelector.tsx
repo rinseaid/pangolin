@@ -105,7 +105,7 @@ export function OrgSelector({ orgId, orgs, isCollapsed = false }: OrgSelectorPro
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="font-medium">{t('setupNewOrg')}</span>
-                                            <span className="text-xs text-muted-foreground">Create a new organization</span>
+                                            <span className="text-xs text-muted-foreground">{t('createNewOrgDescription')}</span>
                                         </div>
                                     </CommandItem>
                                 </CommandList>
@@ -129,7 +129,7 @@ export function OrgSelector({ orgId, orgs, isCollapsed = false }: OrgSelectorPro
                                     </div>
                                     <div className="flex flex-col flex-1">
                                         <span className="font-medium">{org.name}</span>
-                                        <span className="text-xs text-muted-foreground">Organization</span>
+                                        <span className="text-xs text-muted-foreground">{t('organization')}</span>
                                     </div>
                                     <Check
                                         className={cn(

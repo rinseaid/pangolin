@@ -1211,5 +1211,7 @@
     "domainPickerShowMore": "Show More",
     "domainNotFound": "Domain Not Found",
     "domainNotFoundDescription": "This resource is disabled because the domain no longer exists our system. Please set a new domain for this resource.",
-    "failed": "Failed"
+    "failed": "Failed",
+    "createNewOrgDescription": "Create a new organization",
+    "organization": "Organization"
 }
