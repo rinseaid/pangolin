@@ -20,7 +20,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useUserContext } from "@app/hooks/useUserContext";
 import Disable2FaForm from "./Disable2FaForm";
-import Enable2FaForm from "./Enable2FaForm";
+import SecurityKeyForm from "./SecurityKeyForm";
+import Enable2FaDialog from "./Enable2FaDialog";
 import SupporterStatus from "./SupporterStatus";
 import { UserType } from "@server/types/UserTypes";
 import LocaleSwitcher from "@app/components/LocaleSwitcher";
@@ -39,6 +40,7 @@ export default function ProfileIcon() {
 
     const [openEnable2fa, setOpenEnable2fa] = useState(false);
     const [openDisable2fa, setOpenDisable2fa] = useState(false);
+    const [openSecurityKey, setOpenSecurityKey] = useState(false);
 
     const t = useTranslations();
 
@@ -70,8 +72,12 @@ export default function ProfileIcon() {
 
     return (
         <>
-            <Enable2FaForm open={openEnable2fa} setOpen={setOpenEnable2fa} />
+            <Enable2FaDialog open={openEnable2fa} setOpen={setOpenEnable2fa} />
             <Disable2FaForm open={openDisable2fa} setOpen={setOpenDisable2fa} />
+            <SecurityKeyForm
+                open={openSecurityKey}
+                setOpen={setOpenSecurityKey}
+            />
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -104,6 +110,31 @@ export default function ProfileIcon() {
                             </p>
                         )}
                     </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {user?.type === UserType.Internal && (
+                        <>
+                            {!user.twoFactorEnabled && (
+                                <DropdownMenuItem
+                                    onClick={() => setOpenEnable2fa(true)}
+                                >
+                                    <span>{t("otpEnable")}</span>
+                                </DropdownMenuItem>
+                            )}
+                            {user.twoFactorEnabled && (
+                                <DropdownMenuItem
+                                    onClick={() => setOpenDisable2fa(true)}
+                                >
+                                    <span>{t("otpDisable")}</span>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                                onClick={() => setOpenSecurityKey(true)}
+                            >
+                                <span>{t("securityKeyManage")}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                        </>
+                    )}
                     <DropdownMenuSeparator />
                     {user?.type === UserType.Internal && (
                         <>

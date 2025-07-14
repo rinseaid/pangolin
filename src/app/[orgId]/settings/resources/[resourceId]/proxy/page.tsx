@@ -262,7 +262,19 @@ export default function ReverseProxyTargets(props: {
             // make sure that the target IP is within the site subnet
             const targetIp = data.ip;
             const subnet = site.subnet;
-            if (!isIPInSubnet(targetIp, subnet)) {
+            try {
+                if (!isIPInSubnet(targetIp, subnet)) {
+                    toast({
+                        variant: "destructive",
+                        title: t("targetWireGuardErrorInvalidIp"),
+                        description: t(
+                            "targetWireGuardErrorInvalidIpDescription"
+                        )
+                    });
+                    return;
+                }
+            } catch (error) {
+                console.error(error);
                 toast({
                     variant: "destructive",
                     title: t("targetWireGuardErrorInvalidIp"),
@@ -885,10 +897,8 @@ function isIPInSubnet(subnet: string, ip: string): boolean {
     const [subnetIP, maskBits] = subnet.split("/");
     const mask = parseInt(maskBits);
 
-    const t = useTranslations();
-
     if (mask < 0 || mask > 32) {
-        throw new Error(t("subnetMaskErrorInvalid"));
+        throw new Error("subnetMaskErrorInvalid");
     }
 
     // Convert IP addresses to binary numbers
@@ -905,17 +915,16 @@ function isIPInSubnet(subnet: string, ip: string): boolean {
 function ipToNumber(ip: string): number {
     // Validate IP address format
     const parts = ip.split(".");
-    const t = useTranslations();
 
     if (parts.length !== 4) {
-        throw new Error(t("ipAddressErrorInvalidFormat"));
+        throw new Error("ipAddressErrorInvalidFormat");
     }
 
     // Convert IP octets to 32-bit number
     return parts.reduce((num, octet) => {
         const oct = parseInt(octet);
         if (isNaN(oct) || oct < 0 || oct > 255) {
-            throw new Error(t("ipAddressErrorInvalidOctet"));
+            throw new Error("ipAddressErrorInvalidOctet");
         }
         return (num << 8) + oct;
     }, 0);

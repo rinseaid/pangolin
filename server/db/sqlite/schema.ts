@@ -147,6 +147,9 @@ export const users = sqliteTable("user", {
     twoFactorEnabled: integer("twoFactorEnabled", { mode: "boolean" })
         .notNull()
         .default(false),
+    twoFactorSetupRequested: integer("twoFactorSetupRequested", {
+        mode: "boolean"
+    }).default(false),
     twoFactorSecret: text("twoFactorSecret"),
     emailVerified: integer("emailVerified", { mode: "boolean" })
         .notNull()
@@ -155,6 +158,29 @@ export const users = sqliteTable("user", {
     serverAdmin: integer("serverAdmin", { mode: "boolean" })
         .notNull()
         .default(false)
+});
+
+export const securityKeys = sqliteTable("webauthnCredentials", {
+    credentialId: text("credentialId").primaryKey(),
+    userId: text("userId").notNull().references(() => users.userId, {
+        onDelete: "cascade"
+    }),
+    publicKey: text("publicKey").notNull(),
+    signCount: integer("signCount").notNull(),
+    transports: text("transports"),
+    name: text("name"),
+    lastUsed: text("lastUsed").notNull(),
+    dateCreated: text("dateCreated").notNull()
+});
+
+export const webauthnChallenge = sqliteTable("webauthnChallenge", {
+    sessionId: text("sessionId").primaryKey(),
+    challenge: text("challenge").notNull(),
+    securityKeyName: text("securityKeyName"),
+    userId: text("userId").references(() => users.userId, {
+        onDelete: "cascade"
+    }),
+    expiresAt: integer("expiresAt").notNull() // Unix timestamp
 });
 
 export const newts = sqliteTable("newt", {

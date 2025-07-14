@@ -132,6 +132,7 @@ export const users = pgTable("user", {
     }),
     passwordHash: varchar("passwordHash"),
     twoFactorEnabled: boolean("twoFactorEnabled").notNull().default(false),
+    twoFactorSetupRequested: boolean("twoFactorSetupRequested").default(false),
     twoFactorSecret: varchar("twoFactorSecret"),
     emailVerified: boolean("emailVerified").notNull().default(false),
     dateCreated: varchar("dateCreated").notNull(),
@@ -558,6 +559,30 @@ export const roleClients = pgTable("roleClients", {
     clientId: integer("clientId")
         .notNull()
         .references(() => clients.clientId, { onDelete: "cascade" })
+});
+
+export const securityKeys = pgTable("webauthnCredentials", {
+    credentialId: varchar("credentialId").primaryKey(),
+    userId: varchar("userId").notNull().references(() => users.userId, {
+        onDelete: "cascade"
+    }),
+    publicKey: varchar("publicKey").notNull(),
+    signCount: integer("signCount").notNull(),
+    transports: varchar("transports"),
+    name: varchar("name"),
+    lastUsed: varchar("lastUsed").notNull(),
+    dateCreated: varchar("dateCreated").notNull(),
+    securityKeyName: varchar("securityKeyName")
+});
+
+export const webauthnChallenge = pgTable("webauthnChallenge", {
+    sessionId: varchar("sessionId").primaryKey(),
+    challenge: varchar("challenge").notNull(),
+    securityKeyName: varchar("securityKeyName"),
+    userId: varchar("userId").references(() => users.userId, {
+        onDelete: "cascade"
+    }),
+    expiresAt: bigint("expiresAt", { mode: "number" }).notNull() // Unix timestamp
 });
 
 export type Org = InferSelectModel<typeof orgs>;
