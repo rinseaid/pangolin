@@ -29,7 +29,6 @@ import {
     FormMessage
 } from "@app/components/ui/form";
 import { Alert, AlertDescription } from "@app/components/ui/alert";
-import CreateSiteForm from "../[orgId]/settings/sites/CreateSiteForm";
 import { useTranslations } from "next-intl";
 
 type Step = "org" | "site" | "resources";
