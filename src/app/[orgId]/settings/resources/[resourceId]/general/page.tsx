@@ -118,13 +118,12 @@ export default function GeneralForm() {
         fullDomain: string;
     } | null>(null);
 
-    const GeneralFormSchema = z
-        .object({
-            enabled: z.boolean(),
-            subdomain: z.string().optional(),
-            name: z.string().min(1).max(255),
-            domainId: z.string().optional()
-        });
+    const GeneralFormSchema = z.object({
+        enabled: z.boolean(),
+        subdomain: z.string().optional(),
+        name: z.string().min(1).max(255),
+        domainId: z.string().optional()
+    });
 
     type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
 
@@ -197,7 +196,7 @@ export default function GeneralForm() {
                     enabled: data.enabled,
                     name: data.name,
                     subdomain: data.subdomain,
-                    domainId: data.domainId,
+                    domainId: data.domainId
                 }
             )
             .catch((e) => {
@@ -299,11 +298,9 @@ export default function GeneralForm() {
                                                                 defaultChecked={
                                                                     resource.enabled
                                                                 }
-                                                                label={
-                                                                    t(
-                                                                        "resourceEnable"
-                                                                    )
-                                                                }
+                                                                label={t(
+                                                                    "resourceEnable"
+                                                                )}
                                                                 onCheckedChange={(
                                                                     val
                                                                 ) =>
@@ -341,7 +338,7 @@ export default function GeneralForm() {
                                                 <Label>Domain</Label>
                                                 <div className="border p-2 rounded-md flex items-center justify-between">
                                                     <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                                        <Globe size="14"/>
+                                                        <Globe size="14" />
                                                         {resourceFullDomain}
                                                     </span>
                                                     <Button
@@ -438,7 +435,10 @@ export default function GeneralForm() {
                                                                 </Button>
                                                             </FormControl>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-full p-0" align="start">
+                                                        <PopoverContent
+                                                            className="w-full p-0"
+                                                            align="start"
+                                                        >
                                                             <Command>
                                                                 <CommandInput
                                                                     placeholder={t(
@@ -539,14 +539,26 @@ export default function GeneralForm() {
                             <CredenzaClose asChild>
                                 <Button variant="outline">{t("cancel")}</Button>
                             </CredenzaClose>
-                            <Button onClick={() => {
-                                if (selectedDomain) {
-                                    setResourceFullDomain(selectedDomain.fullDomain);
-                                    form.setValue("domainId", selectedDomain.domainId);
-                                    form.setValue("subdomain", selectedDomain.subdomain);
-                                    setEditDomainOpen(false);
-                                }
-                            }}>Select Domain</Button>
+                            <Button
+                                onClick={() => {
+                                    if (selectedDomain) {
+                                        setResourceFullDomain(
+                                            selectedDomain.fullDomain
+                                        );
+                                        form.setValue(
+                                            "domainId",
+                                            selectedDomain.domainId
+                                        );
+                                        form.setValue(
+                                            "subdomain",
+                                            selectedDomain.subdomain
+                                        );
+                                        setEditDomainOpen(false);
+                                    }
+                                }}
+                            >
+                                Select Domain
+                            </Button>
                         </CredenzaFooter>
                     </CredenzaContent>
                 </Credenza>

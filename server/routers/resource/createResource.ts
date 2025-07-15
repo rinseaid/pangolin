@@ -35,8 +35,8 @@ const createHttpResourceSchema = z
         name: z.string().min(1).max(255),
         subdomain: z
             .string()
-            .optional()
-            .transform((val) => val?.toLowerCase()),
+            .nullable()
+            .optional(),
         siteId: z.number(),
         http: z.boolean(),
         protocol: z.enum(["tcp", "udp"]),
@@ -201,7 +201,8 @@ async function createHttpResource(
         );
     }
 
-    const { name, subdomain, domainId } = parsedBody.data;
+    const { name, domainId } = parsedBody.data;
+    let subdomain = parsedBody.data.subdomain;
 
     const [domainRes] = await db
         .select()
@@ -272,6 +273,10 @@ async function createHttpResource(
         } else {
             fullDomain = domainRes.domains.baseDomain;
         }
+    }
+
+    if (fullDomain === domainRes.domains.baseDomain) {
+        subdomain = null;
     }
 
     fullDomain = fullDomain.toLowerCase();

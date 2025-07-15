@@ -35,8 +35,8 @@ const updateHttpResourceBodySchema = z
     .object({
         name: z.string().min(1).max(255).optional(),
         subdomain: subdomainSchema
-            .optional()
-            .transform((val) => val?.toLowerCase()),
+            .nullable()
+            .optional(),
         ssl: z.boolean().optional(),
         sso: z.boolean().optional(),
         blockAccess: z.boolean().optional(),
@@ -286,7 +286,7 @@ async function updateHttpResource(
         } else if (domainRes.domains.type == "cname") {
             fullDomain = domainRes.domains.baseDomain;
         } else if (domainRes.domains.type == "wildcard") {
-            if (updateData.subdomain) {
+            if (updateData.subdomain !== undefined) {
                 // the subdomain cant have a dot in it
                 const parsedSubdomain = subdomainSchema.safeParse(updateData.subdomain);
                 if (!parsedSubdomain.success) {
@@ -341,11 +341,15 @@ async function updateHttpResource(
                 .set({ fullDomain })
                 .where(eq(resources.resourceId, resource.resourceId));
         }
+
+        if (fullDomain === domainRes.domains.baseDomain) {
+            updateData.subdomain = null;
+        }
     }
 
     const updatedResource = await db
         .update(resources)
-        .set(updateData)
+        .set({...updateData, })
         .where(eq(resources.resourceId, resource.resourceId))
         .returning();
 
