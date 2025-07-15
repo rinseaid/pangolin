@@ -39,6 +39,38 @@ export async function deleteAccountDomain(
         let numOrgDomains: OrgDomains[] | undefined;
 
         await db.transaction(async (trx) => {
+            const [existing] = await trx
+                .select()
+                .from(orgDomains)
+                .where(
+                    and(
+                        eq(orgDomains.orgId, orgId),
+                        eq(orgDomains.domainId, domainId)
+                    )
+                )
+                .innerJoin(
+                    domains,
+                    eq(orgDomains.domainId, domains.domainId)
+                );
+
+            if (!existing) {
+                return next(
+                    createHttpError(
+                        HttpCode.NOT_FOUND,
+                        "Domain not found for this account"
+                    )
+                );
+            }
+
+            if (existing.domains.configManaged) {
+                return next(
+                    createHttpError(
+                        HttpCode.BAD_REQUEST,
+                        "Cannot delete a domain that is managed by the config"
+                    )
+                );
+            }
+
             await trx
                 .delete(orgDomains)
                 .where(

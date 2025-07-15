@@ -197,11 +197,10 @@ export default function CreateDomainForm({
                             <Alert variant="default">
                                 <InfoIcon className="h-4 w-4" />
                                 <AlertTitle className="font-semibold">
-                                    Add DNS Records
+                                    {t("createDomainAddDnsRecords")}
                                 </AlertTitle>
                                 <AlertDescription>
-                                    Add the following DNS records to your domain
-                                    provider to complete the setup.
+                                    {t("createDomainAddDnsRecordsDescription")}
                                 </AlertDescription>
                             </Alert>
 
@@ -210,18 +209,18 @@ export default function CreateDomainForm({
                                     createdDomain.nsRecords && (
                                         <div>
                                             <h3 className="font-medium mb-3">
-                                                NS Records
+                                                {t("createDomainNsRecords")}
                                             </h3>
                                             <InfoSections cols={1}>
                                                 <InfoSection>
                                                     <InfoSectionTitle>
-                                                        Record
+                                                        {t("createDomainRecord")}
                                                     </InfoSectionTitle>
                                                     <InfoSectionContent>
                                                         <div className="space-y-2">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="text-sm font-medium">
-                                                                    Type:
+                                                                    {t("createDomainType")}
                                                                 </span>
                                                                 <span className="text-sm font-mono">
                                                                     NS
@@ -229,14 +228,14 @@ export default function CreateDomainForm({
                                                             </div>
                                                             <div className="flex justify-between items-center">
                                                                 <span className="text-sm font-medium">
-                                                                    Name:
+                                                                    {t("createDomainName")}
                                                                 </span>
                                                                 <span className="text-sm font-mono">
                                                                     {baseDomain}
                                                                 </span>
                                                             </div>
                                                             <span className="text-sm font-medium">
-                                                                Value:
+                                                                {t("createDomainValue")}
                                                             </span>
                                                             {createdDomain.nsRecords.map(
                                                                 (
@@ -272,7 +271,7 @@ export default function CreateDomainForm({
                                                     .length > 0 && (
                                                     <div>
                                                         <h3 className="font-medium mb-3">
-                                                            CNAME Records
+                                                            {t("createDomainCnameRecords")}
                                                         </h3>
                                                         <InfoSections cols={1}>
                                                             {createdDomain.cnameRecords.map(
@@ -285,16 +284,14 @@ export default function CreateDomainForm({
                                                                             index
                                                                         }
                                                                     >
-                                                                        <InfoSectionTitle>
-                                                                            Record{" "}
-                                                                            {index +
-                                                                                1}
-                                                                        </InfoSectionTitle>
+                                                                                                                                            <InfoSectionTitle>
+                                                                        {t("createDomainRecordNumber", { number: index + 1 })}
+                                                                    </InfoSectionTitle>
                                                                         <InfoSectionContent>
                                                                             <div className="space-y-2">
                                                                                 <div className="flex justify-between items-center">
                                                                                     <span className="text-sm font-medium">
-                                                                                        Type:
+                                                                                        {t("createDomainType")}
                                                                                     </span>
                                                                                     <span className="text-sm font-mono">
                                                                                         CNAME
@@ -302,7 +299,7 @@ export default function CreateDomainForm({
                                                                                 </div>
                                                                                 <div className="flex justify-between items-center">
                                                                                     <span className="text-sm font-medium">
-                                                                                        Name:
+                                                                                        {t("createDomainName")}
                                                                                     </span>
                                                                                     <span className="text-sm font-mono">
                                                                                         {
@@ -312,7 +309,7 @@ export default function CreateDomainForm({
                                                                                 </div>
                                                                                 <div className="flex justify-between items-center">
                                                                                     <span className="text-sm font-medium">
-                                                                                        Value:
+                                                                                        {t("createDomainValue")}
                                                                                     </span>
                                                                                     <CopyToClipboard
                                                                                         text={
@@ -334,7 +331,7 @@ export default function CreateDomainForm({
                                                     .length > 0 && (
                                                     <div>
                                                         <h3 className="font-medium mb-3">
-                                                            TXT Records
+                                                            {t("createDomainTxtRecords")}
                                                         </h3>
                                                         <InfoSections cols={1}>
                                                             {createdDomain.txtRecords.map(
@@ -347,16 +344,14 @@ export default function CreateDomainForm({
                                                                             index
                                                                         }
                                                                     >
-                                                                        <InfoSectionTitle>
-                                                                            Record{" "}
-                                                                            {index +
-                                                                                1}
-                                                                        </InfoSectionTitle>
+                                                                                                                                            <InfoSectionTitle>
+                                                                        {t("createDomainRecordNumber", { number: index + 1 })}
+                                                                    </InfoSectionTitle>
                                                                         <InfoSectionContent>
                                                                             <div className="space-y-2">
                                                                                 <div className="flex justify-between items-center">
                                                                                     <span className="text-sm font-medium">
-                                                                                        Type:
+                                                                                        {t("createDomainType")}
                                                                                     </span>
                                                                                     <span className="text-sm font-mono">
                                                                                         TXT
@@ -364,7 +359,7 @@ export default function CreateDomainForm({
                                                                                 </div>
                                                                                 <div className="flex justify-between items-center">
                                                                                     <span className="text-sm font-medium">
-                                                                                        Name:
+                                                                                        {t("createDomainName")}
                                                                                     </span>
                                                                                     <span className="text-sm font-mono">
                                                                                         {
@@ -374,7 +369,7 @@ export default function CreateDomainForm({
                                                                                 </div>
                                                                                 <div className="flex justify-between items-center">
                                                                                     <span className="text-sm font-medium">
-                                                                                        Value:
+                                                                                        {t("createDomainValue")}
                                                                                     </span>
                                                                                     <CopyToClipboard
                                                                                         text={
@@ -399,11 +394,10 @@ export default function CreateDomainForm({
                                     <Alert variant="destructive">
                                         <AlertTriangle className="h-4 w-4" />
                                         <AlertTitle className="font-semibold">
-                                            Save These Records
+                                            {t("createDomainSaveTheseRecords")}
                                         </AlertTitle>
                                         <AlertDescription>
-                                            Make sure to save these DNS records
-                                            as you will not see them again.
+                                            {t("createDomainSaveTheseRecordsDescription")}
                                         </AlertDescription>
                                     </Alert>
                                 ))}
@@ -411,13 +405,10 @@ export default function CreateDomainForm({
                             <Alert variant="info">
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle className="font-semibold">
-                                    DNS Propagation
+                                    {t("createDomainDnsPropagation")}
                                 </AlertTitle>
                                 <AlertDescription>
-                                    DNS changes may take some time to propagate
-                                    across the internet. This can take anywhere
-                                    from a few minutes to 48 hours, depending on
-                                    your DNS provider and TTL settings.
+                                    {t("createDomainDnsPropagationDescription")}
                                 </AlertDescription>
                             </Alert>
                         </div>
