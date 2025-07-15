@@ -1,0 +1,55 @@
+services:
+  # PostgreSQL Service
+  db:
+    image: postgres:17 # Use the PostgreSQL 17 image
+    container_name: dev_postgres # Name your PostgreSQL container
+    environment:
+      POSTGRES_DB: postgres # Default database name
+      POSTGRES_USER: postgres # Default user
+      POSTGRES_PASSWORD: password # Default password (change for production!)
+    ports:
+      - "5432:5432" # Map host port 5432 to container port 5432
+    restart: no 
+
+  redis:
+    image: redis:latest # Use the latest Redis image
+    container_name: dev_redis # Name your Redis container
+    ports:
+      - "6379:6379" # Map host port 6379 to container port 6379
+    restart: no 
+
+  # Development application service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: dev_pangolin
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - ENVIRONMENT=dev
+      - DB_TYPE=pg
+      - DATABASE_URL=postgresql://postgres:password@db:5432/postgres
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./server:/app/server
+      - ./public:/app/public
+      - ./messages:/app/messages
+      - ./components.json:/app/components.json
+      - ./next.config.mjs:/app/next.config.mjs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./eslint.config.js:/app/eslint.config.js
+      # Use named volume for node_modules to avoid platform-specific issues
+      - node_modules:/app/node_modules
+    depends_on:
+      - db
+      - redis
+    restart: no
+
+volumes:
+  node_modules: 
