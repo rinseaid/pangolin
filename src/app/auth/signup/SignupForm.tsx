@@ -57,7 +57,9 @@ export default function SignupForm({
 }: SignupFormProps) {
     const router = useRouter();
 
-    const api = createApiClient(useEnvContext());
+    const { env } = useEnvContext();
+
+    const api = createApiClient({ env });
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -116,8 +118,8 @@ export default function SignupForm({
     }
 
     return (
-        <Card className="w-full max-w-md">
-            <CardHeader>
+        <Card className="w-full max-w-md shadow-md">
+            <CardHeader className="border-b">
                 <div className="flex flex-row items-center justify-center">
                     <Image
                         src={`/logo/pangolin_orange.svg`}
@@ -135,7 +137,7 @@ export default function SignupForm({
                     </p>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
@@ -161,10 +163,7 @@ export default function SignupForm({
                                 <FormItem>
                                     <FormLabel>{t('password')}</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            {...field}
-                                        />
+                                        <Input type="password" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -177,10 +176,7 @@ export default function SignupForm({
                                 <FormItem>
                                     <FormLabel>{t('confirmPassword')}</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            {...field}
-                                        />
+                                        <Input type="password" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

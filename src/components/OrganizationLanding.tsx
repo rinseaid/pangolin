@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
+import { useEnvContext } from "@app/hooks/useEnvContext";
 import { useTranslations } from "next-intl";
 
 interface Organization {
@@ -28,6 +29,8 @@ export default function OrganizationLanding({
     disableCreateOrg = false
 }: OrganizationLandingProps) {
     const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
+
+    const { env } = useEnvContext();
 
     const handleOrgClick = (orgId: string) => {
         setSelectedOrg(orgId);

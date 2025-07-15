@@ -24,7 +24,7 @@ export const newtGetTokenBodySchema = z.object({
 
 export type NewtGetTokenBody = z.infer<typeof newtGetTokenBodySchema>;
 
-export async function getToken(
+export async function getNewtToken(
     req: Request,
     res: Response,
     next: NextFunction

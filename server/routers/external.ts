@@ -8,6 +8,7 @@ import * as target from "./target";
 import * as user from "./user";
 import * as auth from "./auth";
 import * as role from "./role";
+import * as client from "./client";
 import * as supporterKey from "./supporterKey";
 import * as accessToken from "./accessToken";
 import * as idp from "./idp";
@@ -28,14 +29,20 @@ import {
     getUserOrgs,
     verifyUserIsServerAdmin,
     verifyIsLoggedInUser,
-    verifyApiKeyAccess
+    verifyClientAccess,
+    verifyApiKeyAccess,
+    verifyDomainAccess,
+    verifyClientsEnabled,
+    verifyUserHasAction,
+    verifyUserIsOrgOwner
 } from "@server/middlewares";
-import { verifyUserHasAction } from "../middlewares/verifyUserHasAction";
+import { createStore } from "@server/lib/rateLimitStore";
 import { ActionsEnum } from "@server/auth/actions";
-import { verifyUserIsOrgOwner } from "../middlewares/verifyUserIsOrgOwner";
-import { createNewt, getToken } from "./newt";
+import { createNewt, getNewtToken } from "./newt";
+import { getOlmToken } from "./olm";
 import rateLimit from "express-rate-limit";
 import createHttpError from "http-errors";
+import { build } from "@server/build";
 
 // Root routes
 export const unauthenticated = Router();
@@ -48,8 +55,11 @@ unauthenticated.get("/", (_, res) => {
 export const authenticated = Router();
 authenticated.use(verifySessionUserMiddleware);
 
+authenticated.get("/pick-org-defaults", org.pickOrgDefaults);
 authenticated.get("/org/checkId", org.checkId);
-authenticated.put("/org", getUserOrgs, org.createOrg);
+if (build === "oss" || build === "enterprise") {
+    authenticated.put("/org", getUserOrgs, org.createOrg);
+}
 
 authenticated.get("/orgs", verifyUserIsServerAdmin, org.listOrgs);
 authenticated.get("/user/:userId/orgs", verifyIsLoggedInUser, org.listUserOrgs);
@@ -104,6 +114,55 @@ authenticated.get(
     verifyUserHasAction(ActionsEnum.getSite),
     site.getSite
 );
+
+authenticated.get(
+    "/org/:orgId/pick-client-defaults",
+    verifyClientsEnabled,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.createClient),
+    client.pickClientDefaults
+);
+
+authenticated.get(
+    "/org/:orgId/clients",
+    verifyClientsEnabled,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.listClients),
+    client.listClients
+);
+
+authenticated.get(
+    "/org/:orgId/client/:clientId",
+    verifyClientsEnabled,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.getClient),
+    client.getClient
+);
+
+authenticated.put(
+    "/org/:orgId/client",
+    verifyClientsEnabled,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.createClient),
+    client.createClient
+);
+
+authenticated.delete(
+    "/client/:clientId",
+    verifyClientsEnabled,
+    verifyClientAccess,
+    verifyUserHasAction(ActionsEnum.deleteClient),
+    client.deleteClient
+);
+
+authenticated.post(
+    "/client/:clientId",
+    verifyClientsEnabled,
+    verifyClientAccess, // this will check if the user has access to the client
+    verifyUserHasAction(ActionsEnum.updateClient), // this will check if the user has permission to update the client
+    client.updateClient
+);
+
 // authenticated.get(
 //     "/site/:siteId/roles",
 //     verifySiteAccess,
@@ -698,6 +757,29 @@ authenticated.get(
     apiKeys.getApiKey
 );
 
+authenticated.put(
+    `/org/:orgId/domain`,
+    verifyOrgAccess,
+    verifyUserHasAction(ActionsEnum.createOrgDomain),
+    domain.createOrgDomain
+);
+
+authenticated.post(
+    `/org/:orgId/domain/:domainId/restart`,
+    verifyOrgAccess,
+    verifyDomainAccess,
+    verifyUserHasAction(ActionsEnum.restartOrgDomain),
+    domain.restartOrgDomain
+);
+
+authenticated.delete(
+    `/org/:orgId/domain/:domainId`,
+    verifyOrgAccess,
+    verifyDomainAccess,
+    verifyUserHasAction(ActionsEnum.deleteOrgDomain),
+    domain.deleteAccountDomain
+);
+
 // Auth routes
 export const authRouter = Router();
 unauthenticated.use("/auth", authRouter);
@@ -751,7 +833,20 @@ authRouter.post(
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
         }
     }),
-    getToken
+    getNewtToken
+);
+authRouter.post(
+    "/olm/get-token",
+    rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 900,
+        keyGenerator: (req) => `newtGetToken:${req.body.newtId}`,
+        handler: (req, res, next) => {
+            const message = `You can only request an Olm token ${900} times every ${15} minutes. Please try again later.`;
+            return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
+        }
+    }),
+    getOlmToken
 );
 
 authRouter.post(
@@ -836,7 +931,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request an email verification code ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.requestEmailVerificationCode
 );
@@ -856,7 +952,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request a password reset ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.requestPasswordReset
 );
@@ -914,7 +1011,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request an email OTP ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     resource.authWithWhitelist
 );

@@ -227,6 +227,7 @@ export default function CreateSiteForm({
                 name: data.name,
                 id: data.siteId,
                 nice: data.niceId.toString(),
+                address: data.address?.split("/")[0],
                 mbIn:
                     data.type == "wireguard" || data.type == "newt"
                         ? t('megabytes', {count: 0})
