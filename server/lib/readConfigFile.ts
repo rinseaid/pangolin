@@ -3,8 +3,6 @@ import yaml from "js-yaml";
 import { configFilePath1, configFilePath2 } from "./consts";
 import { z } from "zod";
 import stoi from "./stoi";
-import { passwordSchema } from "@server/auth/passwordSchema";
-import { fromError } from "zod-validation-error";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
 
@@ -179,10 +177,21 @@ export const configSchema = z.object({
                 .default({}),
             auth: z
                 .object({
-                    window_minutes: z.number().positive().gt(0),
-                    max_requests: z.number().positive().gt(0)
+                    window_minutes: z
+                        .number()
+                        .positive()
+                        .gt(0)
+                        .optional()
+                        .default(1),
+                    max_requests: z
+                        .number()
+                        .positive()
+                        .gt(0)
+                        .optional()
+                        .default(500)
                 })
                 .optional()
+                .default({}),
         })
         .optional()
         .default({}),

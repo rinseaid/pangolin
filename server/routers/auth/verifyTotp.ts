@@ -75,6 +75,14 @@ export async function verifyTotp(
                     )
                 );
             user = res;
+
+            const validPassword = await verifyPassword(
+                password,
+                user.passwordHash!
+            );
+            if (!validPassword) {
+                return next(unauthorized());
+            }
         }
 
         if (!user) {
@@ -89,14 +97,6 @@ export async function verifyTotp(
                     "Username or password is incorrect"
                 )
             );
-        }
-
-        const validPassword = await verifyPassword(
-            password,
-            user.passwordHash!
-        );
-        if (!validPassword) {
-            return next(unauthorized());
         }
 
         if (user.type !== UserType.Internal) {
