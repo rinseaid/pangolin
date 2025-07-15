@@ -205,7 +205,7 @@ export async function createSite(
                         exitNodeId,
                         name,
                         niceId,
-                        // address: updatedAddress || null,
+                        address: updatedAddress || null,
                         subnet,
                         type,
                         dockerSocketEnabled: type == "newt",
@@ -221,7 +221,7 @@ export async function createSite(
                         orgId,
                         name,
                         niceId,
-                        // address: updatedAddress || null,
+                        address: updatedAddress || null,
                         type,
                         dockerSocketEnabled: type == "newt",
                         subnet: "0.0.0.0/0"

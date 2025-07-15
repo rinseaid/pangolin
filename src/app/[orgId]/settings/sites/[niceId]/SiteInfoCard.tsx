@@ -10,12 +10,14 @@ import {
     InfoSectionTitle
 } from "@app/components/InfoSection";
 import { useTranslations } from "next-intl";
+import { useEnvContext } from "@app/hooks/useEnvContext";
 
 type SiteInfoCardProps = {};
 
 export default function SiteInfoCard({}: SiteInfoCardProps) {
     const { site, updateSite } = useSiteContext();
     const t = useTranslations();
+    const { env } = useEnvContext();
 
     const getConnectionTypeString = (type: string) => {
         if (type === "newt") {
@@ -34,7 +36,7 @@ export default function SiteInfoCard({}: SiteInfoCardProps) {
             <InfoIcon className="h-4 w-4" />
             <AlertTitle className="font-semibold">{t('siteInfo')}</AlertTitle>
             <AlertDescription className="mt-4">
-                <InfoSections cols={2}>
+                <InfoSections cols={env.flags.enableClients ? 3 : 2}>
                     {(site.type == "newt" || site.type == "wireguard") && (
                         <>
                             <InfoSection>
@@ -59,6 +61,12 @@ export default function SiteInfoCard({}: SiteInfoCardProps) {
                         <InfoSectionTitle>{t('connectionType')}</InfoSectionTitle>
                         <InfoSectionContent>
                             {getConnectionTypeString(site.type)}
+                        </InfoSectionContent>
+                    </InfoSection>
+                    <InfoSection>
+                        <InfoSectionTitle>Address</InfoSectionTitle>
+                        <InfoSectionContent>
+                            {site.address?.split("/")[0]}
                         </InfoSectionContent>
                     </InfoSection>
                 </InfoSections>

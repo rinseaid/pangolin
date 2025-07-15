@@ -595,47 +595,52 @@ WantedBy=default.target`
                                                     </FormItem>
                                                 )}
                                             />
-                                            {env.flags.enableClients && (
-                                                <FormField
-                                                    control={form.control}
-                                                    name="clientAddress"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>
-                                                                Site Address
-                                                            </FormLabel>
-                                                            <FormControl>
-                                                                <Input
-                                                                    autoComplete="off"
-                                                                    value={
-                                                                        clientAddress
-                                                                    }
-                                                                    onChange={(
-                                                                        e
-                                                                    ) => {
-                                                                        setClientAddress(
+                                            {env.flags.enableClients &&
+                                                form.watch("method") ===
+                                                    "newt" && (
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="clientAddress"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>
+                                                                    Site Address
+                                                                </FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        autoComplete="off"
+                                                                        value={
+                                                                            clientAddress
+                                                                        }
+                                                                        onChange={(
                                                                             e
-                                                                                .target
-                                                                                .value
-                                                                        );
-                                                                        field.onChange(
-                                                                            e
-                                                                                .target
-                                                                                .value
-                                                                        );
-                                                                    }}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                            <FormDescription>
-                                                                Specify the IP
-                                                                address of the
-                                                                host.
-                                                            </FormDescription>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            )}
+                                                                        ) => {
+                                                                            setClientAddress(
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            );
+                                                                            field.onChange(
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                                <FormDescription>
+                                                                    Specify the
+                                                                    IP address
+                                                                    of the host
+                                                                    for clients
+                                                                    to connect
+                                                                    to.
+                                                                </FormDescription>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                )}
                                         </form>
                                     </Form>
                                 </SettingsSectionForm>
