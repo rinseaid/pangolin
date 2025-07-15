@@ -581,9 +581,6 @@ export default function SecurityKeyForm({
                                                     <FormControl>
                                                         <Input
                                                             {...field}
-                                                            placeholder={t(
-                                                                "securityKeyNamePlaceholder"
-                                                            )}
                                                             disabled={
                                                                 isRegistering
                                                             }

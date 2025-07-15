@@ -7,6 +7,7 @@ import Link from "next/link";
 import ProfileIcon from "@app/components/ProfileIcon";
 import ThemeSwitcher from "@app/components/ThemeSwitcher";
 import { useTheme } from "next-themes";
+import BrandingLogo from "./$BrandingLogo";
 import { useEnvContext } from "@app/hooks/useEnvContext";
 import { Badge } from "./ui/badge";
 
@@ -41,11 +42,12 @@ export function LayoutHeader({ showTopBar }: LayoutHeaderProps) {
     }, [theme]);
 
     return (
-        <div className="shrink-0 hidden md:block">
-            <div className="px-6 py-2">
+        <div className="absolute top-0 left-0 right-0 z-50 hidden md:block">
+            <div className="absolute inset-0 bg-background/86 backdrop-blur-sm" />
+            <div className="relative z-10 px-6 py-2">
                 <div className="container mx-auto max-w-12xl">
                     <div className="h-16 flex items-center justify-between">
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2">
                             <Link href="/" className="flex items-center">
                                 {path && (
                                     <Image
