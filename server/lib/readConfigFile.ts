@@ -5,6 +5,7 @@ import { z } from "zod";
 import stoi from "./stoi";
 import { passwordSchema } from "@server/auth/passwordSchema";
 import { fromError } from "zod-validation-error";
+import { build } from "@server/build";
 
 const portSchema = z.number().positive().gt(0).lte(65535);
 
@@ -259,7 +260,21 @@ export const configSchema = z
         {
             message: "At least one domain must be defined"
         }
-    );
+    )
+    .refine(
+        (data) => {
+            if (build == "oss" && data.redis) {
+                return false;
+            }
+            if (build == "oss" && data.flags?.enable_redis) {
+                return false;
+            }
+            return true;
+        },
+        {
+            message: "Redis"
+        }
+    )
 
 export function readConfigFile() {
     const loadConfig = (configPath: string) => {

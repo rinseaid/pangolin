@@ -1,6 +1,7 @@
 import Redis, { RedisOptions } from "ioredis";
 import logger from "@server/logger";
 import config from "@server/lib/config";
+import { build } from "@server/build";
 
 class RedisManager {
     public client: Redis | null = null;
@@ -16,7 +17,11 @@ class RedisManager {
     > = new Map();
 
     constructor() {
-        this.isEnabled = config.getRawConfig().flags?.enable_redis || false;
+        if (build == "oss") {
+            this.isEnabled = false;
+        } else {
+            this.isEnabled = config.getRawConfig().flags?.enable_redis || false;
+        }
         if (this.isEnabled) {
             this.initializeClients();
         }
