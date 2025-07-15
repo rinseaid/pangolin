@@ -27,6 +27,3 @@ services:
       - ./eslint.config.js:/app/eslint.config.js
       - ./config:/app/config
     restart: no
-
-volumes:
-  node_modules: 
