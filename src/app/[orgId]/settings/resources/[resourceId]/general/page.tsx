@@ -109,9 +109,6 @@ export default function GeneralForm() {
     >([]);
 
     const [loadingPage, setLoadingPage] = useState(true);
-    const [domainType, setDomainType] = useState<"subdomain" | "basedomain">(
-        resource.isBaseDomain ? "basedomain" : "subdomain"
-    );
     const [resourceFullDomain, setResourceFullDomain] = useState(
         `${resource.ssl ? "https" : "http"}://${resource.fullDomain}`
     );

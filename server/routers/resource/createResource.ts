@@ -307,8 +307,7 @@ async function createHttpResource(
                 subdomain,
                 http: true,
                 protocol: "tcp",
-                ssl: true,
-                isBaseDomain: false
+                ssl: true
             })
             .returning();
 

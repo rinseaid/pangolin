@@ -124,7 +124,7 @@ export default function GeneralPage() {
         await api
             .post(`/org/${org?.org.orgId}`, {
                 name: data.name,
-                subnet: data.subnet // Include subnet in the API request
+                // subnet: data.subnet // Include subnet in the API request
             })
             .then(() => {
                 toast({

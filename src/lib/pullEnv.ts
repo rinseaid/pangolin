@@ -36,10 +36,6 @@ export function pullEnv(): Env {
                     : false,
             allowRawResources:
                 process.env.FLAGS_ALLOW_RAW_RESOURCES === "true" ? true : false,
-            allowBaseDomainResources:
-                process.env.FLAGS_ALLOW_BASE_DOMAIN_RESOURCES === "true"
-                    ? true
-                    : false,
             disableLocalSites:
                 process.env.FLAGS_DISABLE_LOCAL_SITES === "true" ? true : false,
             disableBasicWireguardSites:

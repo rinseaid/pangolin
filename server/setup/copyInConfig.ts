@@ -115,7 +115,7 @@ async function copyInDomains() {
             }
 
             let fullDomain = "";
-            if (resource.isBaseDomain) {
+            if (!resource.subdomain) {
                 fullDomain = domain.baseDomain;
             } else {
                 fullDomain = `${resource.subdomain}.${domain.baseDomain}`;

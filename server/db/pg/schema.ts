@@ -88,7 +88,6 @@ export const resources = pgTable("resources", {
     emailWhitelistEnabled: boolean("emailWhitelistEnabled")
         .notNull()
         .default(false),
-    isBaseDomain: boolean("isBaseDomain"),
     applyRules: boolean("applyRules").notNull().default(false),
     enabled: boolean("enabled").notNull().default(true),
     stickySession: boolean("stickySession").notNull().default(false),

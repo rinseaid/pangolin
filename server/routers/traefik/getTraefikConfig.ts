@@ -61,7 +61,7 @@ export async function traefikConfigProvider(
                     http: resources.http,
                     proxyPort: resources.proxyPort,
                     protocol: resources.protocol,
-                    isBaseDomain: resources.isBaseDomain,
+                    subdomain: resources.subdomain,
                     domainId: resources.domainId,
                     // Site fields
                     site: {
@@ -210,7 +210,7 @@ export async function traefikConfigProvider(
                     wildCard = `*.${domainParts.slice(1).join(".")}`;
                 }
 
-                if (resource.isBaseDomain) {
+                if (!resource.subdomain) {
                     wildCard = resource.fullDomain;
                 }
 

@@ -233,7 +233,6 @@ export const configSchema = z
                 disable_signup_without_invite: z.boolean().optional(),
                 disable_user_create_org: z.boolean().optional(),
                 allow_raw_resources: z.boolean().optional(),
-                allow_base_domain_resources: z.boolean().optional(),
                 enable_integration_api: z.boolean().optional(),
                 enable_redis: z.boolean().optional(),
                 disable_local_sites: z.boolean().optional(),

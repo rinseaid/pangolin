@@ -30,7 +30,7 @@ orgs:
 email:
     smtp_host: "{{.EmailSMTPHost}}"
     smtp_port: {{.EmailSMTPPort}}
-    smtp_user: "{{.EmailSMTPUser}}"
+    smtp_user: "{{.EmailSMTPUser}allow_base_domain_resources}"
     smtp_pass: "{{.EmailSMTPPass}}"
     no_reply: "{{.EmailNoReply}}"
 {{end}}
@@ -40,4 +40,3 @@ flags:
     disable_signup_without_invite: true
     disable_user_create_org: false
     allow_raw_resources: true
-    allow_base_domain_resources: true

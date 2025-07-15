@@ -81,10 +81,6 @@ export class Config {
             parsedConfig.server.resource_access_token_headers.token;
         process.env.RESOURCE_SESSION_REQUEST_PARAM =
             parsedConfig.server.resource_session_request_param;
-        process.env.FLAGS_ALLOW_BASE_DOMAIN_RESOURCES = parsedConfig.flags
-            ?.allow_base_domain_resources
-            ? "true"
-            : "false";
         process.env.DASHBOARD_URL = parsedConfig.app.dashboard_url;
         process.env.FLAGS_DISABLE_LOCAL_SITES = parsedConfig.flags
             ?.disable_local_sites
