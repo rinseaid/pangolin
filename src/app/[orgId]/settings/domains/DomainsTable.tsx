@@ -23,6 +23,7 @@ export type DomainRow = {
     verified: boolean;
     failed: boolean;
     tries: number;
+    configManaged: boolean;
 };
 
 type Props = {
@@ -36,7 +37,9 @@ export default function DomainsTable({ domains }: Props) {
         null
     );
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [restartingDomains, setRestartingDomains] = useState<Set<string>>(new Set());
+    const [restartingDomains, setRestartingDomains] = useState<Set<string>>(
+        new Set()
+    );
     const api = createApiClient(useEnvContext());
     const router = useRouter();
     const t = useTranslations();
@@ -46,6 +49,7 @@ export default function DomainsTable({ domains }: Props) {
     const refreshData = async () => {
         setIsRefreshing(true);
         try {
+            await new Promise((resolve) => setTimeout(resolve, 200));
             router.refresh();
         } catch (error) {
             toast({
@@ -77,12 +81,14 @@ export default function DomainsTable({ domains }: Props) {
     };
 
     const restartDomain = async (domainId: string) => {
-        setRestartingDomains(prev => new Set(prev).add(domainId));
+        setRestartingDomains((prev) => new Set(prev).add(domainId));
         try {
             await api.post(`/org/${org.org.orgId}/domain/${domainId}/restart`);
             toast({
                 title: t("success"),
-                description: t("domainRestartedDescription", { fallback: "Domain verification restarted successfully" })
+                description: t("domainRestartedDescription", {
+                    fallback: "Domain verification restarted successfully"
+                })
             });
             refreshData();
         } catch (e) {
@@ -92,7 +98,7 @@ export default function DomainsTable({ domains }: Props) {
                 variant: "destructive"
             });
         } finally {
-            setRestartingDomains(prev => {
+            setRestartingDomains((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(domainId);
                 return newSet;
@@ -172,7 +178,11 @@ export default function DomainsTable({ domains }: Props) {
                 if (verified) {
                     return <Badge variant="green">{t("verified")}</Badge>;
                 } else if (failed) {
-                    return <Badge variant="destructive">{t("failed", { fallback: "Failed" })}</Badge>;
+                    return (
+                        <Badge variant="destructive">
+                            {t("failed", { fallback: "Failed" })}
+                        </Badge>
+                    );
                 } else {
                     return <Badge variant="yellow">{t("pending")}</Badge>;
                 }
@@ -183,7 +193,7 @@ export default function DomainsTable({ domains }: Props) {
             cell: ({ row }) => {
                 const domain = row.original;
                 const isRestarting = restartingDomains.has(domain.domainId);
-                
+
                 return (
                     <div className="flex items-center justify-end gap-2">
                         {domain.failed && (
@@ -193,19 +203,25 @@ export default function DomainsTable({ domains }: Props) {
                                 onClick={() => restartDomain(domain.domainId)}
                                 disabled={isRestarting}
                             >
-                                {isRestarting ? t("restarting", { fallback: "Restarting..." }) : t("restart", { fallback: "Restart" })}
+                                {isRestarting
+                                    ? t("restarting", {
+                                          fallback: "Restarting..."
+                                      })
+                                    : t("restart", { fallback: "Restart" })}
                             </Button>
                         )}
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => {
-                                setSelectedDomain(domain);
-                                setIsDeleteModalOpen(true);
-                            }}
-                        >
-                            {t("delete")}
-                        </Button>
+                        {!domain.configManaged && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                    setSelectedDomain(domain);
+                                    setIsDeleteModalOpen(true);
+                                }}
+                            >
+                                {t("delete")}
+                            </Button>
+                        )}
                     </div>
                 );
             }

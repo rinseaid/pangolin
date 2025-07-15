@@ -111,9 +111,10 @@ export function DataTable<TData, TValue>({
                                 variant="outline"
                                 onClick={onRefresh}
                                 disabled={isRefreshing}
-                                loading={isRefreshing}
                             >
-                                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                <RefreshCw
+                                    className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                                />
                                 {t("refresh")}
                             </Button>
                         )}

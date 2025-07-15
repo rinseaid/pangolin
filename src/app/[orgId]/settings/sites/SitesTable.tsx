@@ -26,7 +26,6 @@ import { toast } from "@app/hooks/useToast";
 import { formatAxiosError } from "@app/lib/api";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
-import CreateSiteFormModal from "./CreateSiteModal";
 import { useTranslations } from "next-intl";
 import { parseDataSize } from "@app/lib/dataSize";
 import { Badge } from "@app/components/ui/badge";
@@ -68,8 +67,10 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
     }, [sites]);
 
     const refreshData = async () => {
+        console.log("Data refreshed");
         setIsRefreshing(true);
         try {
+            await new Promise((resolve) => setTimeout(resolve, 200));
             router.refresh();
         } catch (error) {
             toast({

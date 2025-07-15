@@ -42,6 +42,7 @@ async function queryDomains(orgId: string, limit: number, offset: number) {
             type: domains.type,
             failed: domains.failed,
             tries: domains.tries,
+            configManaged: domains.configManaged
         })
         .from(orgDomains)
         .where(eq(orgDomains.orgId, orgId))
