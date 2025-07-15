@@ -135,26 +135,6 @@ export default function ProfileIcon() {
                             <DropdownMenuSeparator />
                         </>
                     )}
-                    <DropdownMenuSeparator />
-                    {user?.type === UserType.Internal && (
-                        <>
-                            {!user.twoFactorEnabled && (
-                                <DropdownMenuItem
-                                    onClick={() => setOpenEnable2fa(true)}
-                                >
-                                    <span>{t("otpEnable")}</span>
-                                </DropdownMenuItem>
-                            )}
-                            {user.twoFactorEnabled && (
-                                <DropdownMenuItem
-                                    onClick={() => setOpenDisable2fa(true)}
-                                >
-                                    <span>{t("otpDisable")}</span>
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                        </>
-                    )}
                     <DropdownMenuLabel>{t("theme")}</DropdownMenuLabel>
                     {(["light", "dark", "system"] as const).map(
                         (themeOption) => (
