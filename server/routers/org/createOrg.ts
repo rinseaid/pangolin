@@ -89,21 +89,22 @@ export async function createOrg(
             );
         }
 
+        // TODO: for now we are making all of the orgs the same subnet
         // make sure the subnet is unique
-        const subnetExists = await db
-            .select()
-            .from(orgs)
-            .where(eq(orgs.subnet, subnet))
-            .limit(1);
+        // const subnetExists = await db
+        //     .select()
+        //     .from(orgs)
+        //     .where(eq(orgs.subnet, subnet))
+        //     .limit(1);
 
-        if (subnetExists.length > 0) {
-            return next(
-                createHttpError(
-                    HttpCode.CONFLICT,
-                    `Subnet ${subnet} already exists`
-                )
-            );
-        }
+        // if (subnetExists.length > 0) {
+        //     return next(
+        //         createHttpError(
+        //             HttpCode.CONFLICT,
+        //             `Subnet ${subnet} already exists`
+        //         )
+        //     );
+        // }
 
         // make sure the orgId is unique
         const orgExists = await db
