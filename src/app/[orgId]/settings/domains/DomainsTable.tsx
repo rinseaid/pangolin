@@ -210,18 +210,17 @@ export default function DomainsTable({ domains }: Props) {
                                     : t("restart", { fallback: "Restart" })}
                             </Button>
                         )}
-                        {!domain.configManaged && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                    setSelectedDomain(domain);
-                                    setIsDeleteModalOpen(true);
-                                }}
-                            >
-                                {t("delete")}
-                            </Button>
-                        )}
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={domain.configManaged}
+                            onClick={() => {
+                                setSelectedDomain(domain);
+                                setIsDeleteModalOpen(true);
+                            }}
+                        >
+                            {t("delete")}
+                        </Button>
                     </div>
                 );
             }
