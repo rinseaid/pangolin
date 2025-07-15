@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { Column, ColumnDef } from "@tanstack/react-table";
 import { SitesDataTable } from "./SitesDataTable";
 import {
     DropdownMenu,
@@ -20,7 +20,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AxiosResponse } from "axios";
 import { useState, useEffect } from "react";
-import CreateSiteForm from "./CreateSiteForm";
 import ConfirmDeleteDialog from "@app/components/ConfirmDeleteDialog";
 import { toast } from "@app/hooks/useToast";
 import { formatAxiosError } from "@app/lib/api";
@@ -60,6 +59,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
 
     const api = createApiClient(useEnvContext());
     const t = useTranslations();
+    const { env } = useEnvContext();
 
     // Update local state when props change (e.g., after refresh)
     useEffect(() => {
@@ -280,9 +280,9 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                 }
             }
         },
-        {
+        ...(env.flags.enableClients ? [{
             accessorKey: "address",
-            header: ({ column }) => {
+            header: ({ column }: { column: Column<SiteRow, unknown> }) => {
                 return (
                     <Button
                         variant="ghost"
@@ -295,7 +295,7 @@ export default function SitesTable({ sites, orgId }: SitesTableProps) {
                     </Button>
                 );
             }
-        },
+        }] : []),
         {
             id: "actions",
             cell: ({ row }) => {
