@@ -16,11 +16,11 @@ export default async function migration() {
                 CREATE TABLE 'clientSites' (
                     'clientId' integer NOT NULL,
                     'siteId' integer NOT NULL,
-                    'isRelayed' integer DEFAULT false NOT NULL,
+                    'isRelayed' integer DEFAULT 0 NOT NULL,
                     FOREIGN KEY ('clientId') REFERENCES 'clients'('id') ON UPDATE no action ON DELETE cascade,
                     FOREIGN KEY ('siteId') REFERENCES 'sites'('siteId') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'clients' (
                     'id' integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                     'orgId' text NOT NULL,
@@ -33,20 +33,20 @@ export default async function migration() {
                     'lastBandwidthUpdate' text,
                     'lastPing' text,
                     'type' text NOT NULL,
-                    'online' integer DEFAULT false NOT NULL,
+                    'online' integer DEFAULT 0 NOT NULL,
                     'endpoint' text,
                     'lastHolePunch' integer,
                     FOREIGN KEY ('orgId') REFERENCES 'orgs'('orgId') ON UPDATE no action ON DELETE cascade,
                     FOREIGN KEY ('exitNode') REFERENCES 'exitNodes'('exitNodeId') ON UPDATE no action ON DELETE set null
                 );
-                
+
                 CREATE TABLE 'clientSession' (
                     'id' text PRIMARY KEY NOT NULL,
                     'olmId' text NOT NULL,
                     'expiresAt' integer NOT NULL,
                     FOREIGN KEY ('olmId') REFERENCES 'olms'('id') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'olms' (
                     'id' text PRIMARY KEY NOT NULL,
                     'secretHash' text NOT NULL,
@@ -54,14 +54,14 @@ export default async function migration() {
                     'clientId' integer,
                     FOREIGN KEY ('clientId') REFERENCES 'clients'('id') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'roleClients' (
                     'roleId' integer NOT NULL,
                     'clientId' integer NOT NULL,
                     FOREIGN KEY ('roleId') REFERENCES 'roles'('roleId') ON UPDATE no action ON DELETE cascade,
                     FOREIGN KEY ('clientId') REFERENCES 'clients'('id') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'webauthnCredentials' (
                     'credentialId' text PRIMARY KEY NOT NULL,
                     'userId' text NOT NULL,
@@ -73,21 +73,21 @@ export default async function migration() {
                     'dateCreated' text NOT NULL,
                     FOREIGN KEY ('userId') REFERENCES 'user'('id') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'userClients' (
                     'userId' text NOT NULL,
                     'clientId' integer NOT NULL,
                     FOREIGN KEY ('userId') REFERENCES 'user'('id') ON UPDATE no action ON DELETE cascade,
                     FOREIGN KEY ('clientId') REFERENCES 'clients'('id') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'userDomains' (
                     'userId' text NOT NULL,
                     'domainId' text NOT NULL,
                     FOREIGN KEY ('userId') REFERENCES 'user'('id') ON UPDATE no action ON DELETE cascade,
                     FOREIGN KEY ('domainId') REFERENCES 'domains'('domainId') ON UPDATE no action ON DELETE cascade
                 );
-                
+
                 CREATE TABLE 'webauthnChallenge' (
                     'sessionId' text PRIMARY KEY NOT NULL,
                     'challenge' text NOT NULL,
@@ -96,12 +96,11 @@ export default async function migration() {
                     'expiresAt' integer NOT NULL,
                     FOREIGN KEY ('userId') REFERENCES 'user'('id') ON UPDATE no action ON DELETE cascade
                 );
-                
-            `);
-        })(); // <-- executes the transaction immediately
 
-        db.pragma("foreign_keys = OFF");
-        db.transaction(() => {
+            `);
+
+            db.pragma("foreign_keys = OFF");
+
             db.exec(`
                 CREATE TABLE '__new_sites' (
                     'siteId' integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -115,41 +114,45 @@ export default async function migration() {
                     'bytesOut' integer DEFAULT 0,
                     'lastBandwidthUpdate' text,
                     'type' text NOT NULL,
-                    'online' integer DEFAULT false NOT NULL,
+                    'online' integer DEFAULT 0 NOT NULL,
                     'address' text,
                     'endpoint' text,
                     'publicKey' text,
                     'lastHolePunch' integer,
                     'listenPort' integer,
-                    'dockerSocketEnabled' integer DEFAULT true NOT NULL,
+                    'dockerSocketEnabled' integer DEFAULT 1 NOT NULL,
                     FOREIGN KEY ('orgId') REFERENCES 'orgs'('orgId') ON UPDATE no action ON DELETE cascade,
                     FOREIGN KEY ('exitNode') REFERENCES 'exitNodes'('exitNodeId') ON UPDATE no action ON DELETE set null
                 );
-                
-                INSERT INTO '__new_sites'("siteId", "orgId", "niceId", "exitNode", "name", "pubKey", "subnet", "bytesIn", "bytesOut", "lastBandwidthUpdate", "type", "online", "address", "endpoint", "publicKey", "lastHolePunch", "listenPort", "dockerSocketEnabled") SELECT "siteId", "orgId", "niceId", "exitNode", "name", "pubKey", "subnet", "bytesIn", "bytesOut", "lastBandwidthUpdate", "type", "online", "address", "endpoint", "publicKey", "lastHolePunch", "listenPort", "dockerSocketEnabled" FROM 'sites';
+
+                INSERT INTO '__new_sites' (
+                    'siteId', 'orgId', 'niceId', 'exitNode', 'name', 'pubKey', 'subnet', 'bytesIn', 'bytesOut', 'lastBandwidthUpdate', 'type', 'online', 'address', 'endpoint', 'publicKey', 'lastHolePunch', 'listenPort', 'dockerSocketEnabled'
+                )
+                SELECT siteId, orgId, niceId, exitNode, name, pubKey, subnet, bytesIn, bytesOut, lastBandwidthUpdate, type, online, NULL, NULL, NULL, NULL, NULL, dockerSocketEnabled
+                FROM sites;
+
                 DROP TABLE 'sites';
                 ALTER TABLE '__new_sites' RENAME TO 'sites';
             `);
-        })(); // <-- executes the transaction immediately
-        db.pragma("foreign_keys = ON");
 
-        db.transaction(() => {
+            db.pragma("foreign_keys = ON");
+
             db.exec(`
                 ALTER TABLE 'domains' ADD 'type' text;
-                ALTER TABLE 'domains' ADD 'verified' integer DEFAULT false NOT NULL;
-                ALTER TABLE 'domains' ADD 'failed' integer DEFAULT false NOT NULL;
+                ALTER TABLE 'domains' ADD 'verified' integer DEFAULT 0 NOT NULL;
+                ALTER TABLE 'domains' ADD 'failed' integer DEFAULT 0 NOT NULL;
                 ALTER TABLE 'domains' ADD 'tries' integer DEFAULT 0 NOT NULL;
                 ALTER TABLE 'exitNodes' ADD 'maxConnections' integer;
                 ALTER TABLE 'newt' ADD 'version' text;
                 ALTER TABLE 'orgs' ADD 'subnet' text NOT NULL;
-                ALTER TABLE 'user' ADD 'twoFactorSetupRequested' integer DEFAULT false;
+                ALTER TABLE 'user' ADD 'twoFactorSetupRequested' integer DEFAULT 0;
                 ALTER TABLE 'resources' DROP COLUMN 'isBaseDomain';
             `);
         })(); // <-- executes the transaction immediately
         console.log(`Migrated database schema`);
     } catch (e) {
         console.log("Unable to migrate database schema");
-        console.log(e);
+        throw e;
     }
 
     console.log(`${version} migration complete`);
