@@ -144,7 +144,7 @@ export default async function migration() {
                 ALTER TABLE 'domains' ADD 'tries' integer DEFAULT 0 NOT NULL;
                 ALTER TABLE 'exitNodes' ADD 'maxConnections' integer;
                 ALTER TABLE 'newt' ADD 'version' text;
-                ALTER TABLE 'orgs' ADD 'subnet' text NOT NULL;
+                ALTER TABLE 'orgs' ADD 'subnet' text;
                 ALTER TABLE 'user' ADD 'twoFactorSetupRequested' integer DEFAULT 0;
                 ALTER TABLE 'resources' DROP COLUMN 'isBaseDomain';
             `);
