@@ -120,6 +120,15 @@ export async function createClient(
             );
         }
 
+        if (!org.subnet) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    `Organization with ID ${orgId} has no subnet defined`
+                )
+            );
+        }
+
         if (!isIpInCidr(subnet, org.subnet)) {
             return next(
                 createHttpError(

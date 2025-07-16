@@ -129,6 +129,15 @@ export async function createSite(
             );
         }
 
+        if (!org.subnet) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    `Organization with ID ${orgId} has no subnet defined`
+                )
+            );
+        }
+
         let updatedAddress = null;
         if (address) {
             if (!isValidIP(address)) {

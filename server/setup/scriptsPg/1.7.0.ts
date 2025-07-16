@@ -86,7 +86,7 @@ export default async function migration() {
             ALTER TABLE "domains" ADD COLUMN "tries" integer DEFAULT 0 NOT NULL;
             ALTER TABLE "exitNodes" ADD COLUMN "maxConnections" integer;
             ALTER TABLE "newt" ADD COLUMN "version" varchar;
-            ALTER TABLE "orgs" ADD COLUMN "subnet" varchar NOT NULL;
+            ALTER TABLE "orgs" ADD COLUMN "subnet" varchar;
             ALTER TABLE "sites" ADD COLUMN "address" varchar;
             ALTER TABLE "sites" ADD COLUMN "endpoint" varchar;
             ALTER TABLE "sites" ADD COLUMN "publicKey" varchar;
@@ -112,6 +112,7 @@ export default async function migration() {
     } catch (e) {
         console.log("Unable to migrate database schema");
         console.log(e);
+        throw e;
     }
 
     console.log(`${version} migration complete`);

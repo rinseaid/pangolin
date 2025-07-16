@@ -22,7 +22,7 @@ export const domains = pgTable("domains", {
 export const orgs = pgTable("orgs", {
     orgId: varchar("orgId").primaryKey(),
     name: varchar("name").notNull(),
-    subnet: varchar("subnet").notNull()
+    subnet: varchar("subnet")
 });
 
 export const orgDomains = pgTable("orgDomains", {

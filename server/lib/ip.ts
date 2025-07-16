@@ -240,6 +240,14 @@ export async function getNextAvailableClientSubnet(
 ): Promise<string> {
     const [org] = await db.select().from(orgs).where(eq(orgs.orgId, orgId));
 
+    if (!org) {
+        throw new Error(`Organization with ID ${orgId} not found`);
+    }
+
+    if (!org.subnet) {
+        throw new Error(`Organization with ID ${orgId} has no subnet defined`);
+    }
+
     const existingAddressesSites = await db
         .select({
             address: sites.address
@@ -279,7 +287,7 @@ export async function getNextAvailableOrgSubnet(): Promise<string> {
         .from(orgs)
         .where(isNotNull(orgs.subnet));
 
-    const addresses = existingAddresses.map((org) => org.subnet);
+    const addresses = existingAddresses.map((org) => org.subnet!);
 
     let subnet = findNextAvailableCidr(
         addresses,
