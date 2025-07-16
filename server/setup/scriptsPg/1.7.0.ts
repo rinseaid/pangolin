@@ -7,7 +7,9 @@ export default async function migration() {
     console.log(`Running setup script ${version}...`);
 
     try {
-        db.execute(sql`
+        await db.execute(sql`
+            BEGIN;
+            
             CREATE TABLE "clientSites" (
                 "clientId" integer NOT NULL,
                 "siteId" integer NOT NULL,
@@ -106,6 +108,8 @@ export default async function migration() {
             ALTER TABLE "userClients" ADD CONSTRAINT "userClients_clientId_clients_id_fk" FOREIGN KEY ("clientId") REFERENCES "public"."clients"("id") ON DELETE cascade ON UPDATE no action;
             ALTER TABLE "webauthnChallenge" ADD CONSTRAINT "webauthnChallenge_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
             ALTER TABLE "resources" DROP COLUMN "isBaseDomain";
+            
+            COMMIT;
         `);
 
         console.log(`Migrated database schema`);
@@ -116,6 +120,8 @@ export default async function migration() {
     }
 
     try {
+        await db.execute(sql`BEGIN`);
+        
         // Update all existing orgs to have the default subnet
         await db.execute(sql`UPDATE "orgs" SET "subnet" = '100.90.128.0/24'`);
 
@@ -144,8 +150,10 @@ export default async function migration() {
             }
         }
 
+        await db.execute(sql`COMMIT`);
         console.log(`Updated org subnets and site addresses`);
     } catch (e) {
+        await db.execute(sql`ROLLBACK`);
         console.log("Unable to update org subnets");
         console.log(e);
         throw e;
