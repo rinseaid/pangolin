@@ -155,5 +155,32 @@ export default async function migration() {
         throw e;
     }
 
+    db.transaction(() => {
+        // Update all existing orgs to have the default subnet
+        db.exec(`UPDATE 'orgs' SET 'subnet' = '100.90.128.0/24'`);
+
+        // Get all orgs and their sites to assign sequential IP addresses
+        const orgs = db.prepare(`SELECT orgId FROM 'orgs'`).all() as {
+            orgId: string;
+        }[];
+
+        for (const org of orgs) {
+            const sites = db
+                .prepare(
+                    `SELECT siteId FROM 'sites' WHERE orgId = ? ORDER BY siteId`
+                )
+                .all(org.orgId) as { siteId: number }[];
+
+            let ipIndex = 1;
+            for (const site of sites) {
+                const address = `100.90.128.${ipIndex}/24`;
+                db.prepare(
+                    `UPDATE 'sites' SET 'address' = ? WHERE siteId = ?`
+                ).run(address, site.siteId);
+                ipIndex++;
+            }
+        }
+    })();
+
     console.log(`${version} migration complete`);
 }

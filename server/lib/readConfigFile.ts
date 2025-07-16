@@ -174,8 +174,11 @@ export const configSchema = z
             .optional()
             .default({}),
         orgs: z.object({
-            block_size: z.number().positive().gt(0),
-            subnet_group: z.string()
+            block_size: z.number().positive().gt(0).optional().default(24),
+            subnet_group: z.string().optional().default("100.90.128.0/24")
+        }).optional().default({
+            block_size: 24,
+            subnet_group: "100.90.128.0/24"
         }),
         rate_limits: z
             .object({
