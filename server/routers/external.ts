@@ -791,7 +791,8 @@ authRouter.use(
         handler: (req, res, next) => {
             const message = `Rate limit exceeded. You can make ${config.getRawConfig().rate_limits.auth.max_requests} requests every ${config.getRawConfig().rate_limits.auth.window_minutes} minute(s).`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     })
 );
 
@@ -804,7 +805,8 @@ authRouter.put(
         handler: (req, res, next) => {
             const message = `You can only sign up ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.signup
 );
@@ -817,7 +819,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only log in ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.login
 );
@@ -831,7 +834,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request a Newt token ${900} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     getNewtToken
 );
@@ -844,7 +848,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request an Olm token ${900} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     getOlmToken
 );
@@ -866,7 +871,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only enable 2FA ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.verifyTotp
 );
@@ -887,7 +893,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request a 2FA code ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
 
     auth.requestTotpSecret
@@ -902,7 +909,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only disable 2FA ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.disable2fa
 );
@@ -915,7 +923,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only sign up ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     verifySessionMiddleware,
     auth.verifyEmail
@@ -967,7 +976,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only request a password reset ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.resetPassword
 );
@@ -982,7 +992,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only authenticate with password ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     resource.authWithPassword
 );
@@ -996,7 +1007,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only authenticate with pincode ${15} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     resource.authWithPincode
 );
@@ -1042,7 +1054,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only register a security key ${5} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.startRegistration
 );
@@ -1066,7 +1079,8 @@ authRouter.post(
         handler: (req, res, next) => {
             const message = `You can only attempt security key authentication ${10} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.startAuthentication
 );
@@ -1086,7 +1100,8 @@ authRouter.delete(
         handler: (req, res, next) => {
             const message = `You can only delete a security key ${10} times every ${15} minutes. Please try again later.`;
             return next(createHttpError(HttpCode.TOO_MANY_REQUESTS, message));
-        }
+        },
+        store: createStore()
     }),
     auth.deleteSecurityKey
 );

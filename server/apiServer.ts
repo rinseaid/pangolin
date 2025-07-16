@@ -16,6 +16,7 @@ import rateLimit from "express-rate-limit";
 import createHttpError from "http-errors";
 import HttpCode from "./types/HttpCode";
 import requestTimeoutMiddleware from "./middlewares/requestTimeout";
+import { createStore } from "./lib/rateLimitStore";
 
 const dev = config.isDev;
 const externalPort = config.getRawConfig().server.external_port;
@@ -75,7 +76,8 @@ export function createApiServer() {
                     return next(
                         createHttpError(HttpCode.TOO_MANY_REQUESTS, message)
                     );
-                }
+                },
+                store: createStore()
             })
         );
     }
