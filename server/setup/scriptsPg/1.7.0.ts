@@ -115,5 +115,41 @@ export default async function migration() {
         throw e;
     }
 
+    try {
+        // Update all existing orgs to have the default subnet
+        await db.execute(sql`UPDATE "orgs" SET "subnet" = '100.90.128.0/24'`);
+
+        // Get all orgs and their sites to assign sequential IP addresses
+        const orgsQuery = await db.execute(sql`SELECT "orgId" FROM "orgs"`);
+
+        const orgs = orgsQuery.rows as { orgId: string }[];
+
+        for (const org of orgs) {
+            const sitesQuery = await db.execute(sql`
+                SELECT "siteId" FROM "sites" 
+                WHERE "orgId" = ${org.orgId} 
+                ORDER BY "siteId"
+            `);
+
+            const sites = sitesQuery.rows as { siteId: number }[];
+
+            let ipIndex = 1;
+            for (const site of sites) {
+                const address = `100.90.128.${ipIndex}/24`;
+                await db.execute(sql`
+                    UPDATE "sites" SET "address" = ${address} 
+                    WHERE "siteId" = ${site.siteId}
+                `);
+                ipIndex++;
+            }
+        }
+
+        console.log(`Updated org subnets and site addresses`);
+    } catch (e) {
+        console.log("Unable to update org subnets");
+        console.log(e);
+        throw e;
+    }
+
     console.log(`${version} migration complete`);
 }
