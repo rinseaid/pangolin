@@ -42,42 +42,68 @@ export async function traefikConfigProvider(
                         .from(exitNodes)
                         .limit(1);
 
-                    if (!exitNode) {
-                        logger.error("No exit node found in the database");
-                        return [];
+                    if (exitNode) {
+                        currentExitNodeId = exitNode.exitNodeId;
                     }
-
-                    currentExitNodeId = exitNode.exitNodeId;
                 }
             }
 
-            // Get the site(s) on this exit node
-            const resourcesWithRelations = await tx
-                .select({
-                    // Resource fields
-                    resourceId: resources.resourceId,
-                    fullDomain: resources.fullDomain,
-                    ssl: resources.ssl,
-                    http: resources.http,
-                    proxyPort: resources.proxyPort,
-                    protocol: resources.protocol,
-                    subdomain: resources.subdomain,
-                    domainId: resources.domainId,
-                    // Site fields
-                    site: {
-                        siteId: sites.siteId,
-                        type: sites.type,
-                        subnet: sites.subnet,
-                        exitNodeId: sites.exitNodeId,
-                    },
-                    enabled: resources.enabled,
-                    stickySession: resources.stickySession,
-                    tlsServerName: resources.tlsServerName,
-                    setHostHeader: resources.setHostHeader
-                })
-                .from(resources)
-                .innerJoin(sites, eq(sites.siteId, resources.siteId))
-                .where(eq(sites.exitNodeId, currentExitNodeId));
+            let resourcesWithRelations;
+            if (currentExitNodeId) {
+                // Get the site(s) on this exit node
+                resourcesWithRelations = await tx
+                    .select({
+                        // Resource fields
+                        resourceId: resources.resourceId,
+                        fullDomain: resources.fullDomain,
+                        ssl: resources.ssl,
+                        http: resources.http,
+                        proxyPort: resources.proxyPort,
+                        protocol: resources.protocol,
+                        subdomain: resources.subdomain,
+                        domainId: resources.domainId,
+                        // Site fields
+                        site: {
+                            siteId: sites.siteId,
+                            type: sites.type,
+                            subnet: sites.subnet,
+                            exitNodeId: sites.exitNodeId
+                        },
+                        enabled: resources.enabled,
+                        stickySession: resources.stickySession,
+                        tlsServerName: resources.tlsServerName,
+                        setHostHeader: resources.setHostHeader
+                    })
+                    .from(resources)
+                    .innerJoin(sites, eq(sites.siteId, resources.siteId))
+                    .where(eq(sites.exitNodeId, currentExitNodeId));
+            } else {
+                resourcesWithRelations = await tx
+                    .select({
+                        // Resource fields
+                        resourceId: resources.resourceId,
+                        fullDomain: resources.fullDomain,
+                        ssl: resources.ssl,
+                        http: resources.http,
+                        proxyPort: resources.proxyPort,
+                        protocol: resources.protocol,
+                        subdomain: resources.subdomain,
+                        domainId: resources.domainId,
+                        // Site fields
+                        site: {
+                            siteId: sites.siteId,
+                            type: sites.type,
+                            subnet: sites.subnet,
+                            exitNodeId: sites.exitNodeId
+                        },
+                        enabled: resources.enabled,
+                        stickySession: resources.stickySession,
+                        tlsServerName: resources.tlsServerName,
+                        setHostHeader: resources.setHostHeader
+                    })
+                    .from(resources)
+                    .innerJoin(sites, eq(sites.siteId, resources.siteId));
+            }
 
             // Get all resource IDs from the first query
             const resourceIds = resourcesWithRelations.map((r) => r.resourceId);
@@ -284,7 +310,8 @@ export async function traefikConfigProvider(
                                 } else if (site.type === "newt") {
                                     if (
                                         !target.internalPort ||
-                                        !target.method || !site.subnet
+                                        !target.method ||
+                                        !site.subnet
                                     ) {
                                         return false;
                                     }
