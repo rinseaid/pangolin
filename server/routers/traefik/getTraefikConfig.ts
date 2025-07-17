@@ -27,13 +27,9 @@ export async function traefikConfigProvider(
                         })
                         .from(exitNodes)
                         .where(eq(exitNodes.name, exitNodeName));
-                    if (!exitNode) {
-                        logger.error(
-                            `Exit node with name ${exitNodeName} not found in the database`
-                        );
-                        return [];
+                    if (exitNode) {
+                        currentExitNodeId = exitNode.exitNodeId;
                     }
-                    currentExitNodeId = exitNode.exitNodeId;
                 } else {
                     const [exitNode] = await tx
                         .select({
