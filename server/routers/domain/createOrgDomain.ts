@@ -29,6 +29,7 @@ export type CreateDomainResponse = {
     domainId: string;
     nsRecords?: string[];
     cnameRecords?: { baseDomain: string; value: string }[];
+    aRecords?: { baseDomain: string; value: string }[];
     txtRecords?: { baseDomain: string; value: string }[];
 };
 
@@ -97,6 +98,7 @@ export async function createOrgDomain(
         }
 
         let numOrgDomains: OrgDomains[] | undefined;
+        let aRecords: CreateDomainResponse["aRecords"];
         let cnameRecords: CreateDomainResponse["cnameRecords"];
         let txtRecords: CreateDomainResponse["txtRecords"];
         let nsRecords: CreateDomainResponse["nsRecords"];
@@ -239,7 +241,7 @@ export async function createOrgDomain(
                     }
                 ];
             } else if (type === "wildcard") {
-                cnameRecords = [
+                aRecords = [
                     {
                         value: `Server IP Address`,
                         baseDomain: `*.${baseDomain}`
@@ -271,7 +273,8 @@ export async function createOrgDomain(
                 domainId: returned.domainId,
                 cnameRecords,
                 txtRecords,
-                nsRecords
+                nsRecords,
+                aRecords
             },
             success: true,
             error: false,
