@@ -271,8 +271,8 @@ export default function CreateDomainForm({
                                         </div>
                                     )}
 
-                                {domainType === "cname" ||
-                                    (domainType == "wildcard" && (
+                                {(domainType == "cname" ||
+                                    domainType == "wildcard") && (
                                         <>
                                             {createdDomain.cnameRecords &&
                                                 createdDomain.cnameRecords
@@ -424,7 +424,7 @@ export default function CreateDomainForm({
                                                     </div>
                                                 )}
                                         </>
-                                    ))}
+                                    )}
                             </div>
 
                             {build == "saas" ||
