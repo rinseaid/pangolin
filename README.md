@@ -54,11 +54,14 @@ Pangolin is a self-hosted tunneled reverse proxy server with identity and access
 ### Reverse Proxy Through WireGuard Tunnel
 
 - Expose private resources on your network **without opening ports** (firewall punching).
-- Secure and easy to configure site-to-site connectivity via a custom **user space WireGuard client**, [Newt](https://github.com/fosrl/newt).
+- Secure and easy to configure private connectivity via a custom **user space WireGuard client**, [Newt](https://github.com/fosrl/newt).
 - Built-in support for any WireGuard client.
 - Automated **SSL certificates** (https) via [LetsEncrypt](https://letsencrypt.org/).
 - Support for HTTP/HTTPS and **raw TCP/UDP services**.
 - Load balancing.
+- Extend functionality with existing [Traefik](https://github.com/traefik/traefik) plugins, such as [CrowdSec](https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin) and [Geoblock](https://github.com/PascalMinder/geoblock).
+    - **Automatically install and configure Crowdsec via Pangolin's installer script.**
+- Attach as many sites to the central server as you wish.
 
 ### Identity & Access Management
 
@@ -72,35 +75,33 @@ Pangolin is a self-hosted tunneled reverse proxy server with identity and access
     - **Temporary, self-destructing share links.**
     - Resource specific pin codes.
     - Resource specific passwords.
+    - Passkeys
 - External identity provider (IdP) support with OAuth2/OIDC, such as Authentik, Keycloak, Okta, and others.
     - Auto-provision users and roles from your IdP.
 
-### Simple Dashboard UI
+<img src="public/auth-diagram.png" alt="Auth and diagram"/>
 
-- Manage sites, users, and roles with a clean and intuitive UI.
-- Monitor site usage and connectivity.
-- Light and dark mode options.
-- Mobile friendly.
+#### Manage Access to Internal Apps
 
-### Easy Deployment
+Grant users access to your apps from anywhere using just a web browser. No client software required.
 
-- Run on any cloud provider or on-premises.
-- **Docker Compose based setup** for simplified deployment.
-- Future-proof installation script for streamlined setup and feature additions.
-- Use any WireGuard client to connect, or use **Newt, our custom user space client** for the best experience.
-- Use the API to create custom integrations and scripts.
-    - Fine-grained access control to the API via scoped API keys.
-    - Comprehensive Swagger documentation for the API.
+#### Developers and DevOps
 
-### Modular Design
+Expose and test internal tools and dashboards like **Grafana**. Bring localhost online for easy access.
 
-- Extend functionality with existing [Traefik](https://github.com/traefik/traefik) plugins, such as [CrowdSec](https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin) and [Geoblock](https://github.com/PascalMinder/geoblock).
-    - **Automatically install and configure Crowdsec via Pangolin's installer script.**
-- Attach as many sites to the central server as you wish.
+#### Secure API Gateway
+
+One application load balancer across multiple clouds and on-premises.
+
+#### IoT and Edge Devices
+
+Easily expose **IoT devices**, **edge servers**, or **Raspberry Pi** to the internet for field equipment monitoring.
+
+<img src="public/screenshots/sites.png" alt="Sites"/>
 
 ## Deployment Options
 
-### Fully Self Hosted!
+### Fully Self Hosted
 
 Host the full application on your own server on your network our on the cloud with a VPS. Take a look at the [documentation](https://docs.fossorial.io/Getting%20Started/quick-install) to get started.
 
@@ -108,7 +109,10 @@ Host the full application on your own server on your network our on the cloud wi
 
 ### Pangolin Cloud
 
-Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io). Everything you get with self hosted Pangolin but managed for you.
+Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io). 
+
+- Everything you get with self hosted Pangolin
+- Managed for you
 
 ### Hybrid & HA
 
@@ -117,17 +121,19 @@ Managed control plane, your infrastructure
 - We manage database and control plane
 - You self-host lightweight exit-node
 - Traffic flows through your infra
-- Fail over to the cloud when things go bad
+- We coordinate failover between your nodes or to cloud when things go bad
+
+If interested contact [contact us](mailto:numbat@fossorial.io).
 
 ### Enterprise
 
-[Contact us](mailto:numbat@fossorial.io) for HA distributed enterprise deployments
+[Contact us](mailto:numbat@fossorial.io) for HA distributed enterprise deployments fully controlled by your team
 
 ## Project Development / Roadmap
 
 View the [project board](https://github.com/orgs/fosrl/projects/1) for more detailed info.
 
-We want to hear your your feature requests! Add them to the [discussion board](https://github.com/orgs/fosrl/discussions/categories/feature-requests).
+We want to hear your feature requests! Add them to the [discussion board](https://github.com/orgs/fosrl/discussions/categories/feature-requests).
 
 ## Licensing
 
