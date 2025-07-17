@@ -38,7 +38,7 @@ _Pangolin tunnels your services to the internet so you can access anything from 
 
 <p align="center">
     <strong>
-    Start testing Pangolin at <a href="https://pangolin.fossorial.io">pangolin.fossorial.io</a>
+    Start testing Pangolin at <a href="https://pangolin.fossorial.io/auth/signup">pangolin.fossorial.io</a>
     <br/>
 </strong>
 </p>
@@ -109,7 +109,7 @@ Host the full application on your own server on your network our on the cloud wi
 
 ### Pangolin Cloud
 
-Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io). 
+Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io/auth/signup). 
 
 - Everything you get with self hosted Pangolin
 - Managed for you
