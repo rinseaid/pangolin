@@ -124,22 +124,6 @@ export const configSchema = z
                     .optional()
             })
             .optional(),
-        redis: z
-            .object({
-                host: z.string(),
-                port: portSchema,
-                password: z.string().optional(),
-                db: z.number().int().nonnegative().optional().default(0),
-                tls: z
-                    .object({
-                        reject_unauthorized: z
-                            .boolean()
-                            .optional()
-                            .default(true)
-                    })
-                    .optional()
-            })
-            .optional(),
         traefik: z
             .object({
                 http_entrypoint: z.string().optional().default("web"),
@@ -237,7 +221,6 @@ export const configSchema = z
                 disable_user_create_org: z.boolean().optional(),
                 allow_raw_resources: z.boolean().optional(),
                 enable_integration_api: z.boolean().optional(),
-                enable_redis: z.boolean().optional(),
                 disable_local_sites: z.boolean().optional(),
                 disable_basic_wireguard_sites: z.boolean().optional(),
                 disable_config_managed_domains: z.boolean().optional(),
@@ -245,18 +228,6 @@ export const configSchema = z
             })
             .optional()
     })
-    .refine(
-        (data) => {
-            if (data.flags?.enable_redis) {
-                return data?.redis !== undefined;
-            }
-            return true;
-        },
-        {
-            message:
-                "If Redis is enabled, configuration details must be provided"
-        }
-    )
     .refine(
         (data) => {
             const keys = Object.keys(data.domains || {});
@@ -272,20 +243,6 @@ export const configSchema = z
             message: "At least one domain must be defined"
         }
     )
-    .refine(
-        (data) => {
-            if (build == "oss" && data.redis) {
-                return false;
-            }
-            if (build == "oss" && data.flags?.enable_redis) {
-                return false;
-            }
-            return true;
-        },
-        {
-            message: "Redis"
-        }
-    );
 
 export function readConfigFile() {
     const loadConfig = (configPath: string) => {
