@@ -9,6 +9,7 @@ import { createIntegrationApiServer } from "./integrationApiServer";
 import config from "@server/lib/config";
 
 async function startServers() {
+    await config.initServer();
     await runSetupFunctions();
 
     // Start all servers
@@ -35,7 +36,7 @@ declare global {
         interface Request {
             apiKey?: ApiKey;
             user?: User;
-            session?: Session;
+            session: Session;
             userOrg?: UserOrg;
             apiKeyOrg?: ApiKeyOrg;
             userOrgRoleId?: number;

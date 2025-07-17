@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import { db } from "@server/db";
+import { db, exitNodes } from "@server/db";
 import { and, eq, inArray } from "drizzle-orm";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
 import config from "@server/lib/config";
 import { orgs, resources, sites, Target, targets } from "@server/db";
-import { sql } from "drizzle-orm";
+
+let currentExitNodeId: number;
 
 export async function traefikConfigProvider(
     _: Request,
@@ -15,30 +16,59 @@ export async function traefikConfigProvider(
         // Get all resources with related data
         const allResources = await db.transaction(async (tx) => {
             // First query to get resources with site and org info
+            // Get the current exit node name from config
+            if (!currentExitNodeId) {
+                if (config.getRawConfig().gerbil.exit_node_name) {
+                    const exitNodeName =
+                        config.getRawConfig().gerbil.exit_node_name!;
+                    const [exitNode] = await tx
+                        .select({
+                            exitNodeId: exitNodes.exitNodeId
+                        })
+                        .from(exitNodes)
+                        .where(eq(exitNodes.name, exitNodeName));
+                    if (!exitNode) {
+                        logger.error(
+                            `Exit node with name ${exitNodeName} not found in the database`
+                        );
+                        return [];
+                    }
+                    currentExitNodeId = exitNode.exitNodeId;
+                } else {
+                    const [exitNode] = await tx
+                        .select({
+                            exitNodeId: exitNodes.exitNodeId
+                        })
+                        .from(exitNodes)
+                        .limit(1);
+
+                    if (!exitNode) {
+                        logger.error("No exit node found in the database");
+                        return [];
+                    }
+
+                    currentExitNodeId = exitNode.exitNodeId;
+                }
+            }
+
+            // Get the site(s) on this exit node
             const resourcesWithRelations = await tx
                 .select({
                     // Resource fields
                     resourceId: resources.resourceId,
-                    subdomain: resources.subdomain,
                     fullDomain: resources.fullDomain,
                     ssl: resources.ssl,
-                    blockAccess: resources.blockAccess,
-                    sso: resources.sso,
-                    emailWhitelistEnabled: resources.emailWhitelistEnabled,
                     http: resources.http,
                     proxyPort: resources.proxyPort,
                     protocol: resources.protocol,
-                    isBaseDomain: resources.isBaseDomain,
+                    subdomain: resources.subdomain,
                     domainId: resources.domainId,
                     // Site fields
                     site: {
                         siteId: sites.siteId,
                         type: sites.type,
-                        subnet: sites.subnet
-                    },
-                    // Org fields
-                    org: {
-                        orgId: orgs.orgId
+                        subnet: sites.subnet,
+                        exitNodeId: sites.exitNodeId,
                     },
                     enabled: resources.enabled,
                     stickySession: resources.stickySession,
@@ -47,7 +77,7 @@ export async function traefikConfigProvider(
                 })
                 .from(resources)
                 .innerJoin(sites, eq(sites.siteId, resources.siteId))
-                .innerJoin(orgs, eq(resources.orgId, orgs.orgId));
+                .where(eq(sites.exitNodeId, currentExitNodeId));
 
             // Get all resource IDs from the first query
             const resourceIds = resourcesWithRelations.map((r) => r.resourceId);
@@ -140,7 +170,6 @@ export async function traefikConfigProvider(
         for (const resource of allResources) {
             const targets = resource.targets as Target[];
             const site = resource.site;
-            const org = resource.org;
 
             const routerName = `${resource.resourceId}-router`;
             const serviceName = `${resource.resourceId}-service`;
@@ -164,11 +193,6 @@ export async function traefikConfigProvider(
                     continue;
                 }
 
-                // HTTP configuration remains the same
-                if (!resource.subdomain && !resource.isBaseDomain) {
-                    continue;
-                }
-
                 // add routers and services empty objects if they don't exist
                 if (!config_output.http.routers) {
                     config_output.http.routers = {};
@@ -186,31 +210,27 @@ export async function traefikConfigProvider(
                     wildCard = `*.${domainParts.slice(1).join(".")}`;
                 }
 
-                if (resource.isBaseDomain) {
+                if (!resource.subdomain) {
                     wildCard = resource.fullDomain;
                 }
 
                 const configDomain = config.getDomain(resource.domainId);
 
-                if (!configDomain) {
-                    logger.error(
-                        `Failed to get domain from config for resource ${resource.resourceId}`
-                    );
-                    continue;
+                let tls = {};
+                if (configDomain) {
+                    tls = {
+                        certResolver: configDomain.cert_resolver,
+                        ...(configDomain.prefer_wildcard_cert
+                            ? {
+                                  domains: [
+                                      {
+                                          main: wildCard
+                                      }
+                                  ]
+                              }
+                            : {})
+                    };
                 }
-
-                const tls = {
-                    certResolver: configDomain.cert_resolver,
-                    ...(configDomain.prefer_wildcard_cert
-                        ? {
-                              domains: [
-                                  {
-                                      main: wildCard
-                                  }
-                              ]
-                          }
-                        : {})
-                };
 
                 const additionalMiddlewares =
                     config.getRawConfig().traefik.additional_middlewares || [];
@@ -227,6 +247,7 @@ export async function traefikConfigProvider(
                     ],
                     service: serviceName,
                     rule: `Host(\`${fullDomain}\`)`,
+                    priority: 100,
                     ...(resource.ssl ? { tls } : {})
                 };
 
@@ -237,7 +258,8 @@ export async function traefikConfigProvider(
                         ],
                         middlewares: [redirectHttpsMiddlewareName],
                         service: serviceName,
-                        rule: `Host(\`${fullDomain}\`)`
+                        rule: `Host(\`${fullDomain}\`)`,
+                        priority: 100
                     };
                 }
 
@@ -262,7 +284,7 @@ export async function traefikConfigProvider(
                                 } else if (site.type === "newt") {
                                     if (
                                         !target.internalPort ||
-                                        !target.method
+                                        !target.method || !site.subnet
                                     ) {
                                         return false;
                                     }
@@ -278,7 +300,7 @@ export async function traefikConfigProvider(
                                         url: `${target.method}://${target.ip}:${target.port}`
                                     };
                                 } else if (site.type === "newt") {
-                                    const ip = site.subnet.split("/")[0];
+                                    const ip = site.subnet!.split("/")[0];
                                     return {
                                         url: `${target.method}://${ip}:${target.internalPort}`
                                     };
@@ -309,7 +331,9 @@ export async function traefikConfigProvider(
                         // if defined in the static config and here. if not set, self-signed certs won't work
                         insecureSkipVerify: true
                     };
-                    config_output.http.services![serviceName].loadBalancer.serversTransport = transportName;
+                    config_output.http.services![
+                        serviceName
+                    ].loadBalancer.serversTransport = transportName;
                 }
 
                 // Add the host header middleware
@@ -317,23 +341,22 @@ export async function traefikConfigProvider(
                     if (!config_output.http.middlewares) {
                         config_output.http.middlewares = {};
                     }
-                    config_output.http.middlewares[hostHeaderMiddlewareName] =
-                        {
-                            headers: {
-                                customRequestHeaders: {
-                                    Host: resource.setHostHeader
-                                }
+                    config_output.http.middlewares[hostHeaderMiddlewareName] = {
+                        headers: {
+                            customRequestHeaders: {
+                                Host: resource.setHostHeader
                             }
-                        };
+                        }
+                    };
                     if (!config_output.http.routers![routerName].middlewares) {
-                        config_output.http.routers![routerName].middlewares = [];
+                        config_output.http.routers![routerName].middlewares =
+                            [];
                     }
                     config_output.http.routers![routerName].middlewares = [
                         ...config_output.http.routers![routerName].middlewares,
                         hostHeaderMiddlewareName
                     ];
                 }
-
             } else {
                 // Non-HTTP (TCP/UDP) configuration
                 const protocol = resource.protocol.toLowerCase();
@@ -371,7 +394,7 @@ export async function traefikConfigProvider(
                                         return false;
                                     }
                                 } else if (site.type === "newt") {
-                                    if (!target.internalPort) {
+                                    if (!target.internalPort || !site.subnet) {
                                         return false;
                                     }
                                 }
@@ -386,7 +409,7 @@ export async function traefikConfigProvider(
                                         address: `${target.ip}:${target.port}`
                                     };
                                 } else if (site.type === "newt") {
-                                    const ip = site.subnet.split("/")[0];
+                                    const ip = site.subnet!.split("/")[0];
                                     return {
                                         address: `${ip}:${target.internalPort}`
                                     };
