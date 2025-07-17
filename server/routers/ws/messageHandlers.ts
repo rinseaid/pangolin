@@ -5,13 +5,13 @@ import {
     handleDockerStatusMessage,
     handleDockerContainersMessage,
     handleNewtPingRequestMessage
-} from "./newt";
+} from "../newt";
 import {
     handleOlmRegisterMessage,
     handleOlmRelayMessage,
     handleOlmPingMessage,
     startOfflineChecker
-} from "./olm";
+} from "../olm";
 import { MessageHandler } from "./ws";
 
 export const messageHandlers: Record<string, MessageHandler> = {
