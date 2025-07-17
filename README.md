@@ -81,21 +81,23 @@ Pangolin is a self-hosted tunneled reverse proxy server with identity and access
 
 <img src="public/auth-diagram1.png" alt="Auth and diagram"/>
 
-#### Manage Access to Internal Apps
+## Use Cases
 
-Grant users access to your apps from anywhere using just a web browser. No client software required.
+### Manage Access to Internal Apps
 
-#### Developers and DevOps
+- Grant users access to your apps from anywhere using just a web browser. No client software required.
 
-Expose and test internal tools and dashboards like **Grafana**. Bring localhost online for easy access.
+### Developers and DevOps
 
-#### Secure API Gateway
+- Expose and test internal tools and dashboards like **Grafana**. Bring localhost or private IPs online for easy access.
 
-One application load balancer across multiple clouds and on-premises.
+### Secure API Gateway
 
-#### IoT and Edge Devices
+- One application load balancer across multiple clouds and on-premises.
 
-Easily expose **IoT devices**, **edge servers**, or **Raspberry Pi** to the internet for field equipment monitoring.
+### IoT and Edge Devices
+
+- Easily expose **IoT devices**, **edge servers**, or **Raspberry Pi** to the internet for field equipment monitoring.
 
 <img src="public/screenshots/sites.png" alt="Sites"/>
 
@@ -103,7 +105,7 @@ Easily expose **IoT devices**, **edge servers**, or **Raspberry Pi** to the inte
 
 ### Fully Self Hosted
 
-Host the full application on your own server on your network our on the cloud with a VPS. Take a look at the [documentation](https://docs.fossorial.io/Getting%20Started/quick-install) to get started.
+Host the full application on your own server or on the cloud with a VPS. Take a look at the [documentation](https://docs.fossorial.io/Getting%20Started/quick-install) to get started.
 
 > Many of our users have had a great experience with [RackNerd](https://my.racknerd.com/aff.php?aff=13788). Depending on promotions, you can get a [**VPS with 1 vCPU, 1GB RAM, and ~20GB SSD for just around $12/year**](https://my.racknerd.com/aff.php?aff=13788&pid=912). That's a great deal!
 
@@ -111,27 +113,24 @@ Host the full application on your own server on your network our on the cloud wi
 
 Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io/auth/signup). 
 
-- Everything you get with self hosted Pangolin
-- Managed for you
+- Everything you get with self hosted Pangolin, but fully managed for you.
 
-### Hybrid & HA
+### Hybrid & High Availability
 
 Managed control plane, your infrastructure
 
-- We manage database and control plane
-- You self-host lightweight exit-node
-- Traffic flows through your infra
-- We coordinate failover between your nodes or to cloud when things go bad
+- We manage database and control plane.
+- You self-host lightweight exit-node.
+- Traffic flows through your infra.
+- We coordinate failover between your nodes or to Cloud when things go bad.
 
-If interested contact [contact us](mailto:numbat@fossorial.io).
+If interested, [contact us](mailto:numbat@fossorial.io).
 
-### Enterprise
+### Full Enterprise On-Premises
 
-[Contact us](mailto:numbat@fossorial.io) for HA distributed enterprise deployments fully controlled by your team
+[Contact us](mailto:numbat@fossorial.io) for a full distributed and enterprise deployments on your infrastructure controlled by your team.
 
 ## Project Development / Roadmap
-
-View the [project board](https://github.com/orgs/fosrl/projects/1) for more detailed info.
 
 We want to hear your feature requests! Add them to the [discussion board](https://github.com/orgs/fosrl/discussions/categories/feature-requests).
 
