@@ -122,7 +122,20 @@ export default function GeneralForm() {
         enabled: z.boolean(),
         subdomain: z.string().optional(),
         name: z.string().min(1).max(255),
-        domainId: z.string().optional()
+        domainId: z.string().optional(),
+        proxyPort: z.number().int().min(1).max(65535).optional()
+    }).refine((data) => {
+        // For non-HTTP resources, proxyPort should be defined
+        if (!resource.http) {
+            return data.proxyPort !== undefined;
+        }
+        // For HTTP resources, proxyPort should be undefined
+        return data.proxyPort === undefined;
+    }, {
+        message: !resource.http 
+            ? "Port number is required for non-HTTP resources" 
+            : "Port number should not be set for HTTP resources",
+        path: ["proxyPort"]
     });
 
     type GeneralFormValues = z.infer<typeof GeneralFormSchema>;
@@ -133,7 +146,8 @@ export default function GeneralForm() {
             enabled: resource.enabled,
             name: resource.name,
             subdomain: resource.subdomain ? resource.subdomain : undefined,
-            domainId: resource.domainId || undefined
+            domainId: resource.domainId || undefined,
+            proxyPort: resource.proxyPort || undefined
         },
         mode: "onChange"
     });
@@ -196,7 +210,8 @@ export default function GeneralForm() {
                     enabled: data.enabled,
                     name: data.name,
                     subdomain: data.subdomain,
-                    domainId: data.domainId
+                    domainId: data.domainId,
+                    proxyPort: data.proxyPort
                 }
             )
             .catch((e) => {
@@ -222,7 +237,8 @@ export default function GeneralForm() {
                 enabled: data.enabled,
                 name: data.name,
                 subdomain: data.subdomain,
-                fullDomain: resource.fullDomain
+                fullDomain: resource.fullDomain,
+                proxyPort: data.proxyPort
             });
 
             router.refresh();
@@ -332,6 +348,39 @@ export default function GeneralForm() {
                                                 </FormItem>
                                             )}
                                         />
+
+                                        {!resource.http && (
+                                            <>
+                                                <FormField
+                                                    control={form.control}
+                                                    name="proxyPort"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                {t("resourcePortNumber")}
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={field.value ?? ""}
+                                                                    onChange={(e) =>
+                                                                        field.onChange(
+                                                                            e.target.value
+                                                                                ? parseInt(e.target.value)
+                                                                                : undefined
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                            <FormDescription>
+                                                                {t("resourcePortNumberDescription")}
+                                                            </FormDescription>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </>
+                                        )}
 
                                         {resource.http && (
                                             <div className="space-y-2">
