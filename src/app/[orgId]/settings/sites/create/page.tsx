@@ -894,49 +894,6 @@ WantedBy=default.target`
                                             )}
                                         </AlertDescription>
                                     </Alert>
-
-                                    <Form {...form}>
-                                        <form
-                                            className="space-y-4"
-                                            id="create-site-form"
-                                        >
-                                            <FormField
-                                                control={form.control}
-                                                name="copied"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <div className="flex items-center space-x-2">
-                                                            <Checkbox
-                                                                id="terms"
-                                                                defaultChecked={
-                                                                    form.getValues(
-                                                                        "copied"
-                                                                    ) as boolean
-                                                                }
-                                                                onCheckedChange={(
-                                                                    e
-                                                                ) => {
-                                                                    form.setValue(
-                                                                        "copied",
-                                                                        e as boolean
-                                                                    );
-                                                                }}
-                                                            />
-                                                            <label
-                                                                htmlFor="terms"
-                                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                            >
-                                                                {t(
-                                                                    "siteConfirmCopy"
-                                                                )}
-                                                            </label>
-                                                        </div>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </form>
-                                    </Form>
                                 </SettingsSectionBody>
                             </SettingsSection>
                         )}

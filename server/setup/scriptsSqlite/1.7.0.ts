@@ -11,6 +11,8 @@ export default async function migration() {
     const db = new Database(location);
 
     try {
+        db.pragma("foreign_keys = OFF");
+
         db.transaction(() => {
             db.exec(`
                 CREATE TABLE 'clientSites' (
@@ -99,8 +101,6 @@ export default async function migration() {
 
             `);
 
-            db.pragma("foreign_keys = OFF");
-
             db.exec(`
                 CREATE TABLE '__new_sites' (
                     'siteId' integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -135,8 +135,6 @@ export default async function migration() {
                 ALTER TABLE '__new_sites' RENAME TO 'sites';
             `);
 
-            db.pragma("foreign_keys = ON");
-
             db.exec(`
                 ALTER TABLE 'domains' ADD 'type' text;
                 ALTER TABLE 'domains' ADD 'verified' integer DEFAULT 0 NOT NULL;
@@ -148,7 +146,10 @@ export default async function migration() {
                 ALTER TABLE 'user' ADD 'twoFactorSetupRequested' integer DEFAULT 0;
                 ALTER TABLE 'resources' DROP COLUMN 'isBaseDomain';
             `);
-        })(); // <-- executes the transaction immediately
+        })();
+
+        db.pragma("foreign_keys = ON");
+
         console.log(`Migrated database schema`);
     } catch (e) {
         console.log("Unable to migrate database schema");
