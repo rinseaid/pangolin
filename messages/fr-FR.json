@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Clé de sécurité supprimée avec succès",
     "securityKeyRemoveError": "Échec de la suppression de la clé de sécurité",
     "securityKeyLoadError": "Échec du chargement des clés de sécurité",
-    "securityKeyLogin": "Se connecter avec une clé de sécurité",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Échec de l'authentification avec la clé de sécurité",
     "securityKeyRecommendation": "Envisagez d'enregistrer une autre clé de sécurité sur un appareil différent pour vous assurer de ne pas être bloqué de votre compte.",
     "registering": "Enregistrement...",
