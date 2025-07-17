@@ -25,7 +25,7 @@ export async function sendEmail(
 
     const emailHtml = await render(template);
 
-    const appName = "Fossorial - Pangolin";
+    const appName = "Pangolin";
 
     await emailClient.sendMail({
         from: {

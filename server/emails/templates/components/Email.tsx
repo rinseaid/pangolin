@@ -1,5 +1,6 @@
 import React from "react";
 import { Container, Img } from "@react-email/components";
+import { build } from "@server/build";
 
 // EmailContainer: Wraps the entire email layout
 export function EmailContainer({ children }: { children: React.ReactNode }) {
@@ -81,18 +82,22 @@ export function EmailSection({
 // EmailFooter: For closing or signature
 export function EmailFooter({ children }: { children: React.ReactNode }) {
     return (
-        <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
-            {children}
-            <p className="text-xs text-gray-400 mt-4">
-                For any questions or support, please contact us at:
-                <br />
-                support@fossorial.io
-            </p>
-            <p className="text-xs text-gray-300 text-center mt-4">
-                &copy; {new Date().getFullYear()} Fossorial, Inc. All rights
-                reserved.
-            </p>
-        </div>
+        <>
+            {build === "saas" && (
+                <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
+                    {children}
+                    <p className="text-xs text-gray-400 mt-4">
+                        For any questions or support, please contact us at:
+                        <br />
+                        support@fossorial.io
+                    </p>
+                    <p className="text-xs text-gray-300 text-center mt-4">
+                        &copy; {new Date().getFullYear()} Fossorial, Inc. All
+                        rights reserved.
+                    </p>
+                </div>
+            )}
+        </>
     );
 }
 
