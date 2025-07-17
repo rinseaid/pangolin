@@ -321,7 +321,9 @@ export default function DomainPicker({
                     }}
                 />
                 <p className="text-xs text-muted-foreground">
-                    {t("domainPickerDescription")}
+                    {build === "saas"
+                        ? t("domainPickerDescriptionSaas")
+                        : t("domainPickerDescription")}
                 </p>
             </div>
 
