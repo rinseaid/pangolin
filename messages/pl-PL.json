@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Klucz bezpieczeństwa został pomyślnie usunięty",
     "securityKeyRemoveError": "Błąd podczas usuwania klucza bezpieczeństwa",
     "securityKeyLoadError": "Błąd podczas ładowania kluczy bezpieczeństwa",
-    "securityKeyLogin": "Zaloguj się kluczem bezpieczeństwa",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Błąd podczas uwierzytelniania kluczem bezpieczeństwa",
     "securityKeyRecommendation": "Rozważ zarejestrowanie innego klucza bezpieczeństwa na innym urządzeniu, aby upewnić się, że nie zostaniesz zablokowany z dostępu do swojego konta.",
     "registering": "Rejestracja...",
