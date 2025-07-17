@@ -111,7 +111,7 @@ Host the full application on your own server or on the cloud with a VPS. Take a 
 
 ### Pangolin Cloud
 
-Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io/auth/signup). 
+Easy to use with simple [pay as you go pricing](https://fossorial.io/pricing). [Check it out here](https://pangolin.fossorial.io/auth/signup). 
 
 - Everything you get with self hosted Pangolin, but fully managed for you.
 
