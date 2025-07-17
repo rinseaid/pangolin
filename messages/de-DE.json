@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Sicherheitsschlüssel erfolgreich entfernt",
     "securityKeyRemoveError": "Fehler beim Entfernen des Sicherheitsschlüssels",
     "securityKeyLoadError": "Fehler beim Laden der Sicherheitsschlüssel",
-    "securityKeyLogin": "Mit Sicherheitsschlüssel anmelden",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Fehler bei der Authentifizierung mit Sicherheitsschlüssel",
     "securityKeyRecommendation": "Erwägen Sie die Registrierung eines weiteren Sicherheitsschlüssels auf einem anderen Gerät, um sicherzustellen, dass Sie sich nicht aus Ihrem Konto aussperren.",
     "registering": "Registrierung...",
