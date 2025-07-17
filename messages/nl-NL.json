@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Beveiligingssleutel succesvol verwijderd",
     "securityKeyRemoveError": "Fout bij verwijderen van beveiligingssleutel",
     "securityKeyLoadError": "Fout bij laden van beveiligingssleutels",
-    "securityKeyLogin": "Inloggen met beveiligingssleutel",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Fout bij authenticatie met beveiligingssleutel",
     "securityKeyRecommendation": "Overweeg om een andere beveiligingssleutel te registreren op een ander apparaat om ervoor te zorgen dat u niet buitengesloten raakt van uw account.",
     "registering": "Registreren...",
