@@ -141,13 +141,16 @@ You can use Pangolin as an easy way to expose your business applications to your
 
 View the [project board](https://github.com/orgs/fosrl/projects/1) for more detailed info.
 
+We want to hear your your feature requests! Add them to the [discussion board](https://github.com/orgs/fosrl/discussions/categories/feature-requests).
+
 ## Licensing
 
-Pangolin is dual licensed under the AGPL-3 and the Fossorial Commercial license. Please see the [LICENSE](./LICENSE) file in the repository for details. For inquiries about commercial licensing, please contact us at [numbat@fossorial.io](mailto:numbat@fossorial.io).
+Pangolin is dual licensed under the AGPL-3 and the Fossorial Commercial license. For inquiries about commercial licensing, please contact us at [numbat@fossorial.io](mailto:numbat@fossorial.io).
 
 ## Contributions
+
+Looking for something to contribute? Take a look at issues marked with [help wanted](https://github.com/fosrl/pangolin/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22help%20wanted%22).
 
 Please see [CONTRIBUTING](./CONTRIBUTING.md) in the repository for guidelines and best practices.
 
 Please post bug reports and other functional issues in the [Issues](https://github.com/fosrl/pangolin/issues) section of the repository.
-For all feature requests, or other ideas, please use the [Discussions](https://github.com/orgs/fosrl/discussions) section.
