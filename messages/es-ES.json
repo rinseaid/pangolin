@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Llave de seguridad eliminada exitosamente",
     "securityKeyRemoveError": "Error al eliminar la llave de seguridad",
     "securityKeyLoadError": "Error al cargar las llaves de seguridad",
-    "securityKeyLogin": "Iniciar sesión con llave de seguridad",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Error al autenticar con llave de seguridad",
     "securityKeyRecommendation": "Considere registrar otra llave de seguridad en un dispositivo diferente para asegurarse de no quedar bloqueado de su cuenta.",
     "registering": "Registrando...",
