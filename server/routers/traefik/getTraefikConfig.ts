@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { db, exitNodes } from "@server/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or, isNull } from "drizzle-orm";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
 import config from "@server/lib/config";
@@ -48,62 +48,38 @@ export async function traefikConfigProvider(
                 }
             }
 
-            let resourcesWithRelations;
-            if (currentExitNodeId) {
-                // Get the site(s) on this exit node
-                resourcesWithRelations = await tx
-                    .select({
-                        // Resource fields
-                        resourceId: resources.resourceId,
-                        fullDomain: resources.fullDomain,
-                        ssl: resources.ssl,
-                        http: resources.http,
-                        proxyPort: resources.proxyPort,
-                        protocol: resources.protocol,
-                        subdomain: resources.subdomain,
-                        domainId: resources.domainId,
-                        // Site fields
-                        site: {
-                            siteId: sites.siteId,
-                            type: sites.type,
-                            subnet: sites.subnet,
-                            exitNodeId: sites.exitNodeId
-                        },
-                        enabled: resources.enabled,
-                        stickySession: resources.stickySession,
-                        tlsServerName: resources.tlsServerName,
-                        setHostHeader: resources.setHostHeader
-                    })
-                    .from(resources)
-                    .innerJoin(sites, eq(sites.siteId, resources.siteId))
-                    .where(eq(sites.exitNodeId, currentExitNodeId));
-            } else {
-                resourcesWithRelations = await tx
-                    .select({
-                        // Resource fields
-                        resourceId: resources.resourceId,
-                        fullDomain: resources.fullDomain,
-                        ssl: resources.ssl,
-                        http: resources.http,
-                        proxyPort: resources.proxyPort,
-                        protocol: resources.protocol,
-                        subdomain: resources.subdomain,
-                        domainId: resources.domainId,
-                        // Site fields
-                        site: {
-                            siteId: sites.siteId,
-                            type: sites.type,
-                            subnet: sites.subnet,
-                            exitNodeId: sites.exitNodeId
-                        },
-                        enabled: resources.enabled,
-                        stickySession: resources.stickySession,
-                        tlsServerName: resources.tlsServerName,
-                        setHostHeader: resources.setHostHeader
-                    })
-                    .from(resources)
-                    .innerJoin(sites, eq(sites.siteId, resources.siteId));
-            }
+            // Get the site(s) on this exit node
+            const resourcesWithRelations = await tx
+                .select({
+                    // Resource fields
+                    resourceId: resources.resourceId,
+                    fullDomain: resources.fullDomain,
+                    ssl: resources.ssl,
+                    http: resources.http,
+                    proxyPort: resources.proxyPort,
+                    protocol: resources.protocol,
+                    subdomain: resources.subdomain,
+                    domainId: resources.domainId,
+                    // Site fields
+                    site: {
+                        siteId: sites.siteId,
+                        type: sites.type,
+                        subnet: sites.subnet,
+                        exitNodeId: sites.exitNodeId
+                    },
+                    enabled: resources.enabled,
+                    stickySession: resources.stickySession,
+                    tlsServerName: resources.tlsServerName,
+                    setHostHeader: resources.setHostHeader
+                })
+                .from(resources)
+                .innerJoin(sites, eq(sites.siteId, resources.siteId))
+                .where(
+                    or(
+                        eq(sites.exitNodeId, currentExitNodeId),
+                        isNull(sites.exitNodeId)
+                    )
+                );
 
             // Get all resource IDs from the first query
             const resourceIds = resourcesWithRelations.map((r) => r.resourceId);
