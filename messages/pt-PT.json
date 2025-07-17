@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Chave de segurança removida com sucesso",
     "securityKeyRemoveError": "Erro ao remover chave de segurança",
     "securityKeyLoadError": "Erro ao carregar chaves de segurança",
-    "securityKeyLogin": "Entrar com chave de segurança",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Erro ao autenticar com chave de segurança",
     "securityKeyRecommendation": "Considere registrar outra chave de segurança em um dispositivo diferente para garantir que você não fique bloqueado da sua conta.",
     "registering": "Registrando...",
