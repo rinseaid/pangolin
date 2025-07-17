@@ -7,10 +7,10 @@
     </h2>
 </div>
 
-<h4 align="center">Tunneled Reverse Proxy Server with Access Control</h4>
+<h4 align="center">Secure gateway to your private networks</h4>
 <div align="center">
 
-_Your own self-hosted zero trust tunnel._
+_Pangolin tunnels your services to the internet so you can access anything from anywhere._
 
 </div>
 
@@ -36,11 +36,18 @@ _Your own self-hosted zero trust tunnel._
 
 </div>
 
+<p align="center">
+    <strong>
+    Start testing Pangolin at <a href="https://pangolin.fossorial.io">pangolin.fossorial.io</a>
+    <br/>
+</strong>
+</p>
+
 Pangolin is a self-hosted tunneled reverse proxy server with identity and access control, designed to securely expose private resources on distributed networks. Acting as a central hub, it connects isolated networks — even those behind restrictive firewalls — through encrypted tunnels, enabling easy access to remote services without opening ports.
 
 <img src="public/screenshots/hero.png" alt="Preview"/>
 
-_Resources page of Pangolin dashboard (dark mode) showing multiple resources available to connect._
+![gif](public/clip.gif)
 
 ## Key Features
 
@@ -93,51 +100,32 @@ _Resources page of Pangolin dashboard (dark mode) showing multiple resources ava
 
 <img src="public/screenshots/collage.png" alt="Collage"/>
 
-## Deployment and Usage Example
+## Deployment Options
 
-1. **Deploy the Central Server**:
+### Fully Self Hosted!
 
-    - Deploy the Docker Compose stack onto a VPS hosted on a cloud platform like RackNerd, Amazon EC2, DigitalOcean Droplet, or similar. There are many cheap VPS hosting options available to suit your needs.
+Host the full application on your own server on your network our on the cloud with a VPS. Take a look at the [documentation](https://docs.fossorial.io/Getting%20Started/quick-install) to get started.
 
-> [!TIP]
 > Many of our users have had a great experience with [RackNerd](https://my.racknerd.com/aff.php?aff=13788). Depending on promotions, you can get a [**VPS with 1 vCPU, 1GB RAM, and ~20GB SSD for just around $12/year**](https://my.racknerd.com/aff.php?aff=13788&pid=912). That's a great deal!
-> We are part of the [RackNerd](https://my.racknerd.com/aff.php?aff=13788) affiliate program, so if you purchase through [our link](https://my.racknerd.com/aff.php?aff=13788), we receive a small commission which helps us maintain the project and keep it free for everyone.
 
-1. **Domain Configuration**:
+### Pangolin Cloud
 
-    - Point your domain name to the VPS and configure Pangolin with your preferred settings.
+Easy to use with simple pay as you go pricing. [Check it out here](https://pangolin.fossorial.io). Everything you get with self hosted Pangolin but managed for you.
 
-2. **Connect Private Sites**:
+### Hybrid & HA
 
-    - Install Newt or use another WireGuard client on private sites.
-    - Automatically establish a connection from these sites to the central server.
+Managed control plane, your infrastructure
 
-3. **Expose Resources**:
+- We manage database and control plane
+- You self-host lightweight exit-node
+- Traffic flows through your infra
+- Fail over to the cloud when things go bad
 
-    - Add resources to the central server and configure access control rules.
-    - Access these resources securely from anywhere.
+### Enterprise
 
-**Use Case Example - Bypassing Port Restrictions in Home Lab**:  
- Imagine private sites where the ISP restricts port forwarding. By connecting these sites to Pangolin via WireGuard, you can securely expose HTTP and HTTPS resources on the private network without any networking complexity.
-
-**Use Case Example - Deploying Services For Your Business**:
-You can use Pangolin as an easy way to expose your business applications to your users behind a safe authentication portal you can integrate into your IdP solution. Expose resources on prem and on the cloud.
-
-**Use Case Example - IoT Networks**:  
- IoT networks are often fragmented and difficult to manage. By deploying Pangolin on a central server, you can connect all your IoT sites via Newt or another WireGuard client. This creates a simple, secure, and centralized way to access IoT resources without the need for intricate networking setups.
-
-## Similar Projects and Inspirations
-
-**Cloudflare Tunnels**:  
- A similar approach to proxying private resources securely, but Pangolin is a self-hosted alternative, giving you full control over your infrastructure.
-
-**Authelia**:  
- This inspired Pangolin’s centralized authentication system for proxies, enabling robust user and role management.
+[Contact us](mailto:numbat@fossorial.io) for HA distributed enterprise deployments
 
 ## Project Development / Roadmap
-
-> [!NOTE]
-> Pangolin is under heavy development. The roadmap is subject to change as we fix bugs, add new features, and make improvements.
 
 View the [project board](https://github.com/orgs/fosrl/projects/1) for more detailed info.
 
