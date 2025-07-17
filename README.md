@@ -98,8 +98,6 @@ Pangolin is a self-hosted tunneled reverse proxy server with identity and access
     - **Automatically install and configure Crowdsec via Pangolin's installer script.**
 - Attach as many sites to the central server as you wish.
 
-<img src="public/screenshots/collage.png" alt="Collage"/>
-
 ## Deployment Options
 
 ### Fully Self Hosted!
