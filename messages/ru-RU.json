@@ -1231,7 +1231,7 @@
     "securityKeyRemoveSuccess": "Security key removed successfully",
     "securityKeyRemoveError": "Failed to remove security key",
     "securityKeyLoadError": "Failed to load security keys",
-    "securityKeyLogin": "Sign in with security key",
+    "securityKeyLogin": "Continue with security key",
     "securityKeyAuthError": "Failed to authenticate with security key",
     "securityKeyRecommendation": "Register a backup security key on another device to ensure you always have access to your account.",
     "registering": "Registering...",
