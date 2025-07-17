@@ -291,6 +291,19 @@ export default function ResourceAuthPortal(props: ResourceAuthPortalProps) {
         <div>
             {!accessDenied ? (
                 <div>
+                    <div className="text-center mb-2">
+                        <span className="text-sm text-muted-foreground">
+                            {t("poweredBy")}{" "}
+                            <Link
+                                href="https://github.com/fosrl/pangolin"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline"
+                            >
+                                Pangolin
+                            </Link>
+                        </span>
+                    </div>
                     <Card>
                         <CardHeader>
                             <CardTitle>{getTitle()}</CardTitle>
