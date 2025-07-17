@@ -79,7 +79,7 @@ Pangolin is a self-hosted tunneled reverse proxy server with identity and access
 - External identity provider (IdP) support with OAuth2/OIDC, such as Authentik, Keycloak, Okta, and others.
     - Auto-provision users and roles from your IdP.
 
-<img src="public/auth-diagram.png" alt="Auth and diagram"/>
+<img src="public/auth-diagram1.png" alt="Auth and diagram"/>
 
 #### Manage Access to Internal Apps
 
