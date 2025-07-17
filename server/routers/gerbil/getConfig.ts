@@ -2,8 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { sites, resources, targets, exitNodes } from "@server/db";
 import { db } from "@server/db";
-import { eq } from "drizzle-orm";
-import response from "@server/lib/response";
+import { eq, isNotNull, and } from "drizzle-orm";
 import HttpCode from "@server/types/HttpCode";
 import createHttpError from "http-errors";
 import logger from "@server/logger";
@@ -105,13 +104,30 @@ export async function getConfig(
         const sitesRes = await db
             .select()
             .from(sites)
-            .where(eq(sites.exitNodeId, exitNode[0].exitNodeId));
+            .where(
+                and(
+                    eq(sites.exitNodeId, exitNode[0].exitNodeId),
+                    isNotNull(sites.pubKey),
+                    isNotNull(sites.subnet)
+                )
+            );
 
-        const peers = await Promise.all(
+        let peers = await Promise.all(
             sitesRes.map(async (site) => {
+                if (site.type === "wireguard") {
+                    return {
+                        publicKey: site.pubKey,
+                        allowedIps: await getAllowedIps(site.siteId)
+                    };
+                } else if (site.type === "newt") {
+                    return {
+                        publicKey: site.pubKey,
+                        allowedIps: [site.subnet!]
+                    };
+                }
                 return {
-                    publicKey: site.pubKey,
-                    allowedIps: await getAllowedIps(site.siteId)
+                    publicKey: null,
+                    allowedIps: []
                 };
             })
         );
