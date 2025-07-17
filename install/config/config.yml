@@ -30,7 +30,7 @@ orgs:
 email:
     smtp_host: "{{.EmailSMTPHost}}"
     smtp_port: {{.EmailSMTPPort}}
-    smtp_user: "{{.EmailSMTPUser}allow_base_domain_resources}"
+    smtp_user: "{{.EmailSMTPUser}}"
     smtp_pass: "{{.EmailSMTPPass}}"
     no_reply: "{{.EmailNoReply}}"
 {{end}}

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { db, exitNodes } from "@server/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or, isNull } from "drizzle-orm";
 import logger from "@server/logger";
 import HttpCode from "@server/types/HttpCode";
 import config from "@server/lib/config";
@@ -27,13 +27,9 @@ export async function traefikConfigProvider(
                         })
                         .from(exitNodes)
                         .where(eq(exitNodes.name, exitNodeName));
-                    if (!exitNode) {
-                        logger.error(
-                            `Exit node with name ${exitNodeName} not found in the database`
-                        );
-                        return [];
+                    if (exitNode) {
+                        currentExitNodeId = exitNode.exitNodeId;
                     }
-                    currentExitNodeId = exitNode.exitNodeId;
                 } else {
                     const [exitNode] = await tx
                         .select({
@@ -42,12 +38,9 @@ export async function traefikConfigProvider(
                         .from(exitNodes)
                         .limit(1);
 
-                    if (!exitNode) {
-                        logger.error("No exit node found in the database");
-                        return [];
+                    if (exitNode) {
+                        currentExitNodeId = exitNode.exitNodeId;
                     }
-
-                    currentExitNodeId = exitNode.exitNodeId;
                 }
             }
 
@@ -68,7 +61,7 @@ export async function traefikConfigProvider(
                         siteId: sites.siteId,
                         type: sites.type,
                         subnet: sites.subnet,
-                        exitNodeId: sites.exitNodeId,
+                        exitNodeId: sites.exitNodeId
                     },
                     enabled: resources.enabled,
                     stickySession: resources.stickySession,
@@ -77,7 +70,12 @@ export async function traefikConfigProvider(
                 })
                 .from(resources)
                 .innerJoin(sites, eq(sites.siteId, resources.siteId))
-                .where(eq(sites.exitNodeId, currentExitNodeId));
+                .where(
+                    or(
+                        eq(sites.exitNodeId, currentExitNodeId),
+                        isNull(sites.exitNodeId)
+                    )
+                );
 
             // Get all resource IDs from the first query
             const resourceIds = resourcesWithRelations.map((r) => r.resourceId);
@@ -284,7 +282,8 @@ export async function traefikConfigProvider(
                                 } else if (site.type === "newt") {
                                     if (
                                         !target.internalPort ||
-                                        !target.method || !site.subnet
+                                        !target.method ||
+                                        !site.subnet
                                     ) {
                                         return false;
                                     }

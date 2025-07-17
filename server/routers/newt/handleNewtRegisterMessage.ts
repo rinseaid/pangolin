@@ -258,101 +258,13 @@ export const handleNewtRegisterMessage: MessageHandler = async (context) => {
     };
 };
 
-/**
- * Selects the most suitable exit node from a list of ping results.
- *
- * The selection algorithm follows these steps:
- *
- * 1. **Filter Invalid Nodes**: Excludes nodes with errors or zero weight.
- *
- * 2. **Sort by Latency**: Sorts valid nodes in ascending order of latency.
- *
- * 3. **Preferred Selection**:
- *    - If the lowest-latency node has sufficient capacity (≥10% weight),
- *      check if a previously connected node is also acceptable.
- *    - The previously connected node is preferred if its latency is within
- *      30ms or 15% of the best node’s latency.
- *
- * 4. **Fallback to Next Best**:
- *    - If the lowest-latency node is under capacity, find the next node
- *      with acceptable capacity.
- *
- * 5. **Final Fallback**:
- *    - If no nodes meet the capacity threshold, fall back to the node
- *      with the highest weight (i.e., most available capacity).
- *
- */
 function selectBestExitNode(
     pingResults: ExitNodePingResult[]
 ): ExitNodePingResult | null {
-    const MIN_CAPACITY_THRESHOLD = 0.1;
-    const LATENCY_TOLERANCE_MS = 30;
-    const LATENCY_TOLERANCE_PERCENT = 0.15;
-
-    // Filter out invalid nodes
-    const validNodes = pingResults.filter((n) => !n.error && n.weight > 0);
-
-    if (validNodes.length === 0) {
-        logger.error("No valid exit nodes available");
+    if (!pingResults || pingResults.length === 0) {
+        logger.warn("No ping results provided");
         return null;
     }
 
-    // Sort by latency (ascending)
-    const sortedNodes = validNodes
-        .slice()
-        .sort((a, b) => a.latencyMs - b.latencyMs);
-    const lowestLatencyNode = sortedNodes[0];
-
-    logger.info(
-        `Lowest latency node: ${lowestLatencyNode.exitNodeName} (${lowestLatencyNode.latencyMs} ms, weight=${lowestLatencyNode.weight.toFixed(2)})`
-    );
-
-    // If lowest latency node has enough capacity, check if previously connected node is acceptable
-    if (lowestLatencyNode.weight >= MIN_CAPACITY_THRESHOLD) {
-        const previouslyConnectedNode = sortedNodes.find(
-            (n) =>
-                n.wasPreviouslyConnected && n.weight >= MIN_CAPACITY_THRESHOLD
-        );
-
-        if (previouslyConnectedNode) {
-            const latencyDiff =
-                previouslyConnectedNode.latencyMs - lowestLatencyNode.latencyMs;
-            const percentDiff = latencyDiff / lowestLatencyNode.latencyMs;
-
-            if (
-                latencyDiff <= LATENCY_TOLERANCE_MS ||
-                percentDiff <= LATENCY_TOLERANCE_PERCENT
-            ) {
-                logger.info(
-                    `Sticking with previously connected node: ${previouslyConnectedNode.exitNodeName} ` +
-                        `(${previouslyConnectedNode.latencyMs} ms), latency diff = ${latencyDiff.toFixed(1)}ms ` +
-                        `/ ${(percentDiff * 100).toFixed(1)}%.`
-                );
-                return previouslyConnectedNode;
-            }
-        }
-
-        return lowestLatencyNode;
-    }
-
-    // Otherwise, find the next node (after the lowest) that has enough capacity
-    for (let i = 1; i < sortedNodes.length; i++) {
-        const node = sortedNodes[i];
-        if (node.weight >= MIN_CAPACITY_THRESHOLD) {
-            logger.info(
-                `Lowest latency node under capacity. Using next best: ${node.exitNodeName} ` +
-                    `(${node.latencyMs} ms, weight=${node.weight.toFixed(2)})`
-            );
-            return node;
-        }
-    }
-
-    // Fallback: pick the highest weight node
-    const fallbackNode = validNodes.reduce((a, b) =>
-        a.weight > b.weight ? a : b
-    );
-    logger.warn(
-        `No nodes with ≥10% weight. Falling back to highest capacity node: ${fallbackNode.exitNodeName}`
-    );
-    return fallbackNode;
+    return pingResults[0];
 }
