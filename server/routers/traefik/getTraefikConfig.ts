@@ -214,7 +214,7 @@ export async function traefikConfigProvider(
 
                 const configDomain = config.getDomain(resource.domainId);
 
-                let certResolver, preferWildcardCert;
+                let certResolver: string, preferWildcardCert: boolean;
                 if (!configDomain) {
                     certResolver = config.getRawConfig().traefik.cert_resolver;
                     preferWildcardCert =
@@ -225,20 +225,18 @@ export async function traefikConfigProvider(
                 }
 
                 let tls = {};
-                if (configDomain) {
-                    tls = {
-                        certResolver: certResolver,
-                        ...(preferWildcardCert
-                            ? {
-                                  domains: [
-                                      {
-                                          main: wildCard
-                                      }
-                                  ]
-                              }
-                            : {})
-                    };
-                }
+                tls = {
+                    certResolver: certResolver,
+                    ...(preferWildcardCert
+                        ? {
+                              domains: [
+                                  {
+                                      main: wildCard
+                                  }
+                              ]
+                          }
+                        : {})
+                };
 
                 const additionalMiddlewares =
                     config.getRawConfig().traefik.additional_middlewares || [];
