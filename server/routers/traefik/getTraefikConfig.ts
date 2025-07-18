@@ -224,8 +224,7 @@ export async function traefikConfigProvider(
                     preferWildcardCert = configDomain.prefer_wildcard_cert;
                 }
 
-                let tls = {};
-                tls = {
+                const tls = {
                     certResolver: certResolver,
                     ...(preferWildcardCert
                         ? {
