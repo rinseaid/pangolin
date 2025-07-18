@@ -128,7 +128,9 @@ export const configSchema = z
             .object({
                 http_entrypoint: z.string().optional().default("web"),
                 https_entrypoint: z.string().optional().default("websecure"),
-                additional_middlewares: z.array(z.string()).optional()
+                additional_middlewares: z.array(z.string()).optional(),
+                cert_resolver: z.string().optional().default("letsencrypt"),
+                prefer_wildcard_cert: z.boolean().optional().default(false)
             })
             .optional()
             .default({}),
@@ -157,13 +159,16 @@ export const configSchema = z
             })
             .optional()
             .default({}),
-        orgs: z.object({
-            block_size: z.number().positive().gt(0).optional().default(24),
-            subnet_group: z.string().optional().default("100.90.128.0/24")
-        }).optional().default({
-            block_size: 24,
-            subnet_group: "100.90.128.0/24"
-        }),
+        orgs: z
+            .object({
+                block_size: z.number().positive().gt(0).optional().default(24),
+                subnet_group: z.string().optional().default("100.90.128.0/24")
+            })
+            .optional()
+            .default({
+                block_size: 24,
+                subnet_group: "100.90.128.0/24"
+            }),
         rate_limits: z
             .object({
                 global: z
@@ -242,7 +247,7 @@ export const configSchema = z
         {
             message: "At least one domain must be defined"
         }
-    )
+    );
 
 export function readConfigFile() {
     const loadConfig = (configPath: string) => {
