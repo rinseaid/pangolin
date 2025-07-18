@@ -214,11 +214,21 @@ export async function traefikConfigProvider(
 
                 const configDomain = config.getDomain(resource.domainId);
 
+                let certResolver, preferWildcardCert;
+                if (!configDomain) {
+                    certResolver = config.getRawConfig().traefik.cert_resolver;
+                    preferWildcardCert =
+                        config.getRawConfig().traefik.prefer_wildcard_cert;
+                } else {
+                    certResolver = configDomain.cert_resolver;
+                    preferWildcardCert = configDomain.prefer_wildcard_cert;
+                }
+
                 let tls = {};
                 if (configDomain) {
                     tls = {
-                        certResolver: configDomain.cert_resolver,
-                        ...(configDomain.prefer_wildcard_cert
+                        certResolver: certResolver,
+                        ...(preferWildcardCert
                             ? {
                                   domains: [
                                       {
