@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { db } from "@server/db";
+import { clients, db } from "@server/db";
 import { roles, userSites, sites, roleSites, Site, orgs } from "@server/db";
 import response from "@server/lib/response";
 import HttpCode from "@server/types/HttpCode";
@@ -178,8 +178,8 @@ export async function createSite(
         
             const addressExistsClients = await db
                 .select()
-                .from(sites)
-                .where(eq(sites.subnet, updatedAddress))
+                .from(clients)
+                .where(eq(clients.subnet, updatedAddress))
                 .limit(1);
             if (addressExistsClients.length > 0) {
                 return next(
