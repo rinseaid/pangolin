@@ -620,8 +620,6 @@ authenticated.post(
 
 authenticated.delete("/idp/:idpId", verifyUserIsServerAdmin, idp.deleteIdp);
 
-authenticated.get("/idp", verifyUserIsServerAdmin, idp.listIdps);
-
 authenticated.get("/idp/:idpId", verifyUserIsServerAdmin, idp.getIdp);
 
 authenticated.put(

@@ -617,7 +617,7 @@ export default function Page() {
                                                                     idp || null
                                                                 );
                                                             }}
-                                                            cols={3}
+                                                            cols={2}
                                                         />
                                                         <FormMessage />
                                                     </FormItem>
