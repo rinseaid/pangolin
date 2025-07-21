@@ -5,7 +5,8 @@ import {
     boolean,
     integer,
     bigint,
-    real
+    real,
+    text
 } from "drizzle-orm/pg-core";
 import { InferSelectModel } from "drizzle-orm";
 
@@ -135,6 +136,8 @@ export const users = pgTable("user", {
     twoFactorSecret: varchar("twoFactorSecret"),
     emailVerified: boolean("emailVerified").notNull().default(false),
     dateCreated: varchar("dateCreated").notNull(),
+    termsAcceptedTimestamp: varchar("termsAcceptedTimestamp"),
+    termsVersion: varchar("termsVersion"),
     serverAdmin: boolean("serverAdmin").notNull().default(false)
 });
 
