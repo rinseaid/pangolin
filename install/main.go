@@ -79,7 +79,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err := exec.Command("bash", "-c", "cat /etc/sysctl.conf | grep 'net.ipv4.ip_unprivileged_port_start='"); err == nil {
+		if err := exec.Command("bash", "-c", "cat /etc/sysctl.conf | grep 'net.ipv4.ip_unprivileged_port_start='").Run(); err != nil {
 			fmt.Println("Would you like to configure ports >= 80 as unprivileged ports? This enables podman containers to listen on low-range ports.")
 			fmt.Println("Pangolin will experience startup issues if this is not configured, because it needs to listen on port 80/443 by default.")
 			approved := readBool(reader, "The installer is about to execute \"echo 'net.ipv4.ip_unprivileged_port_start=80' >> /etc/sysctl.conf && sysctl -p\". Approve?", true)
@@ -389,7 +389,6 @@ func createConfigFiles(config Config) error {
 
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("error walking config files: %v", err)
 	}
