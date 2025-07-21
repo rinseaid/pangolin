@@ -8,7 +8,6 @@ import { AxiosResponse } from "axios";
 import { authCookieHeader } from "@app/lib/api/cookies";
 import { redirect } from "next/navigation";
 import { Layout } from "@app/components/Layout";
-import { orgLangingNavItems, orgNavItems, rootNavItems } from "../navigation";
 import { ListUserOrgsResponse } from "@server/routers/org";
 
 type OrgPageProps = {
@@ -60,7 +59,7 @@ export default async function OrgPage(props: OrgPageProps) {
 
     return (
         <UserProvider user={user}>
-            <Layout orgId={orgId} navItems={orgLangingNavItems} orgs={orgs}>
+            <Layout orgId={orgId} navItems={[]} orgs={orgs}>
                 {overview && (
                     <div className="w-full max-w-4xl mx-auto md:mt-32 mt-4">
                         <OrganizationLandingCard

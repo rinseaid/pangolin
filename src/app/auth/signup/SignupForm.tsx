@@ -32,6 +32,7 @@ import { useEnvContext } from "@app/hooks/useEnvContext";
 import Image from "next/image";
 import { cleanRedirect } from "@app/lib/cleanRedirect";
 import { useTranslations } from "next-intl";
+import BrandingLogo from "@app/components/BrandingLogo";
 
 type SignupFormProps = {
     redirect?: string;
@@ -57,7 +58,9 @@ export default function SignupForm({
 }: SignupFormProps) {
     const router = useRouter();
 
-    const api = createApiClient(useEnvContext());
+    const { env } = useEnvContext();
+
+    const api = createApiClient({ env });
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -86,9 +89,7 @@ export default function SignupForm({
             })
             .catch((e) => {
                 console.error(e);
-                setError(
-                    formatAxiosError(e, t('signupError'))
-                );
+                setError(formatAxiosError(e, t("signupError")));
             });
 
         if (res && res.status === 200) {
@@ -115,27 +116,24 @@ export default function SignupForm({
         setLoading(false);
     }
 
+    function getSubtitle() {
+        return t("authCreateAccount");
+    }
+
     return (
-        <Card className="w-full max-w-md">
-            <CardHeader>
+        <Card className="w-full max-w-md shadow-md">
+            <CardHeader className="border-b">
                 <div className="flex flex-row items-center justify-center">
-                    <Image
-                        src={`/logo/pangolin_orange.svg`}
-                        alt={t('pangolinLogoAlt')}
-                        width="100"
-                        height="100"
+                    <BrandingLogo
+                        height={58}
+                        width={175}
                     />
                 </div>
-                <div className="text-center space-y-1">
-                    <h1 className="text-2xl font-bold mt-1">
-                        {t('welcome')}
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        {t('authCreateAccount')}
-                    </p>
+                <div className="text-center space-y-1 pt-3">
+                    <p className="text-muted-foreground">{getSubtitle()}</p>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
@@ -146,7 +144,7 @@ export default function SignupForm({
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('email')}</FormLabel>
+                                    <FormLabel>{t("email")}</FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
@@ -159,12 +157,9 @@ export default function SignupForm({
                             name="password"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('password')}</FormLabel>
+                                    <FormLabel>{t("password")}</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            {...field}
-                                        />
+                                        <Input type="password" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -175,12 +170,11 @@ export default function SignupForm({
                             name="confirmPassword"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('confirmPassword')}</FormLabel>
+                                    <FormLabel>
+                                        {t("confirmPassword")}
+                                    </FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            {...field}
-                                        />
+                                        <Input type="password" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -194,7 +188,7 @@ export default function SignupForm({
                         )}
 
                         <Button type="submit" className="w-full">
-                            {t('createAccount')}
+                            {t("createAccount")}
                         </Button>
                     </form>
                 </Form>
