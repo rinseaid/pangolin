@@ -235,25 +235,16 @@ export const configSchema = z
         dns: z
             .object({
                 nameservers: z
-                    .array(z.string().url())
+                    .array(z.string().optional().optional())
                     .optional()
-                    .default([
-                        "ns1.fossorial.io",
-                        "ns2.fossorial.io",
-                    ]),
-                cname_extension: z
-                    .string()
-                    .optional()
-                    .default("fossorial.io"),
-                })
+                    .default(["ns1.fossorial.io", "ns2.fossorial.io"]),
+                cname_extension: z.string().optional().default("fossorial.io")
+            })
             .optional()
             .default({
-                nameservers: [
-                    "ns1.fossorial.io",
-                    "ns2.fossorial.io",
-                ],
+                nameservers: ["ns1.fossorial.io", "ns2.fossorial.io"],
                 cname_extension: "fossorial.io"
-            }),
+            })
     })
     .refine(
         (data) => {

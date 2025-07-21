@@ -229,7 +229,7 @@ export async function createOrgDomain(
 
             // TODO: This needs to be cross region and not hardcoded
             if (type === "ns") {
-                nsRecords = config.getRawConfig().dns.nameservers;
+                nsRecords = config.getRawConfig().dns.nameservers as string[];
             } else if (type === "cname") {
                 cnameRecords = [
                     {
