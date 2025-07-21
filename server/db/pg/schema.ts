@@ -504,8 +504,8 @@ export const clients = pgTable("clients", {
     name: varchar("name").notNull(),
     pubKey: varchar("pubKey"),
     subnet: varchar("subnet").notNull(),
-    megabytesIn: integer("bytesIn"),
-    megabytesOut: integer("bytesOut"),
+    megabytesIn: real("bytesIn"),
+    megabytesOut: real("bytesOut"),
     lastBandwidthUpdate: varchar("lastBandwidthUpdate"),
     lastPing: varchar("lastPing"),
     type: varchar("type").notNull(), // "olm"
@@ -539,7 +539,7 @@ export const olmSessions = pgTable("clientSession", {
     olmId: varchar("olmId")
         .notNull()
         .references(() => olms.olmId, { onDelete: "cascade" }),
-    expiresAt: integer("expiresAt").notNull()
+    expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
 });
 
 export const userClients = pgTable("userClients", {
