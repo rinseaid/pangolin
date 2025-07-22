@@ -44,9 +44,8 @@ export default async function migration() {
         }
 
         // Read and parse the YAML file
-        let rawConfig: any;
         const fileContents = fs.readFileSync(filePath, "utf8");
-        rawConfig = yaml.load(fileContents);
+        const rawConfig: any = yaml.load(fileContents);
 
         if (rawConfig.cors?.headers) {
             const headers = JSON.parse(
