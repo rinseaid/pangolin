@@ -59,3 +59,4 @@ networks:
   default:
     driver: bridge
     name: pangolin
+    enable_ipv6: true
