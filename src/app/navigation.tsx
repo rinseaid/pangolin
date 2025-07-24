@@ -26,14 +26,7 @@ export const orgLangingNavItems: SidebarNavItem[] = [
     {
         title: "sidebarAccount",
         href: "/{orgId}",
-        icon: <User className="h-4 w-4" />,
-        autoExpand: true,
-        children: [
-            {
-                title: "sidebarResources",
-                href: "/{orgId}"
-            }
-        ]
+        icon: <User className="h-4 w-4" />
     }
 ];
 
