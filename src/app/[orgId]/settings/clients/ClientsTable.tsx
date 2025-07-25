@@ -25,7 +25,6 @@ import { toast } from "@app/hooks/useToast";
 import { formatAxiosError } from "@app/lib/api";
 import { createApiClient } from "@app/lib/api";
 import { useEnvContext } from "@app/hooks/useEnvContext";
-import CreateClientFormModal from "./CreateClientsModal";
 
 export type ClientRow = {
     id: number;
@@ -250,15 +249,6 @@ export default function ClientsTable({ clients, orgId }: ClientTableProps) {
 
     return (
         <>
-            <CreateClientFormModal
-                open={isCreateModalOpen}
-                setOpen={setIsCreateModalOpen}
-                onCreate={(val) => {
-                    setRows([val, ...rows]);
-                }}
-                orgId={orgId}
-            />
-
             {selectedClient && (
                 <ConfirmDeleteDialog
                     open={isDeleteModalOpen}

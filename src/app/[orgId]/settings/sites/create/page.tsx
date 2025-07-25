@@ -587,11 +587,6 @@ WantedBy=default.target`
                                                             />
                                                         </FormControl>
                                                         <FormMessage />
-                                                        <FormDescription>
-                                                            {t(
-                                                                "siteNameDescription"
-                                                            )}
-                                                        </FormDescription>
                                                     </FormItem>
                                                 )}
                                             />

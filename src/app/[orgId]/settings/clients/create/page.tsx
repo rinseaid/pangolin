@@ -100,7 +100,7 @@ export default function Page() {
             .refine((val) => val.length > 0, {
                 message: t("siteRequired")
             }),
-        subnet: z.string().min(1, {
+        subnet: z.string().ip().min(1, {
             message: t("subnetRequired")
         })
     });
@@ -442,14 +442,10 @@ export default function Page() {
                                                         <FormControl>
                                                             <Input
                                                                 autoComplete="off"
-                                                                placeholder={t("clientNamePlaceholder")}
                                                                 {...field}
                                                             />
                                                         </FormControl>
                                                         <FormMessage />
-                                                        <FormDescription>
-                                                            {t("clientNameDescription")}
-                                                        </FormDescription>
                                                     </FormItem>
                                                 )}
                                             />
