@@ -65,7 +65,8 @@ export const sites = sqliteTable("sites", {
     listenPort: integer("listenPort"),
     dockerSocketEnabled: integer("dockerSocketEnabled", { mode: "boolean" })
         .notNull()
-        .default(true)
+        .default(true),
+    remoteSubnets: text("remoteSubnets"), // comma-separated list of subnets that this site can access
 });
 
 export const resources = sqliteTable("resources", {

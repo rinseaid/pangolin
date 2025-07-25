@@ -1312,5 +1312,8 @@
     "sitesFetchFailed": "Failed to fetch sites",
     "sitesFetchError": "An error occurred while fetching sites.",
     "olmErrorFetchReleases": "An error occurred while fetching Olm releases.",
-    "olmErrorFetchLatest": "An error occurred while fetching the latest Olm release."
+    "olmErrorFetchLatest": "An error occurred while fetching the latest Olm release.",
+    "remoteSubnets": "Remote Subnets",
+    "enterCidrRange": "Enter CIDR range",
+    "remoteSubnetsDescription": "Add CIDR ranges that can access this site remotely. Use format like 10.0.0.0/24 or 192.168.1.0/24."
 }

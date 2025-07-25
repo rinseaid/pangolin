@@ -59,7 +59,8 @@ export const sites = pgTable("sites", {
     publicKey: varchar("publicKey"),
     lastHolePunch: bigint("lastHolePunch", { mode: "number" }),
     listenPort: integer("listenPort"),
-    dockerSocketEnabled: boolean("dockerSocketEnabled").notNull().default(true)
+    dockerSocketEnabled: boolean("dockerSocketEnabled").notNull().default(true),
+    remoteSubnets: text("remoteSubnets") // comma-separated list of subnets that this site can access
 });
 
 export const resources = pgTable("resources", {
@@ -542,7 +543,7 @@ export const olmSessions = pgTable("clientSession", {
     olmId: varchar("olmId")
         .notNull()
         .references(() => olms.olmId, { onDelete: "cascade" }),
-    expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
+    expiresAt: bigint("expiresAt", { mode: "number" }).notNull()
 });
 
 export const userClients = pgTable("userClients", {
@@ -565,9 +566,11 @@ export const roleClients = pgTable("roleClients", {
 
 export const securityKeys = pgTable("webauthnCredentials", {
     credentialId: varchar("credentialId").primaryKey(),
-    userId: varchar("userId").notNull().references(() => users.userId, {
-        onDelete: "cascade"
-    }),
+    userId: varchar("userId")
+        .notNull()
+        .references(() => users.userId, {
+            onDelete: "cascade"
+        }),
     publicKey: varchar("publicKey").notNull(),
     signCount: integer("signCount").notNull(),
     transports: varchar("transports"),
