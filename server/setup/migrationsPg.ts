@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "../db/pg";
 import semver from "semver";

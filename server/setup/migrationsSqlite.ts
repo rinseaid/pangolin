@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { db, exists } from "../db/sqlite";
 import path from "path";
