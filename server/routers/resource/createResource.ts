@@ -40,7 +40,7 @@ const createHttpResourceSchema = z
         siteId: z.number(),
         http: z.boolean(),
         protocol: z.enum(["tcp", "udp"]),
-        domainId: z.string()
+        domainId: z.string(),
     })
     .strict()
     .refine(
@@ -59,7 +59,8 @@ const createRawResourceSchema = z
         siteId: z.number(),
         http: z.boolean(),
         protocol: z.enum(["tcp", "udp"]),
-        proxyPort: z.number().int().min(1).max(65535)
+        proxyPort: z.number().int().min(1).max(65535),
+        enableProxy: z.boolean().default(true)
     })
     .strict()
     .refine(
@@ -378,7 +379,7 @@ async function createRawResource(
         );
     }
 
-    const { name, http, protocol, proxyPort } = parsedBody.data;
+    const { name, http, protocol, proxyPort, enableProxy } = parsedBody.data;
 
     // if http is false check to see if there is already a resource with the same port and protocol
     const existingResource = await db
@@ -411,7 +412,8 @@ async function createRawResource(
                 name,
                 http,
                 protocol,
-                proxyPort
+                proxyPort,
+                enableProxy
             })
             .returning();
 

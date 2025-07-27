@@ -106,7 +106,8 @@ export const resources = sqliteTable("resources", {
         .notNull()
         .default(false),
     tlsServerName: text("tlsServerName"),
-    setHostHeader: text("setHostHeader")
+    setHostHeader: text("setHostHeader"),
+    enableProxy: integer("enableProxy", { mode: "boolean" }).default(true),
 });
 
 export const targets = sqliteTable("targets", {

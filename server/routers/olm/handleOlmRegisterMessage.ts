@@ -119,12 +119,12 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             continue;
         }
 
-        if (site.lastHolePunch && now - site.lastHolePunch > 6 && relay) {
-            logger.warn(
-                `Site ${site.siteId} last hole punch is too old, skipping`
-            );
-            continue;
-        }
+        // if (site.lastHolePunch && now - site.lastHolePunch > 6 && relay) {
+        //     logger.warn(
+        //         `Site ${site.siteId} last hole punch is too old, skipping`
+        //     );
+        //     continue;
+        // }
 
         // If public key changed, delete old peer from this site
         if (client.pubKey && client.pubKey != publicKey) {
@@ -175,7 +175,8 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
             endpoint: endpoint,
             publicKey: site.publicKey,
             serverIP: site.address,
-            serverPort: site.listenPort
+            serverPort: site.listenPort,
+            remoteSubnets: site.remoteSubnets
         });
     }
 

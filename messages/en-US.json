@@ -1093,7 +1093,7 @@
     "sidebarAllUsers": "All Users",
     "sidebarIdentityProviders": "Identity Providers",
     "sidebarLicense": "License",
-    "sidebarClients": "Clients",
+    "sidebarClients": "Clients (beta)",
     "sidebarDomains": "Domains",
     "enableDockerSocket": "Enable Docker Socket",
     "enableDockerSocketDescription": "Enable Docker Socket discovery for populating container information. Socket path must be provided to Newt.",
@@ -1315,5 +1315,8 @@
     "olmErrorFetchLatest": "An error occurred while fetching the latest Olm release.",
     "remoteSubnets": "Remote Subnets",
     "enterCidrRange": "Enter CIDR range",
-    "remoteSubnetsDescription": "Add CIDR ranges that can access this site remotely. Use format like 10.0.0.0/24 or 192.168.1.0/24."
+    "remoteSubnetsDescription": "Add CIDR ranges that can access this site remotely. Use format like 10.0.0.0/24 or 192.168.1.0/24.",
+    "resourceEnableProxy": "Enable Public Proxy",
+    "resourceEnableProxyDescription": "Enable public proxying to this resource. This allows access to the resource from outside the network through the cloud on an open port. Requires Traefik config.",
+    "externalProxyEnabled": "External Proxy Enabled"
 }

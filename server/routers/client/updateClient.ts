@@ -147,7 +147,8 @@ export async function updateClient(
                     endpoint: site.endpoint,
                     publicKey: site.publicKey,
                     serverIP: site.address,
-                    serverPort: site.listenPort
+                    serverPort: site.listenPort,
+                    remoteSubnets: site.remoteSubnets
                 });
             }
 

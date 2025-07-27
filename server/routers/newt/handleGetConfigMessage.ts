@@ -2,9 +2,16 @@ import { z } from "zod";
 import { MessageHandler } from "../ws";
 import logger from "@server/logger";
 import { fromError } from "zod-validation-error";
-import { db, ExitNode, exitNodes } from "@server/db";
+import {
+    db,
+    ExitNode,
+    exitNodes,
+    resources,
+    Target,
+    targets
+} from "@server/db";
 import { clients, clientSites, Newt, sites } from "@server/db";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { updatePeer } from "../olm/peers";
 import axios from "axios";
 
@@ -191,7 +198,8 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
                         endpoint: endpoint,
                         publicKey: site.publicKey,
                         serverIP: site.address,
-                        serverPort: site.listenPort
+                        serverPort: site.listenPort,
+                        remoteSubnets: site.remoteSubnets
                     });
                 } catch (error) {
                     logger.error(
@@ -212,14 +220,96 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
     // Filter out any null values from peers that didn't have an olm
     const validPeers = peers.filter((peer) => peer !== null);
 
+    // Improved version
+    const allResources = await db.transaction(async (tx) => {
+        // First get all resources for the site
+        const resourcesList = await tx
+            .select({
+                resourceId: resources.resourceId,
+                subdomain: resources.subdomain,
+                fullDomain: resources.fullDomain,
+                ssl: resources.ssl,
+                blockAccess: resources.blockAccess,
+                sso: resources.sso,
+                emailWhitelistEnabled: resources.emailWhitelistEnabled,
+                http: resources.http,
+                proxyPort: resources.proxyPort,
+                protocol: resources.protocol
+            })
+            .from(resources)
+            .where(and(eq(resources.siteId, siteId), eq(resources.http, false)));
+
+        // Get all enabled targets for these resources in a single query
+        const resourceIds = resourcesList.map((r) => r.resourceId);
+        const allTargets =
+            resourceIds.length > 0
+                ? await tx
+                      .select({
+                          resourceId: targets.resourceId,
+                          targetId: targets.targetId,
+                          ip: targets.ip,
+                          method: targets.method,
+                          port: targets.port,
+                          internalPort: targets.internalPort,
+                          enabled: targets.enabled,
+                      })
+                      .from(targets)
+                      .where(
+                          and(
+                              inArray(targets.resourceId, resourceIds),
+                              eq(targets.enabled, true)
+                          )
+                      )
+                : [];
+
+        // Combine the data in JS instead of using SQL for the JSON
+        return resourcesList.map((resource) => ({
+            ...resource,
+            targets: allTargets.filter(
+                (target) => target.resourceId === resource.resourceId
+            )
+        }));
+    });
+
+    const { tcpTargets, udpTargets } = allResources.reduce(
+        (acc, resource) => {
+            // Skip resources with no targets
+            if (!resource.targets?.length) return acc;
+
+            // Format valid targets into strings
+            const formattedTargets = resource.targets
+                .filter(
+                    (target: Target) =>
+                        resource.proxyPort && target?.ip && target?.port
+                )
+                .map(
+                    (target: Target) =>
+                        `${resource.proxyPort}:${target.ip}:${target.port}`
+                );
+
+            // Add to the appropriate protocol array
+            if (resource.protocol === "tcp") {
+                acc.tcpTargets.push(...formattedTargets);
+            } else {
+                acc.udpTargets.push(...formattedTargets);
+            }
+
+            return acc;
+        },
+        { tcpTargets: [] as string[], udpTargets: [] as string[] }
+    );
+
     // Build the configuration response
     const configResponse = {
         ipAddress: site.address,
-        peers: validPeers
+        peers: validPeers,
+        targets: {
+            udp: udpTargets,
+            tcp: tcpTargets
+        }
     };
 
     logger.debug("Sending config: ", configResponse);
-
     return {
         message: {
             type: "newt/wg/receive-config",

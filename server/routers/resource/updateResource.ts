@@ -93,7 +93,8 @@ const updateRawResourceBodySchema = z
         name: z.string().min(1).max(255).optional(),
         proxyPort: z.number().int().min(1).max(65535).optional(),
         stickySession: z.boolean().optional(),
-        enabled: z.boolean().optional()
+        enabled: z.boolean().optional(),
+        enableProxy: z.boolean().optional(),
     })
     .strict()
     .refine((data) => Object.keys(data).length > 0, {
