@@ -22,10 +22,6 @@ gerbil:
     start_port: 51820
     base_endpoint: "{{.DashboardDomain}}"
 
-orgs:
-    block_size: 24
-    subnet_group: 100.90.128.0/24 
-
 {{if .EnableEmail}}
 email:
     smtp_host: "{{.EmailSMTPHost}}"
