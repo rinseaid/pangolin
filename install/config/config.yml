@@ -24,7 +24,7 @@ gerbil:
 
 orgs:
     block_size: 24
-    subnet_group: 100.89.138.0/20
+    subnet_group: 100.90.128.0/24 
 
 {{if .EnableEmail}}
 email:

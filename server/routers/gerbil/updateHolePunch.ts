@@ -125,6 +125,8 @@ export async function updateHolePunch(
             }
 
         } else if (newtId) {
+            logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId}`);
+
             const { session, newt: newtSession } =
                 await validateNewtSessionToken(token);
 
