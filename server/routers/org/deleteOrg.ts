@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { db } from "@server/db";
+import { db, resources } from "@server/db";
 import {
     newts,
     newtSessions,
@@ -127,6 +127,7 @@ export async function deleteOrg(
             }
 
             await trx.delete(orgs).where(eq(orgs.orgId, orgId));
+            await trx.delete(resources).where(eq(resources.orgId, orgId));
         });
 
         // Send termination messages outside of transaction to prevent blocking
