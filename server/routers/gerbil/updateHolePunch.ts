@@ -47,7 +47,7 @@ export async function updateHolePunch(
 
         
         let currentSiteId: number | undefined;
-        const destinations: PeerDestination[] = [];
+        let destinations: PeerDestination[] = [];
         
         if (olmId) {
             logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId}`);

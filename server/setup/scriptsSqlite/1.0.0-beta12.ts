@@ -26,7 +26,8 @@ export default async function migration() {
 
         // Read and parse the YAML file
         const fileContents = fs.readFileSync(filePath, "utf8");
-        const rawConfig: any = yaml.load(fileContents);
+        let rawConfig: any;
+        rawConfig = yaml.load(fileContents);
 
         if (!rawConfig.flags) {
             rawConfig.flags = {};
