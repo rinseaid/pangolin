@@ -74,7 +74,7 @@ const baseResourceFormSchema = z.object({
 });
 
 const httpResourceFormSchema = z.object({
-    domainId: z.string().optional(),
+    domainId: z.string().nonempty(),
     subdomain: z.string().optional()
 });
 
@@ -277,9 +277,9 @@ export default function Page() {
                 if (res?.status === 200) {
                     const domains = res.data.data.domains;
                     setBaseDomains(domains);
-                    if (domains.length) {
-                        httpForm.setValue("domainId", domains[0].domainId);
-                    }
+                    // if (domains.length) {
+                    //     httpForm.setValue("domainId", domains[0].domainId);
+                    // }
                 }
             };
 
@@ -683,6 +683,8 @@ export default function Page() {
                                         const settingsValid = isHttp
                                             ? await httpForm.trigger()
                                             : await tcpUdpForm.trigger();
+
+                                        console.log(httpForm.getValues());
 
                                         if (baseValid && settingsValid) {
                                             onSubmit();

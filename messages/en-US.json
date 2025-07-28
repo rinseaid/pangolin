@@ -1093,7 +1093,7 @@
     "sidebarAllUsers": "All Users",
     "sidebarIdentityProviders": "Identity Providers",
     "sidebarLicense": "License",
-    "sidebarClients": "Clients (beta)",
+    "sidebarClients": "Clients (Beta)",
     "sidebarDomains": "Domains",
     "enableDockerSocket": "Enable Docker Socket",
     "enableDockerSocketDescription": "Enable Docker Socket discovery for populating container information. Socket path must be provided to Newt.",

@@ -636,6 +636,7 @@ export default function GeneralForm() {
                         <CredenzaBody>
                             <DomainPicker
                                 orgId={orgId as string}
+                                cols={1}
                                 onDomainChange={(res) => {
                                     const selected = {
                                         domainId: res.domainId,
