@@ -62,11 +62,7 @@ export default async function OrgPage(props: OrgPageProps) {
     return (
         <UserProvider user={user}>
             <Layout orgId={orgId} navItems={[]} orgs={orgs}>
-                {overview && (
-                    <div className="w-full px-4 py-6">
-                        <MemberResourcesPortal orgId={orgId} />
-                    </div>
-                )}
+                {overview && <MemberResourcesPortal orgId={orgId} />}
             </Layout>
         </UserProvider>
     );
