@@ -221,7 +221,9 @@ export default function GeneralForm() {
                     subdomain: data.subdomain,
                     domainId: data.domainId,
                     proxyPort: data.proxyPort,
-                    enableProxy: data.enableProxy
+                    ...(!resource.http && {
+                        enableProxy: data.enableProxy
+                    })
                 }
             )
             .catch((e) => {
@@ -249,7 +251,9 @@ export default function GeneralForm() {
                 subdomain: data.subdomain,
                 fullDomain: resource.fullDomain,
                 proxyPort: data.proxyPort,
-                enableProxy: data.enableProxy
+                ...(!resource.http && {
+                    enableProxy: data.enableProxy
+                }),
             });
 
             router.refresh();

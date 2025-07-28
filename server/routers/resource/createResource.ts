@@ -33,14 +33,11 @@ const createResourceParamsSchema = z
 const createHttpResourceSchema = z
     .object({
         name: z.string().min(1).max(255),
-        subdomain: z
-            .string()
-            .nullable()
-            .optional(),
+        subdomain: z.string().nullable().optional(),
         siteId: z.number(),
         http: z.boolean(),
         protocol: z.enum(["tcp", "udp"]),
-        domainId: z.string(),
+        domainId: z.string()
     })
     .strict()
     .refine(
@@ -51,7 +48,7 @@ const createHttpResourceSchema = z
             return true;
         },
         { message: "Invalid subdomain" }
-    )
+    );
 
 const createRawResourceSchema = z
     .object({
@@ -89,12 +86,7 @@ registry.registerPath({
         body: {
             content: {
                 "application/json": {
-                    schema:
-                        build == "oss"
-                            ? createHttpResourceSchema.or(
-                                  createRawResourceSchema
-                              )
-                            : createHttpResourceSchema
+                    schema: createHttpResourceSchema.or(createRawResourceSchema)
                 }
             }
         }
@@ -157,7 +149,10 @@ export async function createResource(
                 { siteId, orgId }
             );
         } else {
-            if (!config.getRawConfig().flags?.allow_raw_resources && build == "oss") {
+            if (
+                !config.getRawConfig().flags?.allow_raw_resources &&
+                build == "oss"
+            ) {
                 return next(
                     createHttpError(
                         HttpCode.BAD_REQUEST,
