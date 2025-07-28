@@ -129,9 +129,6 @@ export default function DomainPicker({
 
         if (!userInput.trim()) return options;
 
-        // Check if input is more than one level deep (contains multiple dots)
-        const isMultiLevel = (userInput.match(/\./g) || []).length > 1;
-
         // Add organization domain options
         organizationDomains.forEach((orgDomain) => {
             if (orgDomain.type === "cname") {
@@ -319,6 +316,8 @@ export default function DomainPicker({
                             ""
                         );
                         setUserInput(validInput);
+                        // Clear selection when input changes
+                        setSelectedOption(null);
                     }}
                 />
                 <p className="text-sm text-muted-foreground">
