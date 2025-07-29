@@ -104,6 +104,14 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
     // Prepare an array to store site configurations
     let siteConfigurations = [];
     logger.debug(`Found ${sitesData.length} sites for client ${client.clientId}`);
+
+    if (sitesData.length === 0) {
+        sendToClient(olm.olmId, {
+            type: "olm/register/no-sites",
+            data: {}
+        });
+    }
+
     // Process each site
     for (const { sites: site } of sitesData) {
         if (!site.exitNodeId) {
@@ -180,11 +188,11 @@ export const handleOlmRegisterMessage: MessageHandler = async (context) => {
         });
     }
 
-    // If we have no valid site configurations, don't send a connect message
-    if (siteConfigurations.length === 0) {
-        logger.warn("No valid site configurations found");
-        return;
-    }
+    // REMOVED THIS SO IT CREATES THE INTERFACE AND JUST WAITS FOR THE SITES 
+    // if (siteConfigurations.length === 0) {
+    //     logger.warn("No valid site configurations found");
+    //     return;
+    // }
 
     // Return connect message with all site configurations
     return {
