@@ -1,7 +1,7 @@
 import { db } from "@server/db/pg/driver";
 import { sql } from "drizzle-orm";
 
-const version = "1.7.0";
+const version = "1.8.0";
 
 export default async function migration() {
     console.log(`Running setup script ${version}...`);
@@ -16,7 +16,7 @@ export default async function migration() {
             ALTER TABLE "resources" ADD COLUMN "enableProxy" boolean DEFAULT true;
             ALTER TABLE "sites" ADD COLUMN "remoteSubnets" text;
             ALTER TABLE "user" ADD COLUMN "termsAcceptedTimestamp" varchar;
-            ALTER TABLE "user" ADD COLUMN "termsVersion" varchar;           
+            ALTER TABLE "user" ADD COLUMN "termsVersion" varchar;
             
             COMMIT;
         `);

@@ -5,7 +5,7 @@ import path from "path";
 const version = "1.8.0";
 
 export default async function migration() {
-    console.log("Running setup script ${version}...");
+    console.log(`Running setup script ${version}...`);
 
     const location = path.join(APP_PATH, "db", "db.sqlite");
     const db = new Database(location);
@@ -13,7 +13,7 @@ export default async function migration() {
     try {
         db.transaction(() => {
             db.exec(`
-                ALTER TABLE 'resources' ADD 'enableProxy' integer DEFAULT true;
+                ALTER TABLE 'resources' ADD 'enableProxy' integer DEFAULT 1;
                 ALTER TABLE 'sites' ADD 'remoteSubnets' text;
                 ALTER TABLE 'user' ADD 'termsAcceptedTimestamp' text;
                 ALTER TABLE 'user' ADD 'termsVersion' text;
