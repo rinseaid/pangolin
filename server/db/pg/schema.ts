@@ -95,7 +95,7 @@ export const resources = pgTable("resources", {
     stickySession: boolean("stickySession").notNull().default(false),
     tlsServerName: varchar("tlsServerName"),
     setHostHeader: varchar("setHostHeader"),
-    enableProxy: boolean("enableProxy").notNull().default(true),
+    enableProxy: boolean("enableProxy").default(true),
 });
 
 export const targets = pgTable("targets", {
