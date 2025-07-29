@@ -13,9 +13,10 @@ export default async function migration() {
     try {
         db.transaction(() => {
             db.exec(`
+                ALTER TABLE 'resources' ADD 'enableProxy' integer DEFAULT true;
+                ALTER TABLE 'sites' ADD 'remoteSubnets' text;
                 ALTER TABLE 'user' ADD 'termsAcceptedTimestamp' text;
                 ALTER TABLE 'user' ADD 'termsVersion' text;
-                ALTER TABLE 'sites' ADD 'remoteSubnets' text;
             `);
         })();
 
