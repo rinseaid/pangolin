@@ -213,7 +213,7 @@ export const configSchema = z
                 smtp_host: z.string().optional(),
                 smtp_port: portSchema.optional(),
                 smtp_user: z.string().optional(),
-                smtp_pass: z.string().optional(),
+                smtp_pass: z.string().optional().transform(getEnvOrYaml("EMAIL_SMTP_PASS")),
                 smtp_secure: z.boolean().optional(),
                 smtp_tls_reject_unauthorized: z.boolean().optional(),
                 no_reply: z.string().email().optional()
