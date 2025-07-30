@@ -229,9 +229,22 @@ export const configSchema = z
                 disable_local_sites: z.boolean().optional(),
                 disable_basic_wireguard_sites: z.boolean().optional(),
                 disable_config_managed_domains: z.boolean().optional(),
-                enable_clients: z.boolean().optional()
+                enable_clients: z.boolean().optional().default(true),
+            })
+            .optional(),
+        dns: z
+            .object({
+                nameservers: z
+                    .array(z.string().optional().optional())
+                    .optional()
+                    .default(["ns1.fossorial.io", "ns2.fossorial.io"]),
+                cname_extension: z.string().optional().default("fossorial.io")
             })
             .optional()
+            .default({
+                nameservers: ["ns1.fossorial.io", "ns2.fossorial.io"],
+                cname_extension: "fossorial.io"
+            })
     })
     .refine(
         (data) => {

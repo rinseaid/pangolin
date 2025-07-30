@@ -60,8 +60,23 @@ const (
 )
 
 func main() {
+
+	// print a banner about prerequisites - opening port 80, 443, 51820, and 21820 on the VPS and firewall and pointing your domain to the VPS IP with a records. Docs are at http://localhost:3000/Getting%20Started/dns-networking
+
+	fmt.Println("Welcome to the Pangolin installer!")
+	fmt.Println("This installer will help you set up Pangolin on your server.")
+	fmt.Println("")
+	fmt.Println("Please make sure you have the following prerequisites:")
+	fmt.Println("- Open TCP ports 80 and 443 and UDP ports 51820 and 21820 on your VPS and firewall.")
+	fmt.Println("- Point your domain to the VPS IP with A records.")
+	fmt.Println("")
+	fmt.Println("http://docs.fossorial.io/Getting%20Started/dns-networking")
+	fmt.Println("")
+	fmt.Println("Lets get started!")
+	fmt.Println("")
+
 	reader := bufio.NewReader(os.Stdin)
-	inputContainer := readString(reader, "Would you like to run Pangolin as docker or podman container?", "docker")
+	inputContainer := readString(reader, "Would you like to run Pangolin as Docker or Podman containers?", "docker")
 
 	chosenContainer := Docker
 	if strings.EqualFold(inputContainer, "docker") {
