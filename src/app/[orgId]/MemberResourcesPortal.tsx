@@ -630,12 +630,6 @@ export default function MemberResourcesPortal({
                                 <div className="p-6">
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center min-w-0 flex-1 gap-3 overflow-hidden">
-                                            <div className="flex-shrink-0">
-                                                <ResourceFavicon
-                                                    domain={resource.domain}
-                                                    enabled={resource.enabled}
-                                                />
-                                            </div>
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger className="min-w-0 max-w-full">
