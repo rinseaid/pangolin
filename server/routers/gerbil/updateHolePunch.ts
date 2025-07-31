@@ -204,10 +204,13 @@ export async function updateHolePunch(
                 } catch (error) {
                     if (axios.isAxiosError(error)) {
                         logger.error(
-                            `Error updating destinations (can Pangolin see Gerbil HTTP API?) for exit node at ${destination.reachableAt} (status: ${error.response?.status}): ${error.message}`
+                            `Error updating destinations (can Pangolin see Gerbil HTTP API?) for exit node at ${destination.reachableAt} (status: ${error.response?.status}): ${JSON.stringify(error.response?.data, null, 2)}`
+                        );
+                    } else {
+                        logger.error(
+                            `Error updating destinations for exit node at ${destination.reachableAt}: ${error}`
                         );
                     }
-                    throw error;
                 }
             }
 

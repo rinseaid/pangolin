@@ -44,8 +44,11 @@ export async function addPeer(
             logger.error(
                 `Error adding peer (can Pangolin see Gerbil HTTP API?) for exit node at ${exitNode.reachableAt} (status: ${error.response?.status}): ${error.message}`
             );
+        } else {
+            logger.error(
+                `Error adding peer for exit node at ${exitNode.reachableAt}: ${error}`
+            );
         }
-        throw error;
     }
 }
 
@@ -75,7 +78,10 @@ export async function deletePeer(exitNodeId: number, publicKey: string) {
             logger.error(
                 `Error deleting peer (can Pangolin see Gerbil HTTP API?) for exit node at ${exitNode.reachableAt} (status: ${error.response?.status}): ${error.message}`
             );
+        } else {
+            logger.error(
+                `Error deleting peer for exit node at ${exitNode.reachableAt}: ${error}`
+            );
         }
-        throw error;
     }
 }

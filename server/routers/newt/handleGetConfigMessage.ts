@@ -131,8 +131,11 @@ export const handleGetConfigMessage: MessageHandler = async (context) => {
                     logger.error(
                         `Error updating proxy mapping (can Pangolin see Gerbil HTTP API?) for exit node at ${exitNode.reachableAt} (status: ${error.response?.status}): ${error.message}`
                     );
+                } else {
+                    logger.error(
+                        `Error updating proxy mapping for exit node at ${exitNode.reachableAt}: ${error}`
+                    );
                 }
-                throw error;
             }
         }
     }
