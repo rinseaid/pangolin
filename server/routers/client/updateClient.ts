@@ -341,8 +341,8 @@ export async function updateClient(
                         });
                     } catch (error) {
                         if (axios.isAxiosError(error)) {
-                            throw new Error(
-                                `Error communicating with Gerbil. Make sure Pangolin can reach the Gerbil HTTP API: ${error.response?.status}`
+                            logger.error(
+                                `Error updating destinations (can Pangolin see Gerbil HTTP API?) for exit node at ${destination.reachableAt} (status: ${error.response?.status}): ${error.message}`
                             );
                         }
                         throw error;
