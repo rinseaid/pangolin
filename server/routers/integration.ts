@@ -21,7 +21,8 @@ import {
     verifyApiKeySetResourceUsers,
     verifyApiKeyAccessTokenAccess,
     verifyApiKeyIsRoot,
-    verifyApiKeyClientAccess
+    verifyApiKeyClientAccess,
+    verifyClientsEnabled
 } from "@server/middlewares";
 import HttpCode from "@server/types/HttpCode";
 import { Router } from "express";
@@ -517,6 +518,7 @@ authenticated.get(
 
 authenticated.get(
     "/org/:orgId/pick-client-defaults",
+    verifyClientsEnabled,
     verifyApiKeyOrgAccess,
     verifyApiKeyHasAction(ActionsEnum.createClient),
     client.pickClientDefaults
@@ -524,6 +526,7 @@ authenticated.get(
 
 authenticated.get(
     "/org/:orgId/clients",
+    verifyClientsEnabled,
     verifyApiKeyOrgAccess,
     verifyApiKeyHasAction(ActionsEnum.listClients),
     client.listClients
@@ -531,6 +534,7 @@ authenticated.get(
 
 authenticated.get(
     "/org/:orgId/client/:clientId",
+    verifyClientsEnabled,
     verifyApiKeyOrgAccess,
     verifyApiKeyHasAction(ActionsEnum.getClient),
     client.getClient
@@ -538,6 +542,7 @@ authenticated.get(
 
 authenticated.put(
     "/org/:orgId/client",
+    verifyClientsEnabled,
     verifyApiKeyOrgAccess,
     verifyApiKeyHasAction(ActionsEnum.createClient),
     client.createClient
@@ -545,6 +550,7 @@ authenticated.put(
 
 authenticated.delete(
     "/client/:clientId",
+    verifyClientsEnabled,
     verifyApiKeyClientAccess,
     verifyApiKeyHasAction(ActionsEnum.deleteClient),
     client.deleteClient
@@ -552,6 +558,7 @@ authenticated.delete(
 
 authenticated.post(
     "/client/:clientId",
+    verifyClientsEnabled,
     verifyApiKeyClientAccess,
     verifyApiKeyHasAction(ActionsEnum.updateClient),
     client.updateClient
