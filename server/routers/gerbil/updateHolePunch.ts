@@ -188,7 +188,7 @@ export async function updateHolePunch(
                         `${destination.reachableAt}/update-destinations`,
                         {
                             sourceIp: client.endpoint?.split(":")[0] || "",
-                            sourcePort: client.endpoint?.split(":")[1] || 0,
+                            sourcePort: parseInt(client.endpoint?.split(":")[1] || "0"),
                             destinations: destination.destinations
                         },
                         {
@@ -220,7 +220,7 @@ export async function updateHolePunch(
             )?.destinations || [];
 
         } else if (newtId) {
-            logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for olmId: ${olmId}`);
+            logger.debug(`Got hole punch with ip: ${ip}, port: ${port} for newtId: ${newtId}`);
 
             const { session, newt: newtSession } =
                 await validateNewtSessionToken(token);
