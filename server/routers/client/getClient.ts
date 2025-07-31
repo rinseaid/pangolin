@@ -18,28 +18,28 @@ const getClientSchema = z
     })
     .strict();
 
-async function query(clientId: number) {
+async function query(clientId: number, orgId: string) {
     // Get the client
     const [client] = await db
         .select()
         .from(clients)
-        .where(eq(clients.clientId, clientId))
+        .where(and(eq(clients.clientId, clientId), eq(clients.orgId, orgId)))
         .limit(1);
-    
+
     if (!client) {
         return null;
     }
-    
+
     // Get the siteIds associated with this client
     const sites = await db
         .select({ siteId: clientSites.siteId })
         .from(clientSites)
         .where(eq(clientSites.clientId, clientId));
-    
+
     // Add the siteIds to the client object
     return {
         ...client,
-        siteIds: sites.map(site => site.siteId)
+        siteIds: sites.map((site) => site.siteId)
     };
 }
 
@@ -75,9 +75,9 @@ export async function getClient(
             );
         }
 
-        const { clientId } = parsedParams.data;
+        const { clientId, orgId } = parsedParams.data;
 
-        const client = await query(clientId);
+        const client = await query(clientId, orgId);
 
         if (!client) {
             return next(
