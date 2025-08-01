@@ -16,7 +16,8 @@ export const domains = sqliteTable("domains", {
 export const orgs = sqliteTable("orgs", {
     orgId: text("orgId").primaryKey(),
     name: text("name").notNull(),
-    subnet: text("subnet")
+    subnet: text("subnet"),
+    createdAt: text("createdAt")
 });
 
 export const userDomains = sqliteTable("userDomains", {
