@@ -136,7 +136,8 @@ export async function createOrg(
                 .values({
                     orgId,
                     name,
-                    subnet
+                    subnet,
+                    createdAt: new Date().toISOString()
                 })
                 .returning();
 
