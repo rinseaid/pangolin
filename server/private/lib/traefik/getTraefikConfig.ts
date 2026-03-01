@@ -679,6 +679,11 @@ export async function getTraefikConfig(
                                         return false;
                                     }
 
+                                    // Local sites don't report online status, always include them as fallback
+                                    if (target.site.type === "local") {
+                                        return true;
+                                    } 
+
                                     // If any sites are online, exclude offline sites
                                     if (anySitesOnline && !target.site.online) {
                                         return false;
@@ -800,6 +805,11 @@ export async function getTraefikConfig(
                             .filter((target) => {
                                 if (!target.enabled) {
                                     return false;
+                                }
+                                
+                                // Local sites don't report online status, always include them as fallback
+                                if (target.site.type === "local") {
+                                    return true;
                                 }
 
                                 // If any sites are online, exclude offline sites
