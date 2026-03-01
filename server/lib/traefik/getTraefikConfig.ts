@@ -477,7 +477,10 @@ export async function getTraefikConfig(
 
                         // TODO: HOW TO HANDLE ^^^^^^ BETTER
                         const anySitesOnline = targets.some(
-                            (target) => target.site.online
+                            (target) =>
+                            target.site.online ||
+                            target.site.type === "local" ||
+                            target.site.type === "wireguard"
                         );
 
                         return (
@@ -491,10 +494,6 @@ export async function getTraefikConfig(
                                         return false;
                                     }
                                     
-                                    // Local sites don't report online status, always include them as fallback
-                                    if (target.site.type === "local") {
-                                        return true;
-                                    }
                                     // If any sites are online, exclude offline sites
                                     if (anySitesOnline && !target.site.online) {
                                         return false;
@@ -609,18 +608,16 @@ export async function getTraefikConfig(
                     servers: (() => {
                         // Check if any sites are online
                         const anySitesOnline = targets.some(
-                            (target) => target.site.online
+                            (target) =>
+                            target.site.online ||
+                            target.site.type === "local" ||
+                            target.site.type === "wireguard"
                         );
 
                         return targets
                             .filter((target) => {
                                 if (!target.enabled) {
                                     return false;
-                                }
-
-                                // Local sites don't report online status, always include them as fallback
-                                if (target.site.type === "local") {
-                                    return true;
                                 }
                                 
                                 // If any sites are online, exclude offline sites
