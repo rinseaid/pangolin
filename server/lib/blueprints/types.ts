@@ -326,7 +326,7 @@ export const ClientResourceSchema = z
     .object({
         name: z.string().min(1).max(255),
         mode: z.enum(["host", "cidr"]),
-        site: z.string(),
+        site: z.string().optional(),
         // protocol: z.enum(["tcp", "udp"]).optional(),
         // proxyPort: z.int().positive().optional(),
         // destinationPort: z.int().positive().optional(),
