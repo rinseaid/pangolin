@@ -1,0 +1,71 @@
+"use client";
+
+import { cn } from "@app/lib/cn";
+
+export function InfoSections({
+    children,
+    cols,
+    columnSizing = "content"
+}: {
+    children: React.ReactNode;
+    cols?: number;
+    /** content (default): fixed gap, columns hug content, left-aligned; fill: equal-width columns across the row */
+    columnSizing?: "fill" | "content";
+}) {
+    const n = cols || 1;
+    const track =
+        columnSizing === "fill" ? "minmax(0, 1fr)" : "minmax(0, max-content)";
+
+    return (
+        <div
+            className={cn(
+                "grid grid-cols-2 md:grid-cols-(--columns) md:space-x-16 gap-4 md:items-start",
+                columnSizing === "content" &&
+                    "md:justify-items-start md:justify-start"
+            )}
+            style={{
+                // @ts-expect-error dynamic props don't work with tailwind, but we can set the
+                // value of a CSS variable at runtime and tailwind will just reuse that value
+                "--columns": `repeat(${n}, ${track})`
+            }}
+        >
+            {children}
+        </div>
+    );
+}
+
+export function InfoSection({
+    children,
+    className
+}: {
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return <div className={cn("space-y-1", className)}>{children}</div>;
+}
+
+export function InfoSectionTitle({
+    children,
+    className
+}: {
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return <div className={cn("font-semibold", className)}>{children}</div>;
+}
+
+export function InfoSectionContent({
+    children,
+    className
+}: {
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return (
+        <div className={cn("min-w-0 overflow-hidden", className)}>
+            <div className="w-full truncate [&>div.flex]:min-w-0 [&>div.flex]:!whitespace-normal [&>div.flex>span]:truncate [&>div.flex>a]:truncate">
+                {children}
+            </div>
+        </div>
+    );
+}

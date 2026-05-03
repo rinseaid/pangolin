@@ -1,0 +1,775 @@
+"use client";
+
+import {
+    SettingsContainer,
+    SettingsSection,
+    SettingsSectionBody,
+    SettingsSectionDescription,
+    SettingsSectionForm,
+    SettingsSectionHeader,
+    SettingsSectionTitle
+} from "@app/components/Settings";
+import { StrategySelect } from "@app/components/StrategySelect";
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage
+} from "@app/components/ui/form";
+import HeaderTitle from "@app/components/SettingsSectionTitle";
+import { z } from "zod";
+import { createElement, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@app/components/ui/input";
+import { ChevronDown, ChevronUp, InfoIcon, Terminal } from "lucide-react";
+import { Button } from "@app/components/ui/button";
+import CopyTextBox from "@app/components/CopyTextBox";
+import CopyToClipboard from "@app/components/CopyToClipboard";
+import {
+    InfoSection,
+    InfoSectionContent,
+    InfoSections,
+    InfoSectionTitle
+} from "@app/components/InfoSection";
+import {
+    FaApple,
+    FaCubes,
+    FaDocker,
+    FaFreebsd,
+    FaWindows
+} from "react-icons/fa";
+import { SiNixos, SiKubernetes } from "react-icons/si";
+import { Checkbox, CheckboxWithLabel } from "@app/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@app/components/ui/alert";
+import { generateKeypair } from "../[niceId]/wireguardConfig";
+import { createApiClient, formatAxiosError } from "@app/lib/api";
+import { generateWireGuardConfig } from "@app/lib/wireguard";
+import { useEnvContext } from "@app/hooks/useEnvContext";
+import {
+    CreateSiteBody,
+    CreateSiteResponse,
+    PickSiteDefaultsResponse
+} from "@server/routers/site";
+import { ListRemoteExitNodesResponse } from "@server/routers/remoteExitNode/types";
+import { toast } from "@app/hooks/useToast";
+import { AxiosResponse } from "axios";
+import { useParams, useRouter } from "next/navigation";
+import { QRCodeCanvas } from "qrcode.react";
+
+import { useTranslations } from "next-intl";
+import { build } from "@server/build";
+import { NewtSiteInstallCommands } from "@app/components/newt-install-commands";
+
+type SiteType = "newt" | "wireguard" | "local";
+
+interface TunnelTypeOption {
+    id: SiteType;
+    title: string;
+    description: string;
+    disabled?: boolean;
+}
+
+interface RemoteExitNodeOption {
+    id: string;
+    title: string;
+    description: string;
+    disabled?: boolean;
+}
+
+type CommandItem = string | { title: string; command: string };
+
+type Commands = {
+    unix: Record<string, CommandItem[]>;
+    windows: Record<string, CommandItem[]>;
+    docker: Record<string, CommandItem[]>;
+    kubernetes: Record<string, CommandItem[]>;
+    podman: Record<string, CommandItem[]>;
+    nixos: Record<string, CommandItem[]>;
+};
+
+const platforms = [
+    "unix",
+    "docker",
+    "kubernetes",
+    "podman",
+    "windows",
+    "nixos"
+] as const;
+
+type Platform = (typeof platforms)[number];
+
+export default function Page() {
+    const { env } = useEnvContext();
+    const api = createApiClient({ env });
+    const { orgId } = useParams();
+    const router = useRouter();
+    const t = useTranslations();
+
+    const createSiteFormSchema = z
+        .object({
+            name: z
+                .string()
+                .min(2, { message: t("nameMin", { len: 2 }) })
+                .max(30, {
+                    message: t("nameMax", { len: 30 })
+                }),
+            method: z.enum(["newt", "wireguard", "local"]),
+            copied: z.boolean(),
+            clientAddress: z.string().optional(),
+            acceptClients: z.boolean(),
+            exitNodeId: z.number().optional()
+        })
+        .refine(
+            (data) => {
+                if (data.method !== "local") {
+                    // return data.copied;
+                    return true;
+                }
+                // For local sites, require exitNodeId
+                return build == "saas" ? data.exitNodeId !== undefined : true;
+            },
+            {
+                message: t("sitesConfirmCopy"),
+                path: ["copied"]
+            }
+        )
+        .refine(
+            (data) => {
+                if (data.method === "local" && build == "saas") {
+                    return data.exitNodeId !== undefined;
+                }
+                return true;
+            },
+            {
+                message: t("remoteExitNodeRequired"),
+                path: ["exitNodeId"]
+            }
+        );
+
+    type CreateSiteFormValues = z.infer<typeof createSiteFormSchema>;
+
+    const [tunnelTypes, setTunnelTypes] = useState<
+        ReadonlyArray<TunnelTypeOption>
+    >([
+        {
+            id: "newt",
+            title: t("siteNewtTunnel"),
+            description: t("siteNewtTunnelDescription"),
+            disabled: true
+        },
+        ...(env.flags.disableBasicWireguardSites || build == "saas"
+            ? []
+            : [
+                  {
+                      id: "wireguard" as SiteType,
+                      title: t("siteWg"),
+                      description: t("siteWgDescription"),
+                      disabled: true
+                  }
+              ]),
+        ...(env.flags.disableLocalSites
+            ? []
+            : [
+                  {
+                      id: "local" as SiteType,
+                      title: t("local"),
+                      description:
+                          build == "saas"
+                              ? t("siteLocalDescriptionSaas")
+                              : t("siteLocalDescription")
+                  }
+              ])
+    ]);
+
+    const [loadingPage, setLoadingPage] = useState(true);
+
+    const [newtId, setNewtId] = useState("");
+    const [newtSecret, setNewtSecret] = useState("");
+    const [newtEndpoint, setNewtEndpoint] = useState("");
+    const [clientAddress, setClientAddress] = useState("");
+    const [publicKey, setPublicKey] = useState("");
+    const [privateKey, setPrivateKey] = useState("");
+    const [wgConfig, setWgConfig] = useState("");
+
+    const [createLoading, setCreateLoading] = useState(false);
+    const [newtVersion, setNewtVersion] = useState("latest");
+    const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
+    const [siteDefaults, setSiteDefaults] =
+        useState<PickSiteDefaultsResponse | null>(null);
+
+    const [remoteExitNodeOptions, setRemoteExitNodeOptions] = useState<
+        ReadonlyArray<RemoteExitNodeOption>
+    >([]);
+    const [selectedExitNodeId, setSelectedExitNodeId] = useState<
+        string | undefined
+    >();
+
+    const form = useForm({
+        resolver: zodResolver(createSiteFormSchema),
+        defaultValues: {
+            name: "",
+            copied: false,
+            method: "newt",
+            clientAddress: "",
+            acceptClients: true,
+            exitNodeId: undefined
+        }
+    });
+
+    async function onSubmit(data: CreateSiteFormValues) {
+        setCreateLoading(true);
+
+        let payload: CreateSiteBody = {
+            name: data.name,
+            type: data.method
+        };
+
+        if (data.method == "wireguard") {
+            if (!siteDefaults || !wgConfig) {
+                toast({
+                    variant: "destructive",
+                    title: t("siteErrorCreate"),
+                    description: t("siteErrorCreateKeyPair")
+                });
+                setCreateLoading(false);
+                return;
+            }
+
+            payload = {
+                ...payload,
+                subnet: siteDefaults.subnet,
+                exitNodeId: siteDefaults.exitNodeId,
+                pubKey: publicKey
+            };
+        }
+        if (data.method === "newt") {
+            if (!siteDefaults) {
+                toast({
+                    variant: "destructive",
+                    title: t("siteErrorCreate"),
+                    description: t("siteErrorCreateDefaults")
+                });
+                setCreateLoading(false);
+                return;
+            }
+
+            payload = {
+                ...payload,
+                subnet: siteDefaults.subnet,
+                exitNodeId: siteDefaults.exitNodeId,
+                secret: siteDefaults.newtSecret,
+                newtId: siteDefaults.newtId,
+                address: clientAddress
+            };
+        }
+        if (data.method === "local" && build == "saas") {
+            if (!data.exitNodeId) {
+                toast({
+                    variant: "destructive",
+                    title: t("siteErrorCreate"),
+                    description: t("remoteExitNodeRequired")
+                });
+                setCreateLoading(false);
+                return;
+            }
+
+            payload = {
+                ...payload,
+                exitNodeId: data.exitNodeId
+            };
+        }
+
+        const res = await api
+            .put<
+                AxiosResponse<CreateSiteResponse>
+            >(`/org/${orgId}/site/`, payload)
+            .catch((e) => {
+                toast({
+                    variant: "destructive",
+                    title: t("siteErrorCreate"),
+                    description: formatAxiosError(e)
+                });
+            });
+
+        if (res && res.status === 201) {
+            const data = res.data.data;
+
+            router.push(`/${orgId}/settings/sites/${data.niceId}`);
+        }
+
+        setCreateLoading(false);
+    }
+
+    useEffect(() => {
+        const load = async () => {
+            setLoadingPage(true);
+
+            let currentNewtVersion = "latest";
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                const response = await fetch(
+                    `https://api.github.com/repos/fosrl/newt/releases/latest`,
+                    { signal: controller.signal }
+                );
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(
+                        t("newtErrorFetchReleases", {
+                            err: response.statusText
+                        })
+                    );
+                }
+                const data = await response.json();
+                const latestVersion = data.tag_name;
+                currentNewtVersion = latestVersion;
+                setNewtVersion(latestVersion);
+            } catch (error) {
+                if (error instanceof Error && error.name === "AbortError") {
+                    console.error(t("newtErrorFetchTimeout"));
+                } else {
+                    console.error(
+                        t("newtErrorFetchLatest", {
+                            err:
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error)
+                        })
+                    );
+                }
+            }
+
+            const generatedKeypair = generateKeypair();
+
+            const privateKey = generatedKeypair.privateKey;
+            const publicKey = generatedKeypair.publicKey;
+
+            setPrivateKey(privateKey);
+            setPublicKey(publicKey);
+
+            await api
+                .get(`/org/${orgId}/pick-site-defaults`)
+                .catch((e) => {
+                    // update the default value of the form to be local method only if local sites are not disabled
+                    if (!env.flags.disableLocalSites) {
+                        form.setValue("method", "local");
+                    }
+                })
+                .then((res) => {
+                    if (res && res.status === 200) {
+                        const data = res.data.data;
+
+                        setSiteDefaults(data);
+
+                        const newtId = data.newtId;
+                        const newtSecret = data.newtSecret;
+                        const newtEndpoint = data.endpoint;
+                        const clientAddress = data.clientAddress;
+
+                        setNewtId(newtId);
+                        setNewtSecret(newtSecret);
+                        setNewtEndpoint(newtEndpoint);
+                        setClientAddress(clientAddress);
+
+                        const wgConfig = generateWireGuardConfig(
+                            privateKey,
+                            data.publicKey,
+                            data.subnet,
+                            data.address,
+                            data.endpoint,
+                            data.listenPort
+                        );
+                        setWgConfig(wgConfig);
+
+                        setTunnelTypes((prev: any) => {
+                            return prev.map((item: any) => {
+                                return { ...item, disabled: false };
+                            });
+                        });
+                    }
+                });
+
+            if (build === "saas") {
+                // Fetch remote exit nodes for local sites
+                try {
+                    const remoteExitNodesRes = await api.get<
+                        AxiosResponse<ListRemoteExitNodesResponse>
+                    >(`/org/${orgId}/remote-exit-nodes`);
+
+                    if (
+                        remoteExitNodesRes &&
+                        remoteExitNodesRes.status === 200
+                    ) {
+                        const exitNodes =
+                            remoteExitNodesRes.data.data.remoteExitNodes;
+
+                        // Convert to options for StrategySelect
+                        const exitNodeOptions: RemoteExitNodeOption[] =
+                            exitNodes
+                                .filter((node) => node.exitNodeId !== null)
+                                .map((node) => ({
+                                    id: node.exitNodeId!.toString(),
+                                    title: node.name,
+                                    description: `${node.address?.split("/")[0] || "N/A"} - ${node.endpoint || "N/A"}`
+                                }));
+
+                        setRemoteExitNodeOptions(exitNodeOptions);
+
+                        if (exitNodeOptions.length === 0) {
+                            // No remote exit nodes available - remove local option and default to newt
+                            setTunnelTypes((prev: any) =>
+                                prev.filter((item: any) => item.id !== "local")
+                            );
+                            form.setValue("method", "newt");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch remote exit nodes:", error);
+                    // If fetch fails, no remote exit nodes available - remove local option and default to newt
+                    setTunnelTypes((prev: any) =>
+                        prev.filter((item: any) => item.id !== "local")
+                    );
+                    form.setValue("method", "newt");
+                }
+            }
+
+            setLoadingPage(false);
+        };
+
+        load();
+    }, []);
+
+    // Sync form exitNodeId value with local state
+    useEffect(() => {
+        if (build !== "saas") {
+            // dont update the form
+            return;
+        }
+        form.setValue(
+            "exitNodeId",
+            selectedExitNodeId ? parseInt(selectedExitNodeId) : undefined
+        );
+    }, [selectedExitNodeId, form]);
+
+    return (
+        <>
+            <div className="flex justify-between">
+                <HeaderTitle
+                    title={t("siteCreate")}
+                    description={t("siteCreateDescription2")}
+                />
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        router.push(`/${orgId}/settings/sites`);
+                    }}
+                >
+                    {t("siteSeeAll")}
+                </Button>
+            </div>
+
+            {!loadingPage && (
+                <div>
+                    <SettingsContainer>
+                        <SettingsSection>
+                            <SettingsSectionHeader>
+                                <SettingsSectionTitle>
+                                    {t("siteInfo")}
+                                </SettingsSectionTitle>
+                            </SettingsSectionHeader>
+                            <SettingsSectionBody>
+                                {tunnelTypes.length > 1 && (
+                                    <>
+                                        <div className="mb-2">
+                                            <span className="text-sm font-medium">
+                                                {t("type")}
+                                            </span>
+                                        </div>
+                                        <StrategySelect
+                                            options={tunnelTypes}
+                                            defaultValue={form.getValues(
+                                                "method"
+                                            )}
+                                            onChange={(value) => {
+                                                form.setValue("method", value);
+                                            }}
+                                            cols={3}
+                                        />
+                                    </>
+                                )}
+
+                                <Form {...form}>
+                                    <form
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault(); // block default enter refresh
+                                            }
+                                        }}
+                                        className="space-y-4 grid gap-4 grid-cols-1 md:grid-cols-2 items-start"
+                                        id="create-site-form"
+                                    >
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("name")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            autoComplete="off"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                    <FormDescription>
+                                                        {t(
+                                                            "siteNameDescription"
+                                                        )}
+                                                    </FormDescription>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        {form.watch("method") === "newt" && (
+                                            <div className="flex items-center justify-end md:col-start-2">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setShowAdvancedSettings(
+                                                            !showAdvancedSettings
+                                                        )
+                                                    }
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    {showAdvancedSettings ? (
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    )}
+                                                    {t("advancedSettings")}
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {form.watch("method") === "newt" &&
+                                            showAdvancedSettings && (
+                                                <FormField
+                                                    control={form.control}
+                                                    name="clientAddress"
+                                                    render={({ field }) => (
+                                                        <FormItem className="md:col-start-1 md:col-span-2">
+                                                            <FormLabel>
+                                                                {t(
+                                                                    "siteAddress"
+                                                                )}
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    autoComplete="off"
+                                                                    value={
+                                                                        clientAddress
+                                                                    }
+                                                                    onChange={(
+                                                                        e
+                                                                    ) => {
+                                                                        setClientAddress(
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        );
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                            <FormDescription>
+                                                                {t(
+                                                                    "siteAddressDescription"
+                                                                )}
+                                                            </FormDescription>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            )}
+                                    </form>
+                                </Form>
+                            </SettingsSectionBody>
+                        </SettingsSection>
+
+                        {form.watch("method") === "newt" && (
+                            <>
+                                <SettingsSection>
+                                    <SettingsSectionHeader>
+                                        <SettingsSectionTitle>
+                                            {t("siteNewtCredentials")}
+                                        </SettingsSectionTitle>
+                                        <SettingsSectionDescription>
+                                            {t(
+                                                "siteNewtCredentialsDescription"
+                                            )}
+                                        </SettingsSectionDescription>
+                                    </SettingsSectionHeader>
+                                    <SettingsSectionBody>
+                                        <InfoSections cols={3}>
+                                            <InfoSection>
+                                                <InfoSectionTitle>
+                                                    {t("newtEndpoint")}
+                                                </InfoSectionTitle>
+                                                <InfoSectionContent>
+                                                    <CopyToClipboard
+                                                        text={
+                                                            env.app.dashboardUrl
+                                                        }
+                                                    />
+                                                </InfoSectionContent>
+                                            </InfoSection>
+                                            <InfoSection>
+                                                <InfoSectionTitle>
+                                                    {t("newtId")}
+                                                </InfoSectionTitle>
+                                                <InfoSectionContent>
+                                                    <CopyToClipboard
+                                                        text={newtId}
+                                                    />
+                                                </InfoSectionContent>
+                                            </InfoSection>
+                                            <InfoSection>
+                                                <InfoSectionTitle>
+                                                    {t("newtSecretKey")}
+                                                </InfoSectionTitle>
+                                                <InfoSectionContent>
+                                                    <CopyToClipboard
+                                                        text={newtSecret}
+                                                    />
+                                                </InfoSectionContent>
+                                            </InfoSection>
+                                        </InfoSections>
+                                    </SettingsSectionBody>
+                                </SettingsSection>
+
+                                <NewtSiteInstallCommands
+                                    id={newtId}
+                                    secret={newtSecret}
+                                    endpoint={env.app.dashboardUrl}
+                                    version={newtVersion}
+                                />
+                            </>
+                        )}
+
+                        {form.watch("method") === "wireguard" && (
+                            <SettingsSection>
+                                <SettingsSectionHeader>
+                                    <SettingsSectionTitle>
+                                        {t("WgConfiguration")}
+                                    </SettingsSectionTitle>
+                                    <SettingsSectionDescription>
+                                        {t("WgConfigurationDescription")}
+                                    </SettingsSectionDescription>
+                                </SettingsSectionHeader>
+                                <SettingsSectionBody>
+                                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                                        <CopyTextBox text={wgConfig} />
+                                        <div
+                                            className={`relative w-fit border rounded-md`}
+                                        >
+                                            <div className="bg-white p-6 rounded-md">
+                                                <QRCodeCanvas
+                                                    value={wgConfig}
+                                                    size={168}
+                                                    className="mx-auto"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </SettingsSectionBody>
+                            </SettingsSection>
+                        )}
+
+                        {build === "saas" &&
+                            form.watch("method") === "local" && (
+                                <SettingsSection>
+                                    <SettingsSectionHeader>
+                                        <SettingsSectionTitle>
+                                            {t("remoteExitNodeSelection")}
+                                        </SettingsSectionTitle>
+                                        <SettingsSectionDescription>
+                                            {t(
+                                                "remoteExitNodeSelectionDescription"
+                                            )}
+                                        </SettingsSectionDescription>
+                                    </SettingsSectionHeader>
+                                    <SettingsSectionBody>
+                                        {remoteExitNodeOptions.length > 0 ? (
+                                            <StrategySelect
+                                                options={remoteExitNodeOptions}
+                                                defaultValue={
+                                                    selectedExitNodeId
+                                                }
+                                                onChange={(value) => {
+                                                    setSelectedExitNodeId(
+                                                        value
+                                                    );
+                                                }}
+                                                cols={1}
+                                            />
+                                        ) : (
+                                            <Alert variant="destructive">
+                                                <InfoIcon className="h-4 w-4" />
+                                                <AlertTitle className="font-semibold">
+                                                    {t(
+                                                        "noRemoteExitNodesAvailable"
+                                                    )}
+                                                </AlertTitle>
+                                                <AlertDescription>
+                                                    {t(
+                                                        "noRemoteExitNodesAvailableDescription"
+                                                    )}
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                    </SettingsSectionBody>
+                                </SettingsSection>
+                            )}
+                    </SettingsContainer>
+
+                    <div className="flex justify-end space-x-2 mt-8">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                router.push(`/${orgId}/settings/sites`);
+                            }}
+                        >
+                            {t("cancel")}
+                        </Button>
+                        <Button
+                            type="button"
+                            loading={createLoading}
+                            disabled={createLoading}
+                            onClick={() => {
+                                form.handleSubmit(onSubmit)();
+                            }}
+                        >
+                            {t("siteCreate")}
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}

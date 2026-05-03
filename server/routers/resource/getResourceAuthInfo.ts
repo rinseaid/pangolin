@@ -1,0 +1,171 @@
+import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import {
+    db,
+    resourceHeaderAuth,
+    resourceHeaderAuthExtendedCompatibility,
+    resourcePassword,
+    resourcePincode,
+    resources
+} from "@server/db";
+import { eq } from "drizzle-orm";
+import response from "@server/lib/response";
+import HttpCode from "@server/types/HttpCode";
+import createHttpError from "http-errors";
+import { fromError } from "zod-validation-error";
+import logger from "@server/logger";
+import { build } from "@server/build";
+
+const getResourceAuthInfoSchema = z.strictObject({
+    resourceGuid: z.string()
+});
+
+export type GetResourceAuthInfoResponse = {
+    resourceId: number;
+    resourceGuid: string;
+    resourceName: string;
+    niceId: string;
+    password: boolean;
+    pincode: boolean;
+    headerAuth: boolean;
+    headerAuthExtendedCompatibility: boolean;
+    sso: boolean;
+    blockAccess: boolean;
+    url: string;
+    wildcard: boolean;
+    fullDomain: string | null;
+    whitelist: boolean;
+    skipToIdpId: number | null;
+    orgId: string;
+    postAuthPath: string | null;
+};
+
+export async function getResourceAuthInfo(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<any> {
+    try {
+        const parsedParams = getResourceAuthInfoSchema.safeParse(req.params);
+        if (!parsedParams.success) {
+            return next(
+                createHttpError(
+                    HttpCode.BAD_REQUEST,
+                    fromError(parsedParams.error).toString()
+                )
+            );
+        }
+
+        const { resourceGuid } = parsedParams.data;
+
+        const isGuidInteger = /^\d+$/.test(resourceGuid);
+
+        const [result] =
+            isGuidInteger && build === "saas"
+                ? await db
+                      .select()
+                      .from(resources)
+                      .leftJoin(
+                          resourcePincode,
+                          eq(resourcePincode.resourceId, resources.resourceId)
+                      )
+                      .leftJoin(
+                          resourcePassword,
+                          eq(resourcePassword.resourceId, resources.resourceId)
+                      )
+
+                      .leftJoin(
+                          resourceHeaderAuth,
+                          eq(
+                              resourceHeaderAuth.resourceId,
+                              resources.resourceId
+                          )
+                      )
+                      .leftJoin(
+                          resourceHeaderAuthExtendedCompatibility,
+                          eq(
+                              resourceHeaderAuthExtendedCompatibility.resourceId,
+                              resources.resourceId
+                          )
+                      )
+                      .where(eq(resources.resourceId, Number(resourceGuid)))
+                      .limit(1)
+                : await db
+                      .select()
+                      .from(resources)
+                      .leftJoin(
+                          resourcePincode,
+                          eq(resourcePincode.resourceId, resources.resourceId)
+                      )
+                      .leftJoin(
+                          resourcePassword,
+                          eq(resourcePassword.resourceId, resources.resourceId)
+                      )
+
+                      .leftJoin(
+                          resourceHeaderAuth,
+                          eq(
+                              resourceHeaderAuth.resourceId,
+                              resources.resourceId
+                          )
+                      )
+                      .leftJoin(
+                          resourceHeaderAuthExtendedCompatibility,
+                          eq(
+                              resourceHeaderAuthExtendedCompatibility.resourceId,
+                              resources.resourceId
+                          )
+                      )
+                      .where(eq(resources.resourceGuid, resourceGuid))
+                      .limit(1);
+
+        const resource = result?.resources;
+        if (!resource) {
+            return next(
+                createHttpError(HttpCode.NOT_FOUND, "Resource not found")
+            );
+        }
+
+        const pincode = result?.resourcePincode;
+        const password = result?.resourcePassword;
+        const headerAuth = result?.resourceHeaderAuth;
+        const headerAuthExtendedCompatibility =
+            result?.resourceHeaderAuthExtendedCompatibility;
+
+        const url = resource.fullDomain
+            ? `${resource.ssl ? "https" : "http"}://${resource.fullDomain}`
+            : null;
+
+        return response<GetResourceAuthInfoResponse>(res, {
+            data: {
+                niceId: resource.niceId,
+                resourceGuid: resource.resourceGuid,
+                resourceId: resource.resourceId,
+                resourceName: resource.name,
+                password: password !== null,
+                pincode: pincode !== null,
+                headerAuth: headerAuth !== null,
+                headerAuthExtendedCompatibility:
+                    headerAuthExtendedCompatibility !== null,
+                sso: resource.sso,
+                blockAccess: resource.blockAccess,
+                url: url ?? "",
+                wildcard: resource.wildcard ?? false,
+                fullDomain: resource.fullDomain,
+                whitelist: resource.emailWhitelistEnabled,
+                skipToIdpId: resource.skipToIdpId,
+                orgId: resource.orgId,
+                postAuthPath: resource.postAuthPath ?? null
+            },
+            success: true,
+            error: false,
+            message: "Resource auth info retrieved successfully",
+            status: HttpCode.OK
+        });
+    } catch (error) {
+        logger.error(error);
+        return next(
+            createHttpError(HttpCode.INTERNAL_SERVER_ERROR, "An error occurred")
+        );
+    }
+}

@@ -1,0 +1,16 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Use tsx watch for development with hot reload
+CMD ["npm", "run", "dev"]
