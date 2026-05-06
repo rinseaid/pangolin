@@ -6,7 +6,8 @@ import {
     primaryKey,
     sqliteTable,
     text,
-    unique
+    unique,
+    uniqueIndex
 } from "drizzle-orm/sqlite-core";
 
 export const domains = sqliteTable("domains", {
@@ -759,7 +760,9 @@ export const roles = sqliteTable("roles", {
         true
     ),
     sshUnixGroups: text("sshUnixGroups").default("[]")
-});
+},
+    (t) => [uniqueIndex("idx_roles_orgId_name").on(t.orgId, t.name)]
+);
 
 export const userOrgRoles = sqliteTable(
     "userOrgRoles",

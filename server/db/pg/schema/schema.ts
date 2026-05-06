@@ -11,6 +11,7 @@ import {
     serial,
     text,
     unique,
+    uniqueIndex,
     varchar
 } from "drizzle-orm/pg-core";
 
@@ -443,7 +444,9 @@ export const roles = pgTable("roles", {
     sshSudoCommands: text("sshSudoCommands").default("[]"),
     sshCreateHomeDir: boolean("sshCreateHomeDir").default(true),
     sshUnixGroups: text("sshUnixGroups").default("[]")
-});
+},
+    (t) => [uniqueIndex("idx_roles_orgId_name").on(t.orgId, t.name)]
+);
 
 export const userOrgRoles = pgTable(
     "userOrgRoles",
