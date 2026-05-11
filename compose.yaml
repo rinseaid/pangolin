@@ -5,6 +5,8 @@ services:
     image: fosrl/pangolin:ee-latest
     container_name: pangolin
     restart: unless-stopped
+    environment:
+      CROWDSEC_BOUNCER_KEY: "${CROWDSEC_BOUNCER_KEY}"
     deploy:
       resources:
         limits:
