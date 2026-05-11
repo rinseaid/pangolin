@@ -1,0 +1,220 @@
+variant: flatcar
+version: 1.1.0
+
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINHak6tKI6+FrfFoD8MqVMo/ZJyjKiCjlVyZyALOF6jL rinseaid
+
+storage:
+  files:
+    - path: /etc/hostname
+      overwrite: true
+      mode: 0644
+      contents:
+        inline: pangolin
+
+    - path: /etc/flatcar/update.conf
+      overwrite: true
+      mode: 0644
+      contents:
+        inline: |
+          REBOOT_STRATEGY=reboot
+          GROUP=stable
+          LOCKSMITHD_REBOOT_WINDOW_START=Thu 04:00
+          LOCKSMITHD_REBOOT_WINDOW_LENGTH=1h
+
+    - path: /etc/sysctl.d/90-hardening.conf
+      mode: 0644
+      contents:
+        inline: |
+          net.ipv4.ip_forward=1
+          net.ipv6.conf.all.forwarding=1
+          net.ipv4.conf.all.rp_filter=1
+          net.ipv4.conf.default.rp_filter=1
+          net.ipv4.conf.all.accept_redirects=0
+          net.ipv4.conf.default.accept_redirects=0
+          net.ipv6.conf.all.accept_redirects=0
+          net.ipv6.conf.default.accept_redirects=0
+          net.ipv4.conf.all.send_redirects=0
+          net.ipv4.conf.default.send_redirects=0
+          net.ipv4.icmp_echo_ignore_broadcasts=1
+          net.ipv4.tcp_syncookies=1
+          kernel.sysrq=0
+
+    - path: /etc/op-connect/1password-credentials.json
+      mode: 0600
+      contents:
+        inline: "${OP_CREDENTIALS_JSON}"
+
+    - path: /etc/op-connect/token
+      mode: 0600
+      contents:
+        inline: "${OP_CONNECT_TOKEN}"
+
+    - path: /opt/doco-cd/.env
+      mode: 0600
+      contents:
+        inline: |
+          FORGEJO_TOKEN=${FORGEJO_TOKEN}
+          WEBHOOK_SECRET=${WEBHOOK_SECRET}
+          OP_CONNECT_TOKEN=${OP_CONNECT_TOKEN}
+
+    - path: /opt/doco-cd/compose.yaml
+      mode: 0644
+      contents:
+        inline: |
+          name: doco-cd
+
+          services:
+            doco-cd:
+              image: ghcr.io/kimdre/doco-cd:latest
+              container_name: doco-cd
+              restart: unless-stopped
+              ports:
+                - "127.0.0.1:8888:80"
+              env_file: .env
+              environment:
+                TZ: America/New_York
+                GIT_ACCESS_TOKEN_FILE: /run/secrets/forgejo-token
+                WEBHOOK_SECRET_FILE: /run/secrets/webhook-secret
+                SECRET_PROVIDER: "1password"
+                SECRET_PROVIDER_CONNECT_HOST: "http://op-connect-api:8080"
+                SECRET_PROVIDER_CONNECT_TOKEN_FILE: /run/secrets/op-connect-token
+                LOG_LEVEL: "info"
+                POLL_CONFIG: |
+                  - url: https://forgejo.rinseaid.uk/rinseaid/pangolin.git
+                    reference: main
+                    interval: 300
+              volumes:
+                - /var/run/docker.sock:/var/run/docker.sock
+                - data:/data
+              secrets:
+                - forgejo-token
+                - webhook-secret
+                - op-connect-token
+              cap_drop:
+                - ALL
+              healthcheck:
+                test: ["CMD", "/doco-cd", "healthcheck"]
+                start_period: 15s
+                interval: 30s
+                timeout: 5s
+                retries: 3
+
+            op-connect-api:
+              image: 1password/connect-api:latest
+              container_name: op-connect-api
+              restart: unless-stopped
+              volumes:
+                - /etc/op-connect/1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+                - op_data:/home/opuser/.op/data
+
+            op-connect-sync:
+              image: 1password/connect-sync:latest
+              container_name: op-connect-sync
+              restart: unless-stopped
+              volumes:
+                - /etc/op-connect/1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+                - op_data:/home/opuser/.op/data
+
+          secrets:
+            forgejo-token:
+              environment: FORGEJO_TOKEN
+            webhook-secret:
+              environment: WEBHOOK_SECRET
+            op-connect-token:
+              environment: OP_CONNECT_TOKEN
+
+          volumes:
+            data:
+            op_data:
+
+    - path: /etc/nftables/pangolin.nft
+      mode: 0644
+      contents:
+        inline: |
+          #!/usr/sbin/nft -f
+          flush ruleset
+
+          table inet filter {
+            chain input {
+              type filter hook input priority 0; policy drop;
+
+              iif lo accept
+              ct state established,related accept
+              ct state invalid drop
+
+              # SSH (rate-limited)
+              tcp dport 22 ct state new limit rate 3/minute accept
+
+              # WireGuard tunnels
+              udp dport { 51820, 21820 } accept
+
+              # HTTP/HTTPS
+              tcp dport { 80, 443 } accept
+
+              # ICMP
+              ip protocol icmp accept
+              ip6 nexthdr icmpv6 accept
+            }
+
+            chain forward {
+              type filter hook forward priority 0; policy drop;
+              ct state established,related accept
+              # WireGuard tunnel traffic
+              iifname "wg*" accept
+              oifname "wg*" accept
+            }
+
+            chain output {
+              type filter hook output priority 0; policy accept;
+            }
+          }
+
+  directories:
+    - path: /opt/doco-cd
+      mode: 0755
+
+systemd:
+  units:
+    - name: nftables.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=nftables firewall
+        Before=network-pre.target
+        Wants=network-pre.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/sbin/nft -f /etc/nftables/pangolin.nft
+        ExecReload=/usr/sbin/nft -f /etc/nftables/pangolin.nft
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: doco-cd.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Doco-CD GitOps Agent
+        After=docker.service network-online.target
+        Requires=docker.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        WorkingDirectory=/opt/doco-cd
+        ExecStart=/usr/bin/docker compose up -d --remove-orphans
+        ExecStop=/usr/bin/docker compose down
+        ExecReload=/usr/bin/docker compose pull
+        ExecReload=/usr/bin/docker compose up -d --remove-orphans
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: sshd.socket
+      mask: false

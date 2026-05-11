@@ -4,3 +4,8 @@ config/letsencrypt/
 config/traefik/logs/
 config/crowdsec/db/
 .env
+
+# Flatcar build artifacts
+flatcar/*.qcow2
+flatcar/*.img
+flatcar/*.ign
