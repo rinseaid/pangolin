@@ -163,7 +163,10 @@ storage:
             chain forward {
               type filter hook forward priority 0; policy drop;
               ct state established,related accept
-              # WireGuard tunnel traffic
+              iifname "br-*" accept
+              oifname "br-*" accept
+              iifname "docker0" accept
+              oifname "docker0" accept
               iifname "wg*" accept
               oifname "wg*" accept
             }
