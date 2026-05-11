@@ -147,7 +147,7 @@ storage:
               ct state invalid drop
 
               # SSH (rate-limited)
-              tcp dport 22 ct state new limit rate 3/minute accept
+              tcp dport 22 ct state new limit rate 15/minute accept
 
               # WireGuard tunnels
               udp dport { 51820, 21820 } accept
