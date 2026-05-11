@@ -1,0 +1,52 @@
+name: doco-cd
+
+services:
+  doco-cd:
+    image: ghcr.io/kimdre/doco-cd:latest
+    container_name: doco-cd
+    restart: unless-stopped
+    ports:
+      - "8888:80"
+    environment:
+      TZ: America/New_York
+      GIT_ACCESS_TOKEN: "${FORGEJO_TOKEN}"
+      WEBHOOK_SECRET: "${WEBHOOK_SECRET}"
+      SECRET_PROVIDER: "1password"
+      SECRET_PROVIDER_CONNECT_HOST: "http://op-connect-api:8080"
+      SECRET_PROVIDER_CONNECT_TOKEN: "${OP_CONNECT_TOKEN}"
+      LOG_LEVEL: "info"
+      POLL_CONFIG: |
+        - url: https://forgejo.rinseaid.uk/rinseaid/pangolin.git
+          reference: main
+          interval: 300
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - data:/data
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "/doco-cd", "healthcheck"]
+      start_period: 15s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  op-connect-api:
+    image: 1password/connect-api:latest
+    container_name: op-connect-api
+    restart: unless-stopped
+    volumes:
+      - /etc/op-connect/1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+      - op_data:/home/opuser/.op/data
+
+  op-connect-sync:
+    image: 1password/connect-sync:latest
+    container_name: op-connect-sync
+    restart: unless-stopped
+    volumes:
+      - /etc/op-connect/1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+      - op_data:/home/opuser/.op/data
+
+volumes:
+  data:
+  op_data:

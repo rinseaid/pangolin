@@ -1,0 +1,50 @@
+app:
+  dashboard_url: "https://pangolin.rinseaid.org"
+  log_level: "info"
+  save_logs: false
+  log_failed_attempts: false
+
+server:
+  external_port: 3000
+  internal_port: 3001
+  next_port: 3002
+  integration_port: 3003
+  internal_hostname: "pangolin"
+  secret: "${SERVER_SECRET}"
+  dashboard_session_length_hours: 720
+  resource_session_length_hours: 720
+
+domains:
+  domain1:
+    base_domain: "rinseaid.org"
+    cert_resolver: "letsencrypt"
+    prefer_wildcard_cert: false
+
+traefik:
+  http_entrypoint: "web"
+  https_entrypoint: "websecure"
+  cert_resolver: "letsencrypt"
+  prefer_wildcard_cert: false
+
+gerbil:
+  base_endpoint: "pangolin.rinseaid.org"
+  start_port: 51820
+  clients_start_port: 21820
+  use_subdomain: false
+  subnet_group: "100.89.137.0/20"
+  block_size: 24
+  site_block_size: 30
+
+rate_limits:
+  global:
+    window_minutes: 1
+    max_requests: 100
+  auth:
+    window_minutes: 1
+    max_requests: 500
+
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  allow_raw_resources: true
+  enable_integration_api: false
