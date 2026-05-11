@@ -73,7 +73,7 @@ storage:
               container_name: doco-cd
               restart: unless-stopped
               ports:
-                - "127.0.0.1:8888:80"
+                - "8888:80"
               env_file: .env
               environment:
                 TZ: America/New_York
@@ -152,8 +152,8 @@ storage:
               # WireGuard tunnels
               udp dport { 51820, 21820 } accept
 
-              # HTTP/HTTPS
-              tcp dport { 80, 443 } accept
+              # HTTP/HTTPS + Doco-CD webhook
+              tcp dport { 80, 443, 8888 } accept
 
               # ICMP
               ip protocol icmp accept
