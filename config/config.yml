@@ -10,7 +10,6 @@ server:
   next_port: 3002
   integration_port: 3003
   internal_hostname: "pangolin"
-  secret: "${SERVER_SECRET}"
   dashboard_session_length_hours: 720
   resource_session_length_hours: 720
 

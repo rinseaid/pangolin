@@ -6,6 +6,7 @@ services:
     container_name: pangolin
     restart: unless-stopped
     environment:
+      SERVER_SECRET: "${SERVER_SECRET}"
       CROWDSEC_BOUNCER_KEY: "${CROWDSEC_BOUNCER_KEY}"
     deploy:
       resources:

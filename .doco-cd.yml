@@ -4,7 +4,6 @@ compose_files:
   - compose.yaml
 external_secrets:
   SERVER_SECRET: "op://forge/pangolin/server-secret"
-  LICENSE_KEY: "op://forge/pangolin/license-key"
   CROWDSEC_BOUNCER_KEY: "op://forge/pangolin/crowdsec-bouncer-key"
 webhook_filter: "^refs/heads/main$"
 force_image_pull: true
