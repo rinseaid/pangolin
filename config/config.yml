@@ -46,4 +46,4 @@ flags:
   require_email_verification: false
   disable_signup_without_invite: true
   allow_raw_resources: true
-  enable_integration_api: false
+  enable_integration_api: true
