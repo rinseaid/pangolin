@@ -5,6 +5,7 @@ compose_files:
 external_secrets:
   SERVER_SECRET: "op://forge/pangolin/server-secret"
   CROWDSEC_BOUNCER_KEY: "op://forge/pangolin/crowdsec-bouncer-key"
+  CF_DNS_API_TOKEN: "op://forge/pangolin/cloudflare-dns-token"
 webhook_filter: "^refs/heads/main$"
 force_image_pull: true
 reconciliation:
