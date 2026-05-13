@@ -20,7 +20,7 @@ domains:
     prefer_wildcard_cert: false
   domain2:
     base_domain: "rinseaid.net"
-    cert_resolver: "letsencrypt"
+    cert_resolver: "letsencrypt-dns"
     prefer_wildcard_cert: false
 
 traefik:
