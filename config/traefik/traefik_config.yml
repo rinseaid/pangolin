@@ -68,6 +68,16 @@ certificatesResolvers:
       email: "claude@rinseaid.net"
       storage: "/letsencrypt/acme.json"
       caServer: "https://acme-v02.api.letsencrypt.org/directory"
+  letsencrypt-dns:
+    acme:
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+      email: "claude@rinseaid.net"
+      storage: "/letsencrypt/acme-dns.json"
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
 
 entryPoints:
   web:
