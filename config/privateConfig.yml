@@ -1,0 +1,2 @@
+acme:
+  acme_json_path: "config/letsencrypt"
