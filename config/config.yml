@@ -16,7 +16,7 @@ server:
 domains:
   domain1:
     base_domain: "rinseaid.org"
-    cert_resolver: "letsencrypt"
+    cert_resolver: "letsencrypt-dns"
     prefer_wildcard_cert: false
   domain2:
     base_domain: "rinseaid.net"
@@ -26,7 +26,7 @@ domains:
 traefik:
   http_entrypoint: "web"
   https_entrypoint: "websecure"
-  cert_resolver: "letsencrypt"
+  cert_resolver: "letsencrypt-dns"
   prefer_wildcard_cert: false
 
 gerbil:
