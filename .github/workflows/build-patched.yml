@@ -30,7 +30,7 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VERSION=patched
-            BUILD=ee
+            BUILD=enterprise
             DATABASE=sqlite
           tags: ghcr.io/rinseaid/pangolin:patched
           cache-from: type=gha
