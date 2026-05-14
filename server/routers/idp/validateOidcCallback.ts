@@ -38,10 +38,7 @@ import { calculateUserClientsForOrgs } from "@server/lib/calculateUserClientsFor
 import { isSubscribed } from "#dynamic/lib/isSubscribed";
 import { isLicensedOrSubscribed } from "#dynamic/lib/isLicencedOrSubscribed";
 import { tierMatrix } from "@server/lib/billing/tierMatrix";
-import {
-    assignUserToOrg,
-    removeUserFromOrg
-} from "@server/lib/userOrg";
+import { assignUserToOrg, removeUserFromOrg } from "@server/lib/userOrg";
 import { unwrapRoleMapping } from "@app/lib/idpRoleMapping";
 
 const ensureTrailingSlash = (url: string): string => {
@@ -344,13 +341,6 @@ export async function validateOidcCallback(
                     if (!subscribed) {
                         // filter out the org
                         allOrgs = allOrgs.filter((o) => o.orgId !== org.orgId);
-
-                        // return next(
-                        //     createHttpError(
-                        //         HttpCode.FORBIDDEN,
-                        //         "This organization's current plan does not support this feature."
-                        //     )
-                        // );
                     }
                 }
             } else {
@@ -396,16 +386,14 @@ export async function validateOidcCallback(
                     idpOrgRes?.roleMapping || defaultRoleMapping;
                 if (roleMapping) {
                     logger.debug("Role Mapping", { roleMapping });
-                    const roleMappingJmes = unwrapRoleMapping(
-                        roleMapping
-                    ).evaluationExpression;
+                    const roleMappingJmes =
+                        unwrapRoleMapping(roleMapping).evaluationExpression;
                     const roleMappingResult = jmespath.search(
                         claims,
                         roleMappingJmes
                     );
-                    const roleNames = normalizeRoleMappingResult(
-                        roleMappingResult
-                    );
+                    const roleNames =
+                        normalizeRoleMappingResult(roleMappingResult);
 
                     const supportsMultiRole = await isLicensedOrSubscribed(
                         org.orgId,
@@ -495,7 +483,14 @@ export async function validateOidcCallback(
                             }
                         }
 
-                        await calculateUserClientsForOrgs(existingUser.userId);
+                        calculateUserClientsForOrgs(existingUser.userId).catch(
+                            (err) => {
+                                logger.error(
+                                    "Error calculating user clients after removing all orgs for user with no valid IdP mappings",
+                                    { error: err }
+                                );
+                            }
+                        );
 
                         return next(
                             createHttpError(
@@ -515,12 +510,11 @@ export async function validateOidcCallback(
                 }
             }
 
-                const orgUserCounts: { orgId: string; userCount: number }[] = [];
+            const orgUserCounts: { orgId: string; userCount: number }[] = [];
 
+            let userId = existingUser?.userId;
             // sync the user with the orgs and roles
             await db.transaction(async (trx) => {
-                let userId = existingUser?.userId;
-
                 // create user if not exists
                 if (!existingUser) {
                     userId = generateId(15);
@@ -628,7 +622,7 @@ export async function validateOidcCallback(
                                 {
                                     orgId: org.orgId,
                                     userId: userId!,
-                                    autoProvisioned: true,
+                                    autoProvisioned: true
                                 },
                                 org.roleIds,
                                 trx
@@ -650,8 +644,15 @@ export async function validateOidcCallback(
                         userCount: userCount.length
                     });
                 }
+            });
 
+            db.transaction(async (trx) => {
                 await calculateUserClientsForOrgs(userId!, trx);
+            }).catch((err) => {
+                logger.error(
+                    "Error calculating user clients after syncing orgs and roles for OIDC user",
+                    { error: err }
+                );
             });
 
             for (const orgCount of orgUserCounts) {
@@ -758,9 +759,7 @@ function hydrateOrgMapping(
     return orgMapping.split("{{orgId}}").join(orgId);
 }
 
-function normalizeRoleMappingResult(
-    result: unknown
-): string[] {
+function normalizeRoleMappingResult(result: unknown): string[] {
     if (typeof result === "string") {
         const role = result.trim();
         return role ? [role] : [];
@@ -770,7 +769,9 @@ function normalizeRoleMappingResult(
         return [
             ...new Set(
                 result
-                    .filter((value): value is string => typeof value === "string")
+                    .filter(
+                        (value): value is string => typeof value === "string"
+                    )
                     .map((value) => value.trim())
                     .filter(Boolean)
             )
