@@ -118,7 +118,7 @@ http:
     komodo-periphery-svc:
       loadBalancer:
         servers:
-          - url: "http://100.89.138.10"
+          - url: "https://100.89.138.10"
 
     next-service:
       loadBalancer:
