@@ -51,16 +51,6 @@ http:
             - "100.89.137.0/20"
 
   routers:
-    komodo-periphery-public:
-      rule: "Host(`komodo.rinseaid.org`) && PathPrefix(`/ws/periphery`)"
-      service: komodo-periphery-svc
-      entryPoints:
-        - websecure
-      middlewares:
-        - security-headers
-      tls:
-        certResolver: letsencrypt-dns
-
     main-app-router-redirect:
       rule: "Host(`pangolin.rinseaid.org`)"
       service: next-service
@@ -114,17 +104,7 @@ http:
       tls:
         certResolver: letsencrypt
 
-  serversTransports:
-    insecure-skip-verify:
-      insecureSkipVerify: true
-
   services:
-    komodo-periphery-svc:
-      loadBalancer:
-        serversTransport: insecure-skip-verify
-        servers:
-          - url: "https://100.89.138.10"
-
     next-service:
       loadBalancer:
         servers:
