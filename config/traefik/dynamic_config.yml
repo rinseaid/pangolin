@@ -114,9 +114,14 @@ http:
       tls:
         certResolver: letsencrypt
 
+  serversTransports:
+    insecure-skip-verify:
+      insecureSkipVerify: true
+
   services:
     komodo-periphery-svc:
       loadBalancer:
+        serversTransport: insecure-skip-verify
         servers:
           - url: "https://100.89.138.10"
 
