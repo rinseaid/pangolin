@@ -55,7 +55,7 @@ services:
     environment:
       CROWDSEC_BOUNCER_KEY: "${CROWDSEC_BOUNCER_KEY}"
       CF_DNS_API_TOKEN: "${CF_DNS_API_TOKEN}"
-      DYNAMIC_CONFIG_REV: "2"
+      DYNAMIC_CONFIG_REV: "3"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - "cp /etc/traefik/dynamic_config.yml /tmp/dynamic_config.yml && sed -i \"s|__CROWDSEC_BOUNCER_KEY__|$$CROWDSEC_BOUNCER_KEY|g\" /tmp/dynamic_config.yml && exec traefik --configFile=/etc/traefik/traefik_config.yml"
