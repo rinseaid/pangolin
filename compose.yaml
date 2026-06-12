@@ -2,7 +2,7 @@ name: pangolin
 
 services:
   pangolin:
-    image: fosrl/pangolin:ee-latest
+    image: fosrl/pangolin:ee-1.19.0@sha256:b0e208afffab11a84807e909b7c6d1def3c12904b8df6386cf251434048f8d09
     container_name: pangolin
     restart: unless-stopped
     environment:
@@ -23,7 +23,7 @@ services:
       retries: 15
 
   gerbil:
-    image: fosrl/gerbil:latest
+    image: fosrl/gerbil:1.4.1@sha256:1d462197478cef9eb7c6e7f8b9aa1b6bef82073ec5e4e81f1ad87069f330731b
     container_name: gerbil
     restart: unless-stopped
     depends_on:
@@ -55,7 +55,7 @@ services:
     environment:
       CROWDSEC_BOUNCER_KEY: "${CROWDSEC_BOUNCER_KEY}"
       CF_DNS_API_TOKEN: "${CF_DNS_API_TOKEN}"
-      DYNAMIC_CONFIG_REV: "5"
+      DYNAMIC_CONFIG_REV: "6"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - "cp /etc/traefik/dynamic_config.yml /tmp/dynamic_config.yml && sed -i \"s|__CROWDSEC_BOUNCER_KEY__|$$CROWDSEC_BOUNCER_KEY|g\" /tmp/dynamic_config.yml && exec traefik --configFile=/etc/traefik/traefik_config.yml"
