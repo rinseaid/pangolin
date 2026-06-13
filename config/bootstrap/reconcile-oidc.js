@@ -20,6 +20,8 @@ const desired = {
   authUrl: "https://pocket-id.rinseaid.org/authorize",
   tokenUrl: "https://pocket-id.rinseaid.org/api/oidc/token",
   identifierPath: "email",
+  emailPath: "email",
+  namePath: "name",
   scopes: "openid email profile groups",
   roleMapping: "'Admin'",
   orgMapping: "`true`",
@@ -54,11 +56,20 @@ const reconcile = db.transaction(() => {
     desired.authUrl,
     desired.tokenUrl,
     desired.identifierPath,
-    null,
-    null,
+    desired.emailPath,
+    desired.namePath,
     desired.scopes,
     desired.idpId,
   );
+
+  db.prepare(`
+    UPDATE user
+    SET email = username
+    WHERE type = 'oidc'
+      AND idpId = ?
+      AND email IS NULL
+      AND username LIKE '%@%'
+  `).run(desired.idpId);
 
   const idpOrgUpdate = db.prepare(`
     UPDATE idpOrg
