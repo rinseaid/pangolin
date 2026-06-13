@@ -8,6 +8,7 @@ services:
     environment:
       SERVER_SECRET: "${SERVER_SECRET}"
       CROWDSEC_BOUNCER_KEY: "${CROWDSEC_BOUNCER_KEY}"
+      PANGOLIN_ROOT_API_KEY: "3g90vxh995ip44m.ezmu7xmntlwztmidu6b3ntyefs75ajp4u7sfoc3k"
     deploy:
       resources:
         limits:
