@@ -6,6 +6,8 @@ external_secrets:
   SERVER_SECRET: "op://forge/pangolin/server-secret"
   CROWDSEC_BOUNCER_KEY: "op://forge/pangolin/crowdsec-bouncer-key"
   CF_DNS_API_TOKEN: "op://forge/pangolin/cloudflare-dns-token"
+  OIDC_CLIENT_ID: "op://forge/pangolin/oidc-client-id"
+  OIDC_CLIENT_SECRET: "op://forge/pangolin/oidc-client-secret"
 webhook_filter: "^refs/heads/main$"
 force_image_pull: true
 reconciliation:
