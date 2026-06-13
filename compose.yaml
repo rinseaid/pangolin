@@ -14,7 +14,7 @@ services:
       OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET}"
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - "node /app/config/bootstrap/reconcile-oidc.js && exec docker-entrypoint.sh npm run start"
+      - "node /app/config/bootstrap/reconcile-oidc.cjs && exec docker-entrypoint.sh npm run start"
     deploy:
       resources:
         limits:
